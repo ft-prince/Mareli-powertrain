@@ -1,0 +1,272 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ machine_name }} - Manufacturing Traceability{% endblock %}
+
+{% block content %}
+<div class="back-link">
+    <a href="{% url 'dashboard:dashboard' %}" style="color: var(--primary-blue); text-decoration: none;">← Back to Dashboard</a>
+</div>
+
+<div class="machine-card" style="margin-top: 1rem;">
+    <div class="machine-header">
+        <div class="machine-title">
+            <span class="status-indicator {% if is_active %}status-active{% else %}status-inactive{% endif %}"></span>
+            {{ machine_name }}
+        </div>
+        <div class="machine-actions">
+            <a href="{% url 'dashboard:export_machine_data' machine_name|lower|cut:' '|cut:'-' %}" class="action-button">Export CSV</a>
+            <button onclick="refreshData()" class="action-button">Refresh</button>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if error %}
+        <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>{{ error }}</h3>
+        </div>
+        {% elif not records %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>No data available</h3>
+            <p>Waiting for production data...</p>
+        </div>
+        {% else %}
+        <table class="data-table" id="data-table">
+            <thead>
+                <tr>
+                    <th colspan="3" style="background: rgba(0, 102, 204, 0.1); text-align: center;">Preprocessing</th>
+                    <th rowspan="2" style="background: var(--light-gray); vertical-align: middle;">QR Code</th>
+                    <th colspan="2" style="background: rgba(0, 168, 204, 0.1); text-align: center;">Postprocessing</th>
+                </tr>
+                <tr>
+                    <th style="background: rgba(0, 102, 204, 0.05);">ID</th>
+                    <th style="background: rgba(0, 102, 204, 0.05);">Timestamp</th>
+                    <th style="background: rgba(0, 102, 204, 0.05);">Status</th>
+                    <th style="background: rgba(0, 168, 204, 0.05);">ID</th>
+                    <th style="background: rgba(0, 168, 204, 0.05);">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr class="{{ record.status_class }} clickable-row" onclick="openModal({{ record.prep_id }}, '{{ record.qr_code }}', {{ record.post_id|default:'null' }})">
+                    <td>{{ record.prep_id }}</td>
+                    <td>{{ record.prep_timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td>
+                        <span class="status-badge status-ok">{{ record.prep_status }}</span>
+                    </td>
+                    <td><strong>{{ record.qr_code }}</strong></td>
+                    <td>{{ record.post_id|default:"-" }}</td>
+                    <td>
+                        {% if record.post_status == "Pending" %}
+                            <span class="status-badge status-inprogress">⏳ {{ record.post_status }}</span>
+                        {% elif record.post_status == "OK" %}
+                            <span class="status-badge status-ok">✅ {{ record.post_status }}</span>
+                        {% elif record.post_status == "NG" %}
+                            <span class="status-badge status-ng">❌ {{ record.post_status }}</span>
+                        {% else %}
+                            {{ record.post_status }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Fullscreen Modal -->
+<div id="detailModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle">QR Code Details</h2>
+        
+        <div class="modal-body">
+            <div class="modal-section">
+                <h3>📥 Preprocessing Details</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">ID:</span>
+                        <span class="detail-value" id="prepId"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">QR Code:</span>
+                        <span class="detail-value" id="qrCode"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Machine:</span>
+                        <span class="detail-value" id="prepMachine"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Timestamp:</span>
+                        <span class="detail-value" id="prepTimestamp"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value" id="prepStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>📤 Postprocessing Details</h3>
+                <div class="detail-grid" id="postDetails">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="modal-section" id="gaugeSection" style="display: none;">
+                <h3>📊 Gauge Measurements</h3>
+                <div class="detail-grid" id="gaugeValues">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>📈 Workflow Timeline</h3>
+                <div class="timeline" id="timeline">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Store records data for modal
+const recordsData = {{ records_json|safe }};
+
+function openModal(prepId, qrCode, postId) {
+    // Find the record
+    const record = recordsData.find(r => r.prep_id === prepId && r.qr_code === qrCode);
+    if (!record) return;
+
+    // Set modal title
+    document.getElementById('modalTitle').textContent = `Details for ${qrCode}`;
+
+    // Populate preprocessing details
+    document.getElementById('prepId').textContent = record.prep_id;
+    document.getElementById('qrCode').textContent = record.qr_code;
+    document.getElementById('prepMachine').textContent = record.prep_machine_name;
+    document.getElementById('prepTimestamp').textContent = new Date(record.prep_timestamp).toLocaleString();
+    document.getElementById('prepStatus').innerHTML = '<span class="status-badge status-ok">✅ ' + record.prep_status + '</span>';
+
+    // Populate postprocessing details
+    const postDetails = document.getElementById('postDetails');
+    if (postId && record.post_id) {
+        postDetails.innerHTML = `
+            <div class="detail-item">
+                <span class="detail-label">ID:</span>
+                <span class="detail-value">${record.post_id}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Timestamp:</span>
+                <span class="detail-value">${new Date(record.post_timestamp).toLocaleString()}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                    ${record.post_status === 'OK' ? '<span class="status-badge status-ok">✅ OK</span>' : 
+                      record.post_status === 'NG' ? '<span class="status-badge status-ng">❌ NG</span>' : 
+                      record.post_status}
+                </span>
+            </div>
+        `;
+    } else {
+        postDetails.innerHTML = '<p style="color: var(--warning-orange); font-style: italic;">⏳ Postprocessing pending...</p>';
+    }
+
+    // Populate gauge values if exist
+    const gaugeSection = document.getElementById('gaugeSection');
+    const gaugeValues = document.getElementById('gaugeValues');
+    if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
+        gaugeSection.style.display = 'block';
+        gaugeValues.innerHTML = '';
+        for (const [key, value] of Object.entries(record.gauge_values)) {
+            gaugeValues.innerHTML += `
+                <div class="detail-item">
+                    <span class="detail-label">${key.toUpperCase()}:</span>
+                    <span class="detail-value">${value.toFixed(3)}</span>
+                </div>
+            `;
+        }
+    } else {
+        gaugeSection.style.display = 'none';
+    }
+
+    // Populate timeline
+    const timeline = document.getElementById('timeline');
+    timeline.innerHTML = '';
+    
+    // Preprocessing event
+    timeline.innerHTML += `
+        <div class="timeline-item completed">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+                <div class="timeline-time">${new Date(record.prep_timestamp).toLocaleString()}</div>
+                <div class="timeline-title">Preprocessing Started</div>
+                <div class="timeline-desc">Machine: ${record.prep_machine_name}</div>
+            </div>
+        </div>
+    `;
+
+    // Postprocessing event
+    if (record.post_id) {
+        timeline.innerHTML += `
+            <div class="timeline-item completed">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">${new Date(record.post_timestamp).toLocaleString()}</div>
+                    <div class="timeline-title">Postprocessing Completed</div>
+                    <div class="timeline-desc">Status: ${record.post_status}</div>
+                </div>
+            </div>
+        `;
+    } else {
+        timeline.innerHTML += `
+            <div class="timeline-item pending">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <div class="timeline-title">Postprocessing</div>
+                    <div class="timeline-desc">Waiting...</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Show modal
+    document.getElementById('detailModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('detailModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+});
+
+function refreshData() {
+    location.reload();
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Manufacturing Traceability{% endblock %}
+
+{% block search %}
+<div class="search-container">
+    <div class="search-wrapper">
+        <input type="text" id="qr-search" class="search-input" placeholder="Search by QR Code...">
+        <button onclick="searchQR()" class="search-button">Search</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem; color: var(--dark-blue);">Production Line Machines</h2>
+
+<div class="machine-grid">
+    {% for machine in machines %}
+    <div class="machine-grid-card" onclick="openMachineModal('{{ machine.machine_id }}', '{{ machine.name }}')" style="cursor: pointer;">
+        <div class="machine-grid-header">
+            <div class="machine-grid-title">
+                <span class="status-indicator {% if machine.is_active %}status-active{% else %}status-inactive{% endif %}"></span>
+                {{ machine.name }}
+            </div>
+            <span class="machine-type-badge type-{{ machine.type }}">{{ machine.type|upper }}</span>
+        </div>
+        
+        {% if machine.latest_record %}
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">Latest QR:</span>
+                <strong style="font-size: 0.85rem;">{{ machine.latest_record.qr_code }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
+                <span style="font-size: 0.85rem;">{{ machine.latest_record.prep_timestamp|date:"H:i:s" }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
+                {% if machine.latest_record.post_status == "OK" %}
+                    <span class="status-badge status-ok" style="font-size: 0.8rem;">✅ OK</span>
+                {% elif machine.latest_record.post_status == "NG" %}
+                    <span class="status-badge status-ng" style="font-size: 0.8rem;">❌ NG</span>
+                {% else %}
+                    <span class="status-badge status-inprogress" style="font-size: 0.8rem;">⏳ Pending</span>
+                {% endif %}
+            </div>
+            
+            {% if machine.latest_record.gauge_values %}
+            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0;">
+                <div style="color: var(--dark-gray); font-size: 0.8rem; margin-bottom: 0.5rem;">Gauge Values:</div>
+                {% for key, value in machine.latest_record.gauge_values.items %}
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                    <span>{{ key }}:</span>
+                    <span style="font-weight: 600;">{{ value|floatformat:3 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if machine.is_assembly and machine.latest_record.qr_external != '-' %}
+            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0; font-size: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                    <span style="color: var(--dark-gray);">External:</span>
+                    <span>{{ machine.latest_record.qr_external }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--dark-gray);">Housing:</span>
+                    <span>{{ machine.latest_record.qr_housing }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="margin-top: 1rem; color: var(--dark-gray); font-style: italic; text-align: center;">
+            No data available
+        </div>
+        {% endif %}
+        
+        <div style="margin-top: 1rem; font-size: 0.9rem;">
+            {% if machine.is_active %}
+                <span style="color: var(--success-green); font-weight: 600;">● ACTIVE</span>
+            {% else %}
+                <span style="color: var(--danger-red); font-weight: 600;">● INACTIVE</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Fullscreen Machine Detail Modal -->
+<div id="machineModal" class="modal">
+    <div class="modal-content" style="max-width: 95%; width: 95%;">
+        <span class="modal-close" onclick="closeMachineModal()">&times;</span>
+        <h2 id="machineModalTitle">Machine Details</h2>
+        
+        <div class="modal-body">
+            <div id="machineModalContent">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 2rem;">⏳</div>
+                    <p>Loading machine data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentMachineId = null;
+
+function openMachineModal(machineId, machineName) {
+    currentMachineId = machineId;
+    document.getElementById('machineModalTitle').textContent = machineName;
+    document.getElementById('machineModal').style.display = 'flex';
+    
+    // Load machine data
+    fetch(`/api/machine/${machineId}/`)
+        .then(response => response.json())
+        .then(data => {
+            renderMachineData(data);
+        })
+        .catch(error => {
+            document.getElementById('machineModalContent').innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: var(--danger-red);">
+                    <div style="font-size: 2rem;">⚠️</div>
+                    <p>Error loading machine data</p>
+                </div>
+            `;
+        });
+}
+
+function closeMachineModal() {
+    document.getElementById('machineModal').style.display = 'none';
+    currentMachineId = null;
+}
+
+function renderMachineData(data) {
+    const content = document.getElementById('machineModalContent');
+    
+    if (!data.records || data.records.length === 0) {
+        content.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 2rem;">📊</div>
+                <h3>No data available</h3>
+                <p>Waiting for production data...</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Create table with data
+    let tableHTML = `
+        <div class="data-table-container" style="max-height: 70vh; overflow-y: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th colspan="3" style="background: rgba(0, 102, 204, 0.1); text-align: center;">Preprocessing</th>
+                        <th rowspan="2" style="background: var(--light-gray); vertical-align: middle;">QR Code</th>
+                        <th colspan="3" style="background: rgba(0, 168, 204, 0.1); text-align: center;">Postprocessing</th>
+                    </tr>
+                    <tr>
+                        <th style="background: rgba(0, 102, 204, 0.05);">ID</th>
+                        <th style="background: rgba(0, 102, 204, 0.05);">Timestamp</th>
+                        <th style="background: rgba(0, 102, 204, 0.05);">Status</th>
+                        <th style="background: rgba(0, 168, 204, 0.05);">ID</th>
+                        <th style="background: rgba(0, 168, 204, 0.05);">Timestamp</th>
+                        <th style="background: rgba(0, 168, 204, 0.05);">Status/Values</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.records.forEach(record => {
+        const prepTime = new Date(record.prep_timestamp).toLocaleString();
+        const postTime = record.post_timestamp ? new Date(record.post_timestamp).toLocaleString() : '-';
+        
+        // Build postprocessing status/values cell
+        let postStatusCell = '-';
+        if (record.post_status === 'Pending') {
+            postStatusCell = '<span class="status-badge status-inprogress">⏳ Pending</span>';
+        } else if (record.post_status === 'OK') {
+            if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
+                // Show gauge values
+                let gaugeHTML = '<span class="status-badge status-ok">✅ OK</span><br><small>';
+                for (const [key, value] of Object.entries(record.gauge_values)) {
+                    gaugeHTML += `${key}: ${value.toFixed(3)}<br>`;
+                }
+                gaugeHTML += '</small>';
+                postStatusCell = gaugeHTML;
+            } else {
+                postStatusCell = '<span class="status-badge status-ok">✅ OK</span>';
+            }
+        } else if (record.post_status === 'NG') {
+            postStatusCell = '<span class="status-badge status-ng">❌ NG</span>';
+        }
+        
+        // Add assembly QR codes if applicable
+        let qrCodeCell = `<strong>${record.qr_code}</strong>`;
+        if (data.is_assembly && record.qr_external && record.qr_external !== '-') {
+            qrCodeCell += `<br><small style="color: var(--dark-gray);">
+                Ext: ${record.qr_external}<br>
+                House: ${record.qr_housing}
+            </small>`;
+        }
+        
+        tableHTML += `
+            <tr class="${record.status_class}">
+                <td>${record.prep_id}</td>
+                <td>${prepTime}</td>
+                <td><span class="status-badge status-ok">✅ ${record.prep_status}</span></td>
+                <td>${qrCodeCell}</td>
+                <td>${record.post_id || '-'}</td>
+                <td>${postTime}</td>
+                <td>${postStatusCell}</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    content.innerHTML = tableHTML;
+}
+
+function searchQR() {
+    const qrCode = document.getElementById('qr-search').value.trim();
+    if (qrCode) {
+        fetch(`/api/search/?qr=${encodeURIComponent(qrCode)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    let message = `Found QR Code "${data.qr_code}" in:\n\n`;
+                    data.results.forEach(result => {
+                        message += `${result.machine}: ${result.preprocessing_count} prep, ${result.postprocessing_count} post\n`;
+                    });
+                    alert(message);
+                } else {
+                    alert(`QR Code "${data.qr_code}" not found in any machine.`);
+                }
+            });
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('machineModal');
+    if (event.target == modal) {
+        closeMachineModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeMachineModal();
+    }
+});
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    if (currentMachineId) {
+        // Refresh modal data if open
+        fetch(`/api/machine/${currentMachineId}/`)
+            .then(response => response.json())
+            .then(data => {
+                renderMachineData(data);
+            });
+    } else {
+        // Refresh dashboard
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

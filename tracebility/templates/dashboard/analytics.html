@@ -1,0 +1,1011 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Analytics - Manufacturing Traceability{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <h2 style="margin-bottom: 1.5rem; color: var(--dark-coral);">Production Analytics & Insights</h2>
+    
+    <!-- Filters Section -->
+    <div class="filters-card">
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Filters & Controls</h3>
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="dateRange">Date Range</label>
+                <select id="dateRange" onchange="handleDateRangeChange()">
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="week" selected>Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" disabled>
+            </div>
+            
+            <div class="filter-group">
+                <label for="endDate">End Date</label>
+                <input type="date" id="endDate" disabled>
+            </div>
+            
+            <div class="filter-group">
+                <label for="machineFilter">Machine</label>
+                <select id="machineFilter">
+                    <option value="all">All Machines</option>
+                    <optgroup label="DMG MORI">
+                        <option value="dmg_mori_1">DMG MORI 1</option>
+                        <option value="dmg_mori_2">DMG MORI 2</option>
+                        <option value="dmg_mori_3">DMG MORI 3</option>
+                        <option value="dmg_mori_4">DMG MORI 4</option>
+                        <option value="dmg_mori_5">DMG MORI 5</option>
+                        <option value="dmg_mori_6">DMG MORI 6</option>
+                    </optgroup>
+                    <optgroup label="Gauge">
+                        <option value="gauge_1">Gauge 1</option>
+                        <option value="gauge_2">Gauge 2</option>
+                        <option value="gauge_3">Gauge 3</option>
+                    </optgroup>
+                    <optgroup label="Honing">
+                        <option value="honing_1">Honing 1</option>
+                        <option value="honing_2">Honing 2</option>
+                    </optgroup>
+                    <optgroup label="Processing">
+                        <option value="deburring">Deburring</option>
+                        <option value="pre_washing">Pre-Washing</option>
+                        <option value="final_washing">Final Washing</option>
+                    </optgroup>
+                    <optgroup label="Final">
+                        <option value="o_ring___leak_test">O-Ring & Leak Test</option>
+                        <option value="painting">Painting</option>
+                        <option value="lubrication">Lubrication</option>
+                    </optgroup>
+                    <optgroup label="Assembly">
+                        <option value="assembly_machine_1">Assembly Machine 1</option>
+                        <option value="assembly_machine_2">Assembly Machine 2</option>
+                        <option value="assembly_machine_3">Assembly Machine 3</option>
+                        <option value="assembly_machine_4">Assembly Machine 4</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter">
+                    <option value="all">All Status</option>
+                    <option value="OK">OK</option>
+                    <option value="NG">NG</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="filter-actions">
+            <button class="filter-btn filter-btn-primary" onclick="applyFilters()">
+                🔍 Apply Filters
+            </button>
+            <button class="filter-btn filter-btn-secondary" onclick="resetFilters()">
+                🔄 Reset
+            </button>
+            <button class="filter-btn filter-btn-export" onclick="exportData()">
+                📊 Export CSV
+            </button>
+            <button class="filter-btn filter-btn-export" onclick="exportCharts()">
+                📈 Export Charts
+            </button>
+        </div>
+    </div>
+    
+    <!-- Statistics Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value" id="totalParts">0</div>
+            <div class="stat-label">Total Parts Processed</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="okParts" style="color: var(--success-green);">0</div>
+            <div class="stat-label">OK Parts</div>
+            <div class="stat-change positive" id="okPercentage">0%</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value" id="ngParts" style="color: var(--danger-red);">0</div>
+            <div class="stat-label">NG Parts</div>
+            <div class="stat-change negative" id="ngPercentage">0%</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value" id="pendingParts" style="color: var(--warning-orange);">0</div>
+            <div class="stat-label">Pending Parts</div>
+            <div class="stat-change" id="pendingPercentage">0%</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value" id="yieldRate">0%</div>
+            <div class="stat-label">Yield Rate</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-value" id="activeMachines">0</div>
+            <div class="stat-label">Active Machines</div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Status Distribution</h3>
+            <div class="chart-container">
+                <canvas id="statusPieChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Machine Performance</h3>
+            <div class="chart-container">
+                <canvas id="machineBarChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card full-width-chart">
+            <h3>Production Timeline</h3>
+            <div class="chart-container" style="height: 350px;">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Hourly Production Rate</h3>
+            <div class="chart-container">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h3>OK vs NG Trend</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Machine Breakdown -->
+    <div class="chart-card">
+        <h3>Machine Breakdown</h3>
+        <div class="machine-breakdown" id="machineBreakdown">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+    
+    <!-- QR Code Search Section -->
+    <div class="data-table-card">
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">QR Code Search</h3>
+        <div class="search-bar">
+            <input type="text" id="qrSearchInput" class="search-input-analytics" placeholder="Enter QR Code to search...">
+            <button class="filter-btn filter-btn-primary" onclick="searchQRCode()">
+                🔍 Search
+            </button>
+        </div>
+        <div id="searchResults"></div>
+    </div>
+    
+    <!-- Detailed Data Table -->
+    <div class="data-table-card">
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Detailed Data</h3>
+        <div class="data-table-container" style="max-height: 500px; overflow-y: auto;">
+            <table class="data-table" id="detailedDataTable">
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>QR Code</th>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th>Values</th>
+                    </tr>
+                </thead>
+                <tbody id="detailedDataBody">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<style>
+    /* Analytics-specific styles using existing Renata color palette */
+    .analytics-container {
+        padding: 1rem;
+    }
+    
+    .filters-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px var(--shadow);
+    }
+    
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        font-weight: 600;
+        color: var(--dark-coral);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        padding: 0.6rem;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    
+    .filter-group select:focus,
+    .filter-group input:focus {
+        outline: none;
+        border-color: var(--primary-coral);
+        box-shadow: 0 0 0 3px rgba(255, 119, 85, 0.1);
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+    
+    .filter-btn-primary {
+        background: linear-gradient(135deg, var(--dark-coral) 0%, var(--accent-orange) 100%);
+        color: var(--white);
+    }
+    
+    .filter-btn-primary:hover {
+        background: linear-gradient(135deg, var(--primary-coral) 0%, var(--secondary-coral) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow);
+    }
+    
+    .filter-btn-secondary {
+        background: var(--light-gray);
+        color: var(--text-dark);
+    }
+    
+    .filter-btn-secondary:hover {
+        background: var(--medium-gray);
+    }
+    
+    .filter-btn-export {
+        background: var(--success-green);
+        color: var(--white);
+    }
+    
+    .filter-btn-export:hover {
+        background: #00b359;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px var(--shadow);
+        text-align: center;
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 12px var(--shadow);
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark-coral);
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        color: var(--dark-gray);
+        font-size: 0.9rem;
+    }
+    
+    .stat-change {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .stat-change.positive {
+        color: var(--success-green);
+    }
+    
+    .stat-change.negative {
+        color: var(--danger-red);
+    }
+    
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px var(--shadow);
+    }
+    
+    .chart-card h3 {
+        color: var(--dark-coral);
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    .full-width-chart {
+        grid-column: 1 / -1;
+    }
+    
+    .data-table-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px var(--shadow);
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .search-input-analytics {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    
+    .search-input-analytics:focus {
+        outline: none;
+        border-color: var(--primary-coral);
+        box-shadow: 0 0 0 3px rgba(255, 119, 85, 0.1);
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loading-spinner {
+        border: 4px solid var(--light-gray);
+        border-top: 4px solid var(--dark-coral);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .machine-breakdown {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .machine-stat {
+        background: var(--light-gray);
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .machine-stat:hover {
+        background: var(--medium-gray);
+        transform: translateY(-2px);
+    }
+    
+    .machine-stat-name {
+        font-size: 0.85rem;
+        color: var(--dark-gray);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .machine-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark-coral);
+    }
+    
+    @media (max-width: 768px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-actions {
+            flex-direction: column;
+        }
+        
+        .filter-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Check if Chart.js is loaded
+if (typeof Chart === 'undefined') {
+    console.error('Chart.js not loaded. Loading now...');
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
+    script.onload = function() {
+        console.log('Chart.js loaded successfully');
+        initializeDashboard();
+    };
+    script.onerror = function() {
+        alert('Failed to load Chart.js. Please check your internet connection and refresh the page.');
+    };
+    document.head.appendChild(script);
+} else {
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDashboard();
+    });
+}
+
+let analyticsData = null;
+let charts = {};
+
+function initializeDashboard() {
+    initializeDateRange();
+    applyFilters();
+}
+
+function initializeDateRange() {
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    document.getElementById('endDate').valueAsDate = today;
+    document.getElementById('startDate').valueAsDate = weekAgo;
+}
+
+function handleDateRangeChange() {
+    const range = document.getElementById('dateRange').value;
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    
+    if (range === 'custom') {
+        startDate.disabled = false;
+        endDate.disabled = false;
+        return;
+    }
+    
+    startDate.disabled = true;
+    endDate.disabled = true;
+    
+    const today = new Date();
+    endDate.valueAsDate = today;
+    
+    switch(range) {
+        case 'today':
+            startDate.valueAsDate = today;
+            break;
+        case 'yesterday':
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            startDate.valueAsDate = yesterday;
+            endDate.valueAsDate = yesterday;
+            break;
+        case 'week':
+            const weekAgo = new Date(today);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            startDate.valueAsDate = weekAgo;
+            break;
+        case 'month':
+            const monthAgo = new Date(today);
+            monthAgo.setDate(monthAgo.getDate() - 30);
+            startDate.valueAsDate = monthAgo;
+            break;
+    }
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function applyFilters() {
+    showLoading();
+    
+    const filters = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        machine: document.getElementById('machineFilter').value,
+        status: document.getElementById('statusFilter').value
+    };
+    
+    fetch('/api/analytics/?' + new URLSearchParams(filters))
+        .then(response => response.json())
+        .then(data => {
+            analyticsData = data;
+            updateDashboard(data);
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Error fetching analytics:', error);
+            hideLoading();
+            alert('Error loading analytics data');
+        });
+}
+
+function resetFilters() {
+    document.getElementById('dateRange').value = 'week';
+    document.getElementById('machineFilter').value = 'all';
+    document.getElementById('statusFilter').value = 'all';
+    handleDateRangeChange();
+    applyFilters();
+}
+
+function updateDashboard(data) {
+    updateStatistics(data);
+    updateCharts(data);
+    updateMachineBreakdown(data);
+    updateDetailedTable(data);
+}
+
+function updateStatistics(data) {
+    const total = data.total_parts || 0;
+    const ok = data.ok_parts || 0;
+    const ng = data.ng_parts || 0;
+    const pending = data.pending_parts || 0;
+    
+    document.getElementById('totalParts').textContent = total;
+    document.getElementById('okParts').textContent = ok;
+    document.getElementById('ngParts').textContent = ng;
+    document.getElementById('pendingParts').textContent = pending;
+    
+    const okPercent = total > 0 ? ((ok / total) * 100).toFixed(1) : 0;
+    const ngPercent = total > 0 ? ((ng / total) * 100).toFixed(1) : 0;
+    const pendingPercent = total > 0 ? ((pending / total) * 100).toFixed(1) : 0;
+    
+    document.getElementById('okPercentage').textContent = okPercent + '%';
+    document.getElementById('ngPercentage').textContent = ngPercent + '%';
+    document.getElementById('pendingPercentage').textContent = pendingPercent + '%';
+    
+    const completed = ok + ng;
+    const yieldRate = completed > 0 ? ((ok / completed) * 100).toFixed(1) : 0;
+    document.getElementById('yieldRate').textContent = yieldRate + '%';
+    
+    document.getElementById('activeMachines').textContent = data.active_machines || 0;
+}
+
+function updateCharts(data) {
+    // Check if Chart is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded yet');
+        setTimeout(() => updateCharts(data), 1000);
+        return;
+    }
+    
+    // Destroy existing charts
+    Object.values(charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+        }
+    });
+    charts = {};
+    
+    // Status Distribution Pie Chart
+    const statusCtx = document.getElementById('statusPieChart');
+    if (statusCtx) {
+        const ctx = statusCtx.getContext('2d');
+        charts.status = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['OK', 'NG', 'Pending'],
+                datasets: [{
+                    data: [data.ok_parts || 0, data.ng_parts || 0, data.pending_parts || 0],
+                    backgroundColor: ['#00cc66', '#cc3333', '#ff9933']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Machine Performance Bar Chart
+    if (data.machine_stats && data.machine_stats.length > 0) {
+        const machineCtx = document.getElementById('machineBarChart');
+        if (machineCtx) {
+            const ctx = machineCtx.getContext('2d');
+            charts.machine = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.machine_stats.map(m => m.machine),
+                    datasets: [
+                        {
+                            label: 'OK',
+                            data: data.machine_stats.map(m => m.ok),
+                            backgroundColor: '#00cc66'
+                        },
+                        {
+                            label: 'NG',
+                            data: data.machine_stats.map(m => m.ng),
+                            backgroundColor: '#cc3333'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: false
+                        },
+                        y: {
+                            stacked: false,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // Timeline Chart
+    if (data.timeline_data && data.timeline_data.labels && data.timeline_data.labels.length > 0) {
+        const timelineCtx = document.getElementById('timelineChart');
+        if (timelineCtx) {
+            const ctx = timelineCtx.getContext('2d');
+            charts.timeline = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.timeline_data.labels,
+                    datasets: [
+                        {
+                            label: 'OK Parts',
+                            data: data.timeline_data.ok,
+                            borderColor: '#00cc66',
+                            backgroundColor: 'rgba(0, 204, 102, 0.1)',
+                            fill: true
+                        },
+                        {
+                            label: 'NG Parts',
+                            data: data.timeline_data.ng,
+                            borderColor: '#cc3333',
+                            backgroundColor: 'rgba(204, 51, 51, 0.1)',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // Hourly Production Chart
+    if (data.hourly_data && data.hourly_data.labels && data.hourly_data.labels.length > 0) {
+        const hourlyCtx = document.getElementById('hourlyChart');
+        if (hourlyCtx) {
+            const ctx = hourlyCtx.getContext('2d');
+            charts.hourly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.hourly_data.labels,
+                    datasets: [{
+                        label: 'Parts Produced',
+                        data: data.hourly_data.values,
+                        backgroundColor: '#ff7755'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // Trend Chart
+    if (data.trend_data && data.trend_data.labels && data.trend_data.labels.length > 0) {
+        const trendCtx = document.getElementById('trendChart');
+        if (trendCtx) {
+            const ctx = trendCtx.getContext('2d');
+            charts.trend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.trend_data.labels,
+                    datasets: [{
+                        label: 'Yield Rate %',
+                        data: data.trend_data.values,
+                        borderColor: '#ff7755',
+                        backgroundColor: 'rgba(255, 119, 85, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+    }
+}
+
+function updateMachineBreakdown(data) {
+    const container = document.getElementById('machineBreakdown');
+    container.innerHTML = '';
+    
+    if (data.machine_stats) {
+        data.machine_stats.forEach(machine => {
+            const total = machine.ok + machine.ng + machine.pending;
+            const yieldRate = (machine.ok + machine.ng) > 0 
+                ? ((machine.ok / (machine.ok + machine.ng)) * 100).toFixed(1) 
+                : 0;
+            
+            container.innerHTML += `
+                <div class="machine-stat">
+                    <div class="machine-stat-name">${machine.machine}</div>
+                    <div class="machine-stat-value">${total}</div>
+                    <div style="font-size: 0.75rem; color: var(--dark-gray); margin-top: 0.25rem;">
+                        Yield: ${yieldRate}%
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+function updateDetailedTable(data) {
+    const tbody = document.getElementById('detailedDataBody');
+    tbody.innerHTML = '';
+    
+    if (data.detailed_data && data.detailed_data.length > 0) {
+        data.detailed_data.forEach(record => {
+            const timestamp = new Date(record.timestamp).toLocaleString();
+            const statusClass = record.status === 'OK' ? 'status-ok' : 
+                               record.status === 'NG' ? 'status-ng' : 'status-inprogress';
+            
+            let valuesHtml = '-';
+            if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
+                valuesHtml = '<small>';
+                for (const [key, value] of Object.entries(record.gauge_values)) {
+                    valuesHtml += `${key}: ${value.toFixed(3)}<br>`;
+                }
+                valuesHtml += '</small>';
+            }
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${record.machine}</td>
+                    <td><strong>${record.qr_code}</strong></td>
+                    <td>${timestamp}</td>
+                    <td><span class="status-badge ${statusClass}">${record.status}</span></td>
+                    <td>${valuesHtml}</td>
+                </tr>
+            `;
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No data available</td></tr>';
+    }
+}
+
+function searchQRCode() {
+    const qrCode = document.getElementById('qrSearchInput').value.trim();
+    if (!qrCode) {
+        alert('Please enter a QR code');
+        return;
+    }
+    
+    showLoading();
+    
+    fetch(`/api/search/?qr=${encodeURIComponent(qrCode)}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySearchResults(data);
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Error searching:', error);
+            hideLoading();
+            alert('Error searching QR code');
+        });
+}
+
+function displaySearchResults(data) {
+    const container = document.getElementById('searchResults');
+    
+    if (!data.results || data.results.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 1rem; text-align: center; color: var(--dark-gray);">
+                No results found for QR code: <strong>${data.qr_code}</strong>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: 8px;">
+            <h4 style="margin-bottom: 1rem;">Results for: <strong>${data.qr_code}</strong></h4>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Preprocessing Count</th>
+                        <th>Postprocessing Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.results.forEach(result => {
+        html += `
+            <tr>
+                <td><strong>${result.machine}</strong></td>
+                <td>${result.preprocessing_count}</td>
+                <td>${result.postprocessing_count}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function exportData() {
+    const filters = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        machine: document.getElementById('machineFilter').value,
+        status: document.getElementById('statusFilter').value
+    };
+    
+    window.location.href = '/api/analytics/export/?' + new URLSearchParams(filters);
+}
+
+function exportCharts() {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write('<html><head><title>Analytics Charts</title>');
+    printWindow.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; } .chart { margin-bottom: 40px; page-break-inside: avoid; } h2 { color: #ff7755; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<h1>Production Analytics Report</h1>');
+    printWindow.document.write('<p>Generated: ' + new Date().toLocaleString() + '</p>');
+    
+    printWindow.document.write('<h2>Statistics Summary</h2>');
+    printWindow.document.write('<table border="1" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">');
+    printWindow.document.write('<tr><td><strong>Total Parts:</strong></td><td>' + document.getElementById('totalParts').textContent + '</td></tr>');
+    printWindow.document.write('<tr><td><strong>OK Parts:</strong></td><td>' + document.getElementById('okParts').textContent + '</td></tr>');
+    printWindow.document.write('<tr><td><strong>NG Parts:</strong></td><td>' + document.getElementById('ngParts').textContent + '</td></tr>');
+    printWindow.document.write('<tr><td><strong>Yield Rate:</strong></td><td>' + document.getElementById('yieldRate').textContent + '</td></tr>');
+    printWindow.document.write('</table>');
+    
+    Object.keys(charts).forEach(key => {
+        const canvas = charts[key].canvas;
+        const imgData = canvas.toDataURL('image/png');
+        printWindow.document.write('<div class="chart">');
+        printWindow.document.write('<h2>' + key.charAt(0).toUpperCase() + key.slice(1) + ' Chart</h2>');
+        printWindow.document.write('<img src="' + imgData + '" style="max-width: 100%;">');
+        printWindow.document.write('</div>');
+    });
+    
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    
+    setTimeout(() => {
+        printWindow.print();
+    }, 500);
+}
+</script>
+{% endblock %}
