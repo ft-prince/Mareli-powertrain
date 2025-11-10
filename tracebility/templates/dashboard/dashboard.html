@@ -28,9 +28,15 @@
                 <span style="color: var(--dark-gray); font-size: 0.85rem;">Latest QR:</span>
                 <strong style="font-size: 0.85rem;">{{ machine.latest_record.qr_code }}</strong>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
-                <span style="font-size: 0.85rem;" data-timestamp="{{ machine.latest_record.prep_timestamp }}"></span>
+            <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--dark-gray); font-size: 0.85rem;">Date:</span>
+                    <span style="font-size: 0.85rem;" data-timestamp-date="{{ machine.latest_record.prep_timestamp }}"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
+                    <span style="font-size: 0.85rem;" data-timestamp-time="{{ machine.latest_record.prep_timestamp }}"></span>
+                </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
@@ -115,46 +121,130 @@ let currentMachineId = null;
 let dashboardEventSource = null;
 let machineEventSource = null;
 
-// Format timestamp - handles both ISO strings and regular datetime strings
-function formatTimestamp(timestamp) {
-    if (!timestamp) return '-';
+// Parse timestamp string "10/11/2025, 3:40:33 pm" to Date object
+function parseCustomTimestamp(timestamp) {
+    if (!timestamp) return null;
     
     try {
-        // Try to parse the timestamp
-        let date;
+        // Already a Date object
+        if (timestamp instanceof Date) return timestamp;
         
-        // Check if it's already a valid date string
-        if (timestamp.includes('T') || timestamp.includes('-')) {
-            date = new Date(timestamp);
-        } else {
-            // Try parsing other formats
-            date = new Date(timestamp);
+        // Try standard ISO format first
+        if (timestamp.includes('T') || (timestamp.includes('-') && !timestamp.includes(','))) {
+            const date = new Date(timestamp);
+            if (!isNaN(date.getTime())) return date;
         }
         
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-            // If invalid, just return the timestamp as-is
-            return timestamp;
+        // Parse custom format: "10/11/2025, 3:40:33 pm" or "10/11/2025, 3:40:33 PM"
+        const match = timestamp.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})\s*(am|pm|AM|PM)/i);
+        if (match) {
+            let [, day, month, year, hour, minute, second, meridiem] = match;
+            
+            // Convert to numbers
+            day = parseInt(day);
+            month = parseInt(month);
+            year = parseInt(year);
+            hour = parseInt(hour);
+            minute = parseInt(minute);
+            second = parseInt(second);
+            
+            // Convert 12-hour to 24-hour format
+            if (meridiem.toLowerCase() === 'pm' && hour !== 12) {
+                hour += 12;
+            } else if (meridiem.toLowerCase() === 'am' && hour === 12) {
+                hour = 0;
+            }
+            
+            // Try DD/MM/YYYY format first (more common internationally)
+            let date = new Date(year, month - 1, day, hour, minute, second);
+            if (!isNaN(date.getTime()) && date.getDate() === day) {
+                return date;
+            }
+            
+            // Try MM/DD/YYYY format (US format)
+            date = new Date(year, day - 1, month, hour, minute, second);
+            if (!isNaN(date.getTime())) {
+                return date;
+            }
         }
         
-        // Format as HH:MM:SS
-        return date.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit',
-            hour12: false 
-        });
+        // Fallback: try native Date parsing
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) return date;
+        
+        return null;
     } catch (e) {
-        console.error('Error formatting timestamp:', e, timestamp);
-        return timestamp;
+        console.error('Error parsing timestamp:', e, timestamp);
+        return null;
     }
+}
+
+// Format date only (e.g., "Nov 10, 2025")
+function formatDate(timestamp) {
+    if (!timestamp) return '-';
+    
+    const date = parseCustomTimestamp(timestamp);
+    if (!date) return timestamp;
+    
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
+// Format time only in 12-hour format (e.g., "3:40:33 PM")
+function formatTime(timestamp) {
+    if (!timestamp) return '-';
+    
+    const date = parseCustomTimestamp(timestamp);
+    if (!date) return timestamp;
+    
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+}
+
+// Format full date and time (e.g., "Nov 10, 2025, 3:40:33 PM")
+function formatDateTime(timestamp) {
+    if (!timestamp) return '-';
+    
+    const date = parseCustomTimestamp(timestamp);
+    if (!date) return timestamp;
+    
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    }) + ', ' + date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
 }
 
 // Format timestamps on page load
 function formatAllTimestamps() {
-    document.querySelectorAll('[data-timestamp]').forEach(element => {
-        const timestamp = element.getAttribute('data-timestamp');
-        element.textContent = formatTimestamp(timestamp);
+    // Format date elements
+    document.querySelectorAll('[data-timestamp-date]').forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp-date');
+        element.textContent = formatDate(timestamp);
+    });
+    
+    // Format time elements
+    document.querySelectorAll('[data-timestamp-time]').forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp-time');
+        element.textContent = formatTime(timestamp);
+    });
+    
+    // Format full datetime elements
+    document.querySelectorAll('[data-timestamp-full]').forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp-full');
+        element.textContent = formatDateTime(timestamp);
     });
 }
 
@@ -258,9 +348,15 @@ function updateDashboardMachines(machines) {
                             <span style="color: var(--dark-gray); font-size: 0.85rem;">Latest QR:</span>
                             <strong style="font-size: 0.85rem;">${machine.latest_record.qr_code}</strong>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
-                            <span style="font-size: 0.85rem;">${formatTimestamp(machine.latest_record.prep_timestamp)}</span>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--dark-gray); font-size: 0.85rem;">Date:</span>
+                                <span style="font-size: 0.85rem;">${formatDate(machine.latest_record.prep_timestamp)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
+                                <span style="font-size: 0.85rem;">${formatTime(machine.latest_record.prep_timestamp)}</span>
+                            </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
@@ -434,16 +530,18 @@ function renderMachineData(data) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th colspan="3" style="background: rgba(0, 102, 204, 0.1); text-align: center;">Preprocessing</th>
+                        <th colspan="4" style="background: rgba(0, 102, 204, 0.1); text-align: center;">Preprocessing</th>
                         <th rowspan="2" style="background: var(--light-gray); vertical-align: middle;">QR Code</th>
-                        <th colspan="3" style="background: rgba(0, 168, 204, 0.1); text-align: center;">Postprocessing</th>
+                        <th colspan="4" style="background: rgba(0, 168, 204, 0.1); text-align: center;">Postprocessing</th>
                     </tr>
                     <tr>
                         <th style="background: rgba(0, 102, 204, 0.05);">ID</th>
-                        <th style="background: rgba(0, 102, 204, 0.05);">Timestamp</th>
+                        <th style="background: rgba(0, 102, 204, 0.05);">Date</th>
+                        <th style="background: rgba(0, 102, 204, 0.05);">Time</th>
                         <th style="background: rgba(0, 102, 204, 0.05);">Status</th>
                         <th style="background: rgba(0, 168, 204, 0.05);">ID</th>
-                        <th style="background: rgba(0, 168, 204, 0.05);">Timestamp</th>
+                        <th style="background: rgba(0, 168, 204, 0.05);">Date</th>
+                        <th style="background: rgba(0, 168, 204, 0.05);">Time</th>
                         <th style="background: rgba(0, 168, 204, 0.05);">Status/Values</th>
                     </tr>
                 </thead>
@@ -451,8 +549,10 @@ function renderMachineData(data) {
     `;
     
     data.records.forEach(record => {
-        const prepTime = formatTimestamp(record.prep_timestamp);
-        const postTime = record.post_timestamp ? formatTimestamp(record.post_timestamp) : '-';
+        const prepDate = formatDate(record.prep_timestamp);
+        const prepTime = formatTime(record.prep_timestamp);
+        const postDate = record.post_timestamp ? formatDate(record.post_timestamp) : '-';
+        const postTime = record.post_timestamp ? formatTime(record.post_timestamp) : '-';
         
         // Build postprocessing status/values cell
         let postStatusCell = '-';
@@ -486,11 +586,13 @@ function renderMachineData(data) {
         tableHTML += `
             <tr class="${record.status_class}">
                 <td>${record.prep_id}</td>
-                <td>${prepTime}</td>
+                <td><small>${prepDate}</small></td>
+                <td><small>${prepTime}</small></td>
                 <td><span class="status-badge status-ok">✅ ${record.prep_status}</span></td>
                 <td>${qrCodeCell}</td>
                 <td>${record.post_id || '-'}</td>
-                <td>${postTime}</td>
+                <td><small>${postDate}</small></td>
+                <td><small>${postTime}</small></td>
                 <td>${postStatusCell}</td>
             </tr>
         `;
