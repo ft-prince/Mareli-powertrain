@@ -104,7 +104,7 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         # Get gauge values if applicable
         gauge_values = {}
         if post and hasattr(post, 'value1'):
-            for i in range(1, 6):
+            for i in range(1, 7):
                 val = getattr(post, f'value{i}', None)
                 if val is not None:
                     gauge_values[f'value{i}'] = val
@@ -178,20 +178,108 @@ def get_assembly_machine_data(prep_model, post_model):
     return records
 
 
-def check_machine_status(prep_model):
-    """Check if machine is active (data within last 5 minutes)"""
-    five_minutes_ago = timezone.now() - timedelta(minutes=5)
+def parse_timestamp_to_datetime(timestamp):
+    """Convert timestamp string "10/11/2025, 3:40:33 pm" to datetime object"""
+    if timestamp is None:
+        return None
     
-    # Handle both CharField and DateTimeField timestamps
-    try:
-        # Try DateTimeField filter first
-        recent_count = prep_model.objects.filter(timestamp__gte=five_minutes_ago).count()
-    except:
-        # Fallback for CharField timestamps - just check if any recent records exist
-        recent_count = prep_model.objects.all()[:5].count()
+    # Already a datetime
+    if hasattr(timestamp, 'strftime'):
+        return timestamp
     
-    return recent_count > 0
+    # Try parsing string
+    if isinstance(timestamp, str):
+        # Try DD/MM/YYYY format: "10/11/2025, 3:40:33 pm"
+        try:
+            return datetime.strptime(timestamp, '%d/%m/%Y, %I:%M:%S %p')
+        except:
+            pass
+        
+        # Try MM/DD/YYYY format (US)
+        try:
+            return datetime.strptime(timestamp, '%m/%d/%Y, %I:%M:%S %p')
+        except:
+            pass
+        
+        # Try other common formats
+        formats = [
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%d %H:%M:%S.%f',
+            '%d-%m-%Y %H:%M:%S',
+            '%m-%d-%Y %H:%M:%S',
+        ]
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(timestamp, fmt)
+            except:
+                continue
+        
+        # Try ISO format
+        try:
+            return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        except:
+            pass
+    
+    return None
 
+def check_machine_status(prep_model):
+    """Check if machine is active - DEBUG VERSION"""
+    threshold = timezone.now() - timedelta(minutes=21)
+    
+    try:
+        latest_record = prep_model.objects.first()
+        if not latest_record:
+            print(f"{prep_model.__name__}: No records - INACTIVE")
+            return False
+        
+        # Get timestamp field
+        try:
+            timestamp = latest_record.timestamp_internal
+            field_name = 'timestamp_internal'
+        except AttributeError:
+            timestamp = latest_record.timestamp
+            field_name = 'timestamp'
+        
+        # print(f"\n{prep_model.__name__}:")
+        # print(f"  Raw timestamp: {timestamp}")
+        # print(f"  Type: {type(timestamp).__name__}")
+        
+        # If it's a DateTimeField
+        if hasattr(timestamp, 'timestamp'):
+            is_active = timestamp >= threshold
+            age = (timezone.now() - timestamp).total_seconds() / 60
+            # print(f"  Age: {age:.1f} minutes")
+            # print(f"  Result: {'ACTIVE' if is_active else 'INACTIVE'}")
+            return is_active
+        
+        # If it's a CharField
+        if isinstance(timestamp, str):
+            parsed_dt = parse_timestamp_to_datetime(timestamp)
+            print(f"  Parsed: {parsed_dt}")
+            
+            if parsed_dt:
+                if timezone.is_naive(parsed_dt):
+                    parsed_dt = timezone.make_aware(parsed_dt)
+                
+                age = (timezone.now() - parsed_dt).total_seconds() / 60
+                is_active = parsed_dt >= threshold
+                # print(f"  Age: {age:.1f} minutes")
+                # print(f"  Threshold: < 5 minutes")
+                # print(f"  Result: {'ACTIVE' if is_active else 'INACTIVE'}")
+                return is_active
+            else:
+                # print(f"  Could not parse - INACTIVE")
+                return False
+        
+        # print(f"  Unknown type - INACTIVE")
+        return False
+        
+    except Exception as e:
+        # print(f"{prep_model.__name__}: ERROR - {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
     """Get the latest record for a machine"""
@@ -215,7 +303,7 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
     # Get gauge values if applicable
     gauge_values = {}
     if post and hasattr(post, 'value1'):
-        for i in range(1, 6):
+        for i in range(1, 7):
             val = getattr(post, f'value{i}', None)
             if val is not None:
                 gauge_values[f'value{i}'] = val

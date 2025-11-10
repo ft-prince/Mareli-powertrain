@@ -249,6 +249,7 @@ class Gauge2Postprocessing(models.Model):
     value3 = models.FloatField(blank=True, null=True)
     value4 = models.FloatField(blank=True, null=True)
     value5 = models.FloatField(blank=True, null=True)
+    value6 = models.FloatField(blank=True, null=True)
 
     class Meta:
         managed = True
@@ -284,6 +285,7 @@ class Gauge3Postprocessing(models.Model):
     value3 = models.FloatField(blank=True, null=True)
     value4 = models.FloatField(blank=True, null=True)
     value5 = models.FloatField(blank=True, null=True)
+    value6 = models.FloatField(blank=True, null=True)
 
     class Meta:
         managed = True

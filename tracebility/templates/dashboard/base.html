@@ -9,8 +9,8 @@
       {% block title %}Manufacturing Traceability System{% endblock %}
     </title>
     <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/index.min.js"></script>
+    <script src="{% static 'chart.js' %}"></script>
+    <script src="{% static 'min.js' %}"></script>
 
   </head>
   <style>
@@ -602,7 +602,8 @@ tr.in-progress {
   <body>
     <header class="header">
       <div class="header-content">
-        <img src='https://renataiot.com/wp-content/uploads/2022/01/logo-Renata-IoT_1_new2-768x256.png' alt='Renata IoT' class="header-logo"/> 
+    <img src="{% static 'logo.png' %}" 
+ alt='Renata IoT' class="header-logo"/> 
         <div class="header-text">
           <h1>Renata <> Traceability</h1>
           <div class="header-subtitle">Marelli Powertrain India</div>
