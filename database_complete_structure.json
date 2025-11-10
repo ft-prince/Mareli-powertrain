@@ -1,0 +1,2873 @@
+{
+  "cnc1_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc1_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc1_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc1_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc1_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "machine_name",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc1_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc2_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc2_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc2_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc2_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc2_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "machine_name",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc2_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc3_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc3_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc3_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc3_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc3_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "machine_name",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc3_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc4_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc4_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc4_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc4_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc4_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "machine_name",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc4_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc5_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc5_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc5_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc5_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc5_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "machine_name",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc5_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc6_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc6_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc6_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "cnc6_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('cnc6_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "machine_name",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "cnc6_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "deburring_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('deburring_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "deburring_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "deburring_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('deburring_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "deburring_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "finalwashing_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('finalwashing_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "finalwashing_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "finalwashing_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('finalwashing_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "finalwashing_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "gauge1_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('gauge1_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "value1",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value2",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value3",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value4",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value5",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "gauge1_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "gauge1_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('gauge1_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "gauge1_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "gauge2_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('gauge2_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "value1",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value2",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value3",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value4",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value5",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "gauge2_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "gauge2_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('gauge2_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "gauge2_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "gauge3_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('gauge3_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "value1",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value2",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value3",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value4",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      },
+      {
+        "name": "value5",
+        "data_type": "double precision",
+        "max_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "float8",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "gauge3_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "gauge3_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('gauge3_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "gauge3_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "honing1_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('honing1_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "honing1_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "honing1_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('honing1_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "honing1_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "honing2_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('honing2_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "honing2_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "honing2_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('honing2_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "honing2_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "lub_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('lub_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_piston",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "lub_postprocessing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "lub_postprocessing_qr_data_piston_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "lub_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('lub_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_piston",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "lub_preprocessing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "lub_preprocessing_qr_data_piston_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "op40a_processing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('op40a_processing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp_internal",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_internal",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_internal_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_external",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_external",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_housing",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_housing_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 20,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "'IN_PROGRESS'::character varying",
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "op40a_processing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "op40a_processing_qr_data_external_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40a_processing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40a_processing_qr_data_internal_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "op40b_processing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('op40b_processing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp_internal",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_internal",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_internal_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_external",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_external",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_housing",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_housing_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 20,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "'IN_PROGRESS'::character varying",
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "op40b_processing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "op40b_processing_qr_data_external_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40b_processing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40b_processing_qr_data_internal_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "op40c_processing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('op40c_processing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp_internal",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_internal",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_internal_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_external",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_external",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_housing",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_housing_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 20,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "'IN_PROGRESS'::character varying",
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "op40c_processing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "op40c_processing_qr_data_external_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40c_processing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40c_processing_qr_data_internal_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "op40d_processing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('op40d_processing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp_internal",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_internal",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_internal_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_external",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_external",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "timestamp_housing",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_housing_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 20,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "'IN_PROGRESS'::character varying",
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "created_at",
+        "data_type": "timestamp without time zone",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "udt_name": "timestamp",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "op40d_processing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "op40d_processing_qr_data_external_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40d_processing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "op40d_processing_qr_data_internal_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "op80_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('op80_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing_new",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "match_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "op80_postprocessing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "op80_postprocessing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "op80_postprocessing_qr_data_housing_new_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "op80_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('op80_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_piston",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "op80_preprocessing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "op80_preprocessing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "op80_preprocessing_qr_data_piston_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "painting_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('painting_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_piston",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "painting_postprocessing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "painting_postprocessing_qr_data_piston_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "painting_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('painting_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_housing",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data_piston",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": true,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "pre_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "painting_preprocessing_pkey",
+        "is_unique": true
+      },
+      {
+        "name": "painting_preprocessing_qr_data_housing_key",
+        "is_unique": true
+      },
+      {
+        "name": "painting_preprocessing_qr_data_piston_key",
+        "is_unique": true
+      }
+    ]
+  },
+  "prewashing_postprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('prewashing_postprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "prewashing_postprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  },
+  "prewashing_preprocessing": {
+    "columns": [
+      {
+        "name": "id",
+        "data_type": "integer",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "nullable": false,
+        "default": "nextval('prewashing_preprocessing_id_seq'::regclass)",
+        "udt_name": "int4",
+        "is_primary_key": true
+      },
+      {
+        "name": "timestamp",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "qr_data",
+        "data_type": "character varying",
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "previous_machine_status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      },
+      {
+        "name": "status",
+        "data_type": "character varying",
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "nullable": false,
+        "default": null,
+        "udt_name": "varchar",
+        "is_primary_key": false
+      }
+    ],
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "name": "prewashing_preprocessing_pkey",
+        "is_unique": true
+      }
+    ]
+  }
+}

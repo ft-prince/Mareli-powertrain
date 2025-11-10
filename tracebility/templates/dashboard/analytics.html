@@ -35,13 +35,13 @@
                 <label for="machineFilter">Machine</label>
                 <select id="machineFilter">
                     <option value="all">All Machines</option>
-                    <optgroup label="DMG MORI">
-                        <option value="dmg_mori_1">DMG MORI 1</option>
-                        <option value="dmg_mori_2">DMG MORI 2</option>
-                        <option value="dmg_mori_3">DMG MORI 3</option>
-                        <option value="dmg_mori_4">DMG MORI 4</option>
-                        <option value="dmg_mori_5">DMG MORI 5</option>
-                        <option value="dmg_mori_6">DMG MORI 6</option>
+                    <optgroup label="CNC Machines">
+                        <option value="cnc_1">CNC 1</option>
+                        <option value="cnc_2">CNC 2</option>
+                        <option value="cnc_3">CNC 3</option>
+                        <option value="cnc_4">CNC 4</option>
+                        <option value="cnc_5">CNC 5</option>
+                        <option value="cnc_6">CNC 6</option>
                     </optgroup>
                     <optgroup label="Gauge">
                         <option value="gauge_1">Gauge 1</option>
@@ -54,19 +54,18 @@
                     </optgroup>
                     <optgroup label="Processing">
                         <option value="deburring">Deburring</option>
-                        <option value="pre_washing">Pre-Washing</option>
+                        <option value="prewashing">Prewashing</option>
                         <option value="final_washing">Final Washing</option>
                     </optgroup>
                     <optgroup label="Final">
-                        <option value="o_ring___leak_test">O-Ring & Leak Test</option>
                         <option value="painting">Painting</option>
                         <option value="lubrication">Lubrication</option>
                     </optgroup>
                     <optgroup label="Assembly">
-                        <option value="assembly_machine_1">Assembly Machine 1</option>
-                        <option value="assembly_machine_2">Assembly Machine 2</option>
-                        <option value="assembly_machine_3">Assembly Machine 3</option>
-                        <option value="assembly_machine_4">Assembly Machine 4</option>
+                        <option value="assembly_op40a">Assembly OP40A</option>
+                        <option value="assembly_op40b">Assembly OP40B</option>
+                        <option value="assembly_op40c">Assembly OP40C</option>
+                        <option value="assembly_op40d">Assembly OP40D</option>
                     </optgroup>
                 </select>
             </div>
@@ -168,13 +167,15 @@
             <div class="chart-container">
                 <canvas id="hourlyChart"></canvas>
             </div>
+            <div id="hourlyDebug" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;"></div>
         </div>
         
         <div class="chart-card">
-            <h3>OK vs NG Trend</h3>
+            <h3>Yield Rate Trend</h3>
             <div class="chart-container">
                 <canvas id="trendChart"></canvas>
             </div>
+            <div id="trendDebug" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;"></div>
         </div>
     </div>
     
@@ -200,7 +201,7 @@
     
     <!-- Detailed Data Table -->
     <div class="data-table-card">
-        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Detailed Data</h3>
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Detailed Data (Latest 100 Records)</h3>
         <div class="data-table-container" style="max-height: 500px; overflow-y: auto;">
             <table class="data-table" id="detailedDataTable">
                 <thead>
@@ -510,28 +511,81 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Load Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <script>
-// Check if Chart.js is loaded
-if (typeof Chart === 'undefined') {
-    console.error('Chart.js not loaded. Loading now...');
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
-    script.onload = function() {
-        console.log('Chart.js loaded successfully');
+// Wait for both DOM and Chart.js to be ready
+let chartJsLoaded = false;
+let domReady = false;
+
+function tryInitialize() {
+    if (chartJsLoaded && domReady) {
+        console.log('✅ Initializing dashboard...');
         initializeDashboard();
-    };
-    script.onerror = function() {
-        alert('Failed to load Chart.js. Please check your internet connection and refresh the page.');
-    };
-    document.head.appendChild(script);
-} else {
-    document.addEventListener('DOMContentLoaded', function() {
-        initializeDashboard();
-    });
+    }
 }
+
+// Check Chart.js loading
+function checkChartJs() {
+    if (typeof Chart !== 'undefined') {
+        console.log('✅ Chart.js loaded successfully');
+        chartJsLoaded = true;
+        tryInitialize();
+    } else {
+        console.log('⏳ Waiting for Chart.js...');
+        setTimeout(checkChartJs, 100);
+    }
+}
+
+// Wait for DOM
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ DOM ready');
+        domReady = true;
+        tryInitialize();
+    });
+} else {
+    console.log('✅ DOM already ready');
+    domReady = true;
+}
+
+// Start checking for Chart.js
+checkChartJs();
 
 let analyticsData = null;
 let charts = {};
+
+// Format timestamp helper
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '-';
+    
+    try {
+        let date;
+        if (timestamp.includes('T') || timestamp.includes('-')) {
+            date = new Date(timestamp);
+        } else {
+            date = new Date(timestamp);
+        }
+        
+        if (isNaN(date.getTime())) {
+            return timestamp;
+        }
+        
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    } catch (e) {
+        console.error('Error formatting timestamp:', e, timestamp);
+        return timestamp;
+    }
+}
 
 function initializeDashboard() {
     initializeDateRange();
@@ -605,17 +659,20 @@ function applyFilters() {
         status: document.getElementById('statusFilter').value
     };
     
+    console.log('🔍 Applying filters:', filters);
+    
     fetch('/api/analytics/?' + new URLSearchParams(filters))
         .then(response => response.json())
         .then(data => {
+            console.log('📊 Received analytics data:', data);
             analyticsData = data;
             updateDashboard(data);
             hideLoading();
         })
         .catch(error => {
-            console.error('Error fetching analytics:', error);
+            console.error('❌ Error fetching analytics:', error);
             hideLoading();
-            alert('Error loading analytics data');
+            alert('Error loading analytics data. Please try again.');
         });
 }
 
@@ -640,10 +697,10 @@ function updateStatistics(data) {
     const ng = data.ng_parts || 0;
     const pending = data.pending_parts || 0;
     
-    document.getElementById('totalParts').textContent = total;
-    document.getElementById('okParts').textContent = ok;
-    document.getElementById('ngParts').textContent = ng;
-    document.getElementById('pendingParts').textContent = pending;
+    document.getElementById('totalParts').textContent = total.toLocaleString();
+    document.getElementById('okParts').textContent = ok.toLocaleString();
+    document.getElementById('ngParts').textContent = ng.toLocaleString();
+    document.getElementById('pendingParts').textContent = pending.toLocaleString();
     
     const okPercent = total > 0 ? ((ok / total) * 100).toFixed(1) : 0;
     const ngPercent = total > 0 ? ((ng / total) * 100).toFixed(1) : 0;
@@ -657,16 +714,22 @@ function updateStatistics(data) {
     const yieldRate = completed > 0 ? ((ok / completed) * 100).toFixed(1) : 0;
     document.getElementById('yieldRate').textContent = yieldRate + '%';
     
-    document.getElementById('activeMachines').textContent = data.active_machines || 0;
+    document.getElementById('activeMachines').textContent = (data.active_machines || 0).toLocaleString();
 }
 
 function updateCharts(data) {
     // Check if Chart is available
     if (typeof Chart === 'undefined') {
-        console.error('Chart.js is not loaded yet');
+        console.error('❌ Chart.js is not loaded yet');
         setTimeout(() => updateCharts(data), 1000);
         return;
     }
+    
+    console.log('📈 Updating charts with data:', {
+        hourly: data.hourly_data,
+        trend: data.trend_data,
+        timeline: data.timeline_data
+    });
     
     // Destroy existing charts
     Object.values(charts).forEach(chart => {
@@ -695,10 +758,22 @@ function updateCharts(data) {
                 plugins: {
                     legend: {
                         position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
         });
+        console.log('✅ Status pie chart created');
     }
     
     // Machine Performance Bar Chart
@@ -737,6 +812,7 @@ function updateCharts(data) {
                     }
                 }
             });
+            console.log('✅ Machine bar chart created');
         }
     }
     
@@ -755,14 +831,16 @@ function updateCharts(data) {
                             data: data.timeline_data.ok,
                             borderColor: '#00cc66',
                             backgroundColor: 'rgba(0, 204, 102, 0.1)',
-                            fill: true
+                            fill: true,
+                            tension: 0.4
                         },
                         {
                             label: 'NG Parts',
                             data: data.timeline_data.ng,
                             borderColor: '#cc3333',
                             backgroundColor: 'rgba(204, 51, 51, 0.1)',
-                            fill: true
+                            fill: true,
+                            tension: 0.4
                         }
                     ]
                 },
@@ -776,11 +854,13 @@ function updateCharts(data) {
                     }
                 }
             });
+            console.log('✅ Timeline chart created');
         }
     }
     
     // Hourly Production Chart
     if (data.hourly_data && data.hourly_data.labels && data.hourly_data.labels.length > 0) {
+        console.log('⏰ Creating hourly chart with:', data.hourly_data);
         const hourlyCtx = document.getElementById('hourlyChart');
         if (hourlyCtx) {
             const ctx = hourlyCtx.getContext('2d');
@@ -804,11 +884,18 @@ function updateCharts(data) {
                     }
                 }
             });
+            console.log('✅ Hourly chart created');
+            document.getElementById('hourlyDebug').textContent = 
+                `Data points: ${data.hourly_data.labels.length}, Total parts: ${data.hourly_data.values.reduce((a,b) => a+b, 0)}`;
         }
+    } else {
+        console.warn('⚠️ No hourly data available:', data.hourly_data);
+        document.getElementById('hourlyDebug').textContent = 'No hourly data available';
     }
     
-    // Trend Chart
+    // Trend Chart (Yield Rate)
     if (data.trend_data && data.trend_data.labels && data.trend_data.labels.length > 0) {
+        console.log('📈 Creating trend chart with:', data.trend_data);
         const trendCtx = document.getElementById('trendChart');
         if (trendCtx) {
             const ctx = trendCtx.getContext('2d');
@@ -821,7 +908,8 @@ function updateCharts(data) {
                         data: data.trend_data.values,
                         borderColor: '#ff7755',
                         backgroundColor: 'rgba(255, 119, 85, 0.1)',
-                        fill: true
+                        fill: true,
+                        tension: 0.4
                     }]
                 },
                 options: {
@@ -830,12 +918,32 @@ function updateCharts(data) {
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 100
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Yield Rate: ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                            }
                         }
                     }
                 }
             });
+            console.log('✅ Trend chart created');
+            document.getElementById('trendDebug').textContent = 
+                `Data points: ${data.trend_data.labels.length}, Avg yield: ${(data.trend_data.values.reduce((a,b) => a+b, 0) / data.trend_data.values.length).toFixed(1)}%`;
         }
+    } else {
+        console.warn('⚠️ No trend data available:', data.trend_data);
+        document.getElementById('trendDebug').textContent = 'No trend data available';
     }
 }
 
@@ -843,7 +951,7 @@ function updateMachineBreakdown(data) {
     const container = document.getElementById('machineBreakdown');
     container.innerHTML = '';
     
-    if (data.machine_stats) {
+    if (data.machine_stats && data.machine_stats.length > 0) {
         data.machine_stats.forEach(machine => {
             const total = machine.ok + machine.ng + machine.pending;
             const yieldRate = (machine.ok + machine.ng) > 0 
@@ -853,13 +961,18 @@ function updateMachineBreakdown(data) {
             container.innerHTML += `
                 <div class="machine-stat">
                     <div class="machine-stat-name">${machine.machine}</div>
-                    <div class="machine-stat-value">${total}</div>
+                    <div class="machine-stat-value">${total.toLocaleString()}</div>
                     <div style="font-size: 0.75rem; color: var(--dark-gray); margin-top: 0.25rem;">
                         Yield: ${yieldRate}%
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--dark-gray); margin-top: 0.25rem;">
+                        OK: ${machine.ok} | NG: ${machine.ng}
                     </div>
                 </div>
             `;
         });
+    } else {
+        container.innerHTML = '<p style="text-align: center; color: var(--dark-gray);">No machine data available</p>';
     }
 }
 
@@ -869,7 +982,7 @@ function updateDetailedTable(data) {
     
     if (data.detailed_data && data.detailed_data.length > 0) {
         data.detailed_data.forEach(record => {
-            const timestamp = new Date(record.timestamp).toLocaleString();
+            const timestamp = formatTimestamp(record.timestamp);
             const statusClass = record.status === 'OK' ? 'status-ok' : 
                                record.status === 'NG' ? 'status-ng' : 'status-inprogress';
             
@@ -886,14 +999,14 @@ function updateDetailedTable(data) {
                 <tr>
                     <td>${record.machine}</td>
                     <td><strong>${record.qr_code}</strong></td>
-                    <td>${timestamp}</td>
+                    <td><small>${timestamp}</small></td>
                     <td><span class="status-badge ${statusClass}">${record.status}</span></td>
                     <td>${valuesHtml}</td>
                 </tr>
             `;
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--dark-gray);">No data available for the selected filters</td></tr>';
     }
 }
 
@@ -924,7 +1037,7 @@ function displaySearchResults(data) {
     
     if (!data.results || data.results.length === 0) {
         container.innerHTML = `
-            <div style="padding: 1rem; text-align: center; color: var(--dark-gray);">
+            <div style="padding: 1rem; text-align: center; color: var(--dark-gray); background: var(--light-gray); border-radius: 8px; margin-top: 1rem;">
                 No results found for QR code: <strong>${data.qr_code}</strong>
             </div>
         `;
@@ -933,7 +1046,7 @@ function displaySearchResults(data) {
     
     let html = `
         <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: 8px;">
-            <h4 style="margin-bottom: 1rem;">Results for: <strong>${data.qr_code}</strong></h4>
+            <h4 style="margin-bottom: 1rem; color: var(--dark-coral);">Results for: <strong>${data.qr_code}</strong></h4>
             <table class="data-table">
                 <thead>
                     <tr>

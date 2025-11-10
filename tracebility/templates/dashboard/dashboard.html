@@ -3,11 +3,16 @@
 {% block title %}Dashboard - Manufacturing Traceability{% endblock %}
 
 {% block content %}
-<h2 style="margin-bottom: 1.5rem; color: var(--dark-blue);">Production Line Machines</h2>
+<h2 style="margin-bottom: 1.5rem; color: var(--dark-blue);">
+    Production Line Machines
+    <span id="connectionStatus" style="font-size: 0.8rem; margin-left: 1rem;">
+        <span class="status-indicator status-active"></span> Live
+    </span>
+</h2>
 
-<div class="machine-grid">
+<div class="machine-grid" id="machineGrid">
     {% for machine in machines %}
-    <div class="machine-grid-card" onclick="openMachineModal('{{ machine.machine_id }}', '{{ machine.name }}')" style="cursor: pointer;">
+    <div class="machine-grid-card" id="machine-card-{{ machine.machine_id }}" onclick="openMachineModal('{{ machine.machine_id }}', '{{ machine.name }}')" style="cursor: pointer;">
         <div class="machine-grid-header">
             <div class="machine-grid-title">
                 <span class="status-indicator {% if machine.is_active %}status-active{% else %}status-inactive{% endif %}"></span>
@@ -16,6 +21,7 @@
             <span class="machine-type-badge type-{{ machine.type }}">{{ machine.type|upper }}</span>
         </div>
         
+        <div class="machine-data-section" data-machine-id="{{ machine.machine_id }}">
         {% if machine.latest_record %}
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -24,7 +30,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
-                <span style="font-size: 0.85rem;">{{ machine.latest_record.prep_timestamp|date:"H:i:s" }}</span>
+                <span style="font-size: 0.85rem;" data-timestamp="{{ machine.latest_record.prep_timestamp }}"></span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
@@ -67,8 +73,9 @@
             No data available
         </div>
         {% endif %}
+        </div>
         
-        <div style="margin-top: 1rem; font-size: 0.9rem;">
+        <div class="machine-status-section" data-machine-id="{{ machine.machine_id }}" style="margin-top: 1rem; font-size: 0.9rem;">
             {% if machine.is_active %}
                 <span style="color: var(--success-green); font-weight: 600;">● ACTIVE</span>
             {% else %}
@@ -83,7 +90,12 @@
 <div id="machineModal" class="modal">
     <div class="modal-content" style="max-width: 100%; width: 95%; height:97%">
         <span class="modal-close" onclick="closeMachineModal()">&times;</span>
-        <h2 id="machineModalTitle">Machine Details</h2>
+        <h2 id="machineModalTitle">
+            Machine Details
+            <span id="modalConnectionStatus" style="font-size: 0.8rem; margin-left: 1rem;">
+                <span class="status-indicator status-active"></span> Live
+            </span>
+        </h2>
         
         <div class="modal-body">
             <div id="machineModalContent">
@@ -100,17 +112,286 @@
 {% block scripts %}
 <script>
 let currentMachineId = null;
+let dashboardEventSource = null;
+let machineEventSource = null;
+
+// Format timestamp - handles both ISO strings and regular datetime strings
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '-';
+    
+    try {
+        // Try to parse the timestamp
+        let date;
+        
+        // Check if it's already a valid date string
+        if (timestamp.includes('T') || timestamp.includes('-')) {
+            date = new Date(timestamp);
+        } else {
+            // Try parsing other formats
+            date = new Date(timestamp);
+        }
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            // If invalid, just return the timestamp as-is
+            return timestamp;
+        }
+        
+        // Format as HH:MM:SS
+        return date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+        });
+    } catch (e) {
+        console.error('Error formatting timestamp:', e, timestamp);
+        return timestamp;
+    }
+}
+
+// Format timestamps on page load
+function formatAllTimestamps() {
+    document.querySelectorAll('[data-timestamp]').forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        element.textContent = formatTimestamp(timestamp);
+    });
+}
+
+// Initialize dashboard real-time updates
+function initDashboardStream() {
+    if (dashboardEventSource) {
+        dashboardEventSource.close();
+    }
+    
+    dashboardEventSource = new EventSource('/stream/dashboard/');
+    
+    dashboardEventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'update' && data.machines) {
+                updateDashboardMachines(data.machines);
+            }
+        } catch (error) {
+            console.error('Error parsing dashboard update:', error);
+        }
+    };
+    
+    dashboardEventSource.onerror = function(error) {
+        console.error('Dashboard stream error:', error);
+        updateConnectionStatus(false);
+        
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+            console.log('Attempting to reconnect dashboard stream...');
+            initDashboardStream();
+        }, 5000);
+    };
+    
+    dashboardEventSource.onopen = function() {
+        console.log('Dashboard stream connected');
+        updateConnectionStatus(true);
+    };
+}
+
+// Update connection status indicator
+function updateConnectionStatus(connected) {
+    const statusEl = document.getElementById('connectionStatus');
+    if (statusEl) {
+        const indicator = statusEl.querySelector('.status-indicator');
+        if (connected) {
+            indicator.className = 'status-indicator status-active';
+            statusEl.innerHTML = '<span class="status-indicator status-active"></span> Live';
+        } else {
+            indicator.className = 'status-indicator status-inactive';
+            statusEl.innerHTML = '<span class="status-indicator status-inactive"></span> Reconnecting...';
+        }
+    }
+}
+
+// Update modal connection status
+function updateModalConnectionStatus(connected) {
+    const statusEl = document.getElementById('modalConnectionStatus');
+    if (statusEl) {
+        if (connected) {
+            statusEl.innerHTML = '<span class="status-indicator status-active"></span> Live';
+        } else {
+            statusEl.innerHTML = '<span class="status-indicator status-inactive"></span> Reconnecting...';
+        }
+    }
+}
+
+// Update dashboard machine cards with real-time data
+function updateDashboardMachines(machines) {
+    machines.forEach(machine => {
+        const card = document.getElementById(`machine-card-${machine.machine_id}`);
+        if (!card) return;
+        
+        // Add subtle animation for update
+        card.style.transition = 'box-shadow 0.3s ease';
+        card.style.boxShadow = '0 0 15px rgba(0, 102, 204, 0.3)';
+        setTimeout(() => {
+            card.style.boxShadow = '';
+        }, 1000);
+        
+        // Update the machine card HTML with fresh data
+        const machineHeader = card.querySelector('.machine-grid-header');
+        const statusIndicator = machineHeader.querySelector('.status-indicator');
+        
+        // Update status indicator in header
+        if (statusIndicator && machine.is_active !== undefined) {
+            statusIndicator.className = machine.is_active ? 
+                'status-indicator status-active' : 
+                'status-indicator status-inactive';
+        }
+        
+        // Find sections using data attributes (more reliable)
+        const dataSection = card.querySelector(`.machine-data-section[data-machine-id="${machine.machine_id}"]`);
+        const activeStatusSection = card.querySelector(`.machine-status-section[data-machine-id="${machine.machine_id}"]`);
+        
+        // Update latest record section
+        if (dataSection) {
+            if (machine.latest_record) {
+                let recordHTML = `
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Latest QR:</span>
+                            <strong style="font-size: 0.85rem;">${machine.latest_record.qr_code}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
+                            <span style="font-size: 0.85rem;">${formatTimestamp(machine.latest_record.prep_timestamp)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
+                `;
+                
+                // Add status badge
+                if (machine.latest_record.post_status === 'OK') {
+                    recordHTML += '<span class="status-badge status-ok" style="font-size: 0.8rem;">✅ OK</span>';
+                } else if (machine.latest_record.post_status === 'NG') {
+                    recordHTML += '<span class="status-badge status-ng" style="font-size: 0.8rem;">❌ NG</span>';
+                } else {
+                    recordHTML += '<span class="status-badge status-inprogress" style="font-size: 0.8rem;">⏳ Pending</span>';
+                }
+                recordHTML += '</div>';
+                
+                // Add gauge values if present
+                if (machine.latest_record.gauge_values && Object.keys(machine.latest_record.gauge_values).length > 0) {
+                    recordHTML += `
+                        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0;">
+                            <div style="color: var(--dark-gray); font-size: 0.8rem; margin-bottom: 0.5rem;">Gauge Values:</div>
+                    `;
+                    for (const [key, value] of Object.entries(machine.latest_record.gauge_values)) {
+                        recordHTML += `
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                                <span>${key}:</span>
+                                <span style="font-weight: 600;">${parseFloat(value).toFixed(3)}</span>
+                            </div>
+                        `;
+                    }
+                    recordHTML += '</div>';
+                }
+                
+                // Add assembly QR codes if present
+                if (machine.is_assembly && machine.latest_record.qr_external && machine.latest_record.qr_external !== '-') {
+                    recordHTML += `
+                        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0; font-size: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span style="color: var(--dark-gray);">External:</span>
+                                <span>${machine.latest_record.qr_external}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--dark-gray);">Housing:</span>
+                                <span>${machine.latest_record.qr_housing}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                recordHTML += '</div>';
+                dataSection.innerHTML = recordHTML;
+            } else {
+                dataSection.innerHTML = '<div style="margin-top: 1rem; color: var(--dark-gray); font-style: italic; text-align: center;">No data available</div>';
+            }
+        }
+        
+        // Update active/inactive status
+        if (activeStatusSection) {
+            if (machine.is_active) {
+                activeStatusSection.innerHTML = '<span style="color: var(--success-green); font-weight: 600;">● ACTIVE</span>';
+            } else {
+                activeStatusSection.innerHTML = '<span style="color: var(--danger-red); font-weight: 600;">● INACTIVE</span>';
+            }
+        }
+    });
+}
+
+// Initialize machine modal real-time updates
+function initMachineStream(machineId) {
+    if (machineEventSource) {
+        machineEventSource.close();
+    }
+    
+    machineEventSource = new EventSource(`/stream/machine/${machineId}/`);
+    
+    machineEventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'update') {
+                renderMachineData(data);
+                
+                // Add visual feedback for update
+                const content = document.getElementById('machineModalContent');
+                if (content) {
+                    content.style.transition = 'opacity 0.2s ease';
+                    content.style.opacity = '0.7';
+                    setTimeout(() => {
+                        content.style.opacity = '1';
+                    }, 200);
+                }
+            }
+        } catch (error) {
+            console.error('Error parsing machine update:', error);
+        }
+    };
+    
+    machineEventSource.onerror = function(error) {
+        console.error('Machine stream error:', error);
+        updateModalConnectionStatus(false);
+        
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+            if (currentMachineId === machineId) {
+                console.log('Attempting to reconnect machine stream...');
+                initMachineStream(machineId);
+            }
+        }, 5000);
+    };
+    
+    machineEventSource.onopen = function() {
+        console.log('Machine stream connected');
+        updateModalConnectionStatus(true);
+    };
+}
 
 function openMachineModal(machineId, machineName) {
     currentMachineId = machineId;
-    document.getElementById('machineModalTitle').textContent = machineName;
+    document.getElementById('machineModalTitle').innerHTML = `
+        ${machineName}
+        <span id="modalConnectionStatus" style="font-size: 0.8rem; margin-left: 1rem;">
+            <span class="status-indicator status-active"></span> Connecting...
+        </span>
+    `;
     document.getElementById('machineModal').style.display = 'flex';
     
-    // Load machine data
+    // Load initial machine data
     fetch(`/api/machine/${machineId}/`)
         .then(response => response.json())
         .then(data => {
             renderMachineData(data);
+            // Start real-time updates
+            initMachineStream(machineId);
         })
         .catch(error => {
             document.getElementById('machineModalContent').innerHTML = `
@@ -125,6 +406,12 @@ function openMachineModal(machineId, machineName) {
 function closeMachineModal() {
     document.getElementById('machineModal').style.display = 'none';
     currentMachineId = null;
+    
+    // Close machine stream
+    if (machineEventSource) {
+        machineEventSource.close();
+        machineEventSource = null;
+    }
 }
 
 function renderMachineData(data) {
@@ -164,8 +451,8 @@ function renderMachineData(data) {
     `;
     
     data.records.forEach(record => {
-        const prepTime = new Date(record.prep_timestamp).toLocaleString();
-        const postTime = record.post_timestamp ? new Date(record.post_timestamp).toLocaleString() : '-';
+        const prepTime = formatTimestamp(record.prep_timestamp);
+        const postTime = record.post_timestamp ? formatTimestamp(record.post_timestamp) : '-';
         
         // Build postprocessing status/values cell
         let postStatusCell = '-';
@@ -252,19 +539,20 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Auto-refresh every 30 seconds
-setInterval(() => {
-    if (currentMachineId) {
-        // Refresh modal data if open
-        fetch(`/api/machine/${currentMachineId}/`)
-            .then(response => response.json())
-            .then(data => {
-                renderMachineData(data);
-            });
-    } else {
-        // Refresh dashboard
-        location.reload();
+// Initialize dashboard stream and format timestamps on page load
+document.addEventListener('DOMContentLoaded', function() {
+    formatAllTimestamps();
+    initDashboardStream();
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    if (dashboardEventSource) {
+        dashboardEventSource.close();
     }
-}, 30000);
+    if (machineEventSource) {
+        machineEventSource.close();
+    }
+});
 </script>
 {% endblock %}

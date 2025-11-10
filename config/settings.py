@@ -38,8 +38,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'tracebility',
-
+    'django_eventstream',
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -77,13 +78,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'traceability_system',
+        'NAME': 'demo',
         'USER': 'postgres',
         'PASSWORD': 'newpassword18',  # the password you set
         'HOST': 'localhost',
         'PORT': '5433',  # must match postgresql.conf
     }
 }
+
+
 
 
 # Password validation
@@ -132,3 +135,5 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+EVENTSTREAM_ALLOW_ORIGIN = '*'  
