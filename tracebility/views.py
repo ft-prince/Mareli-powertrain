@@ -416,6 +416,23 @@ def dashboard_view(request):
             'latest_record': latest_record,
         })
     
+    # Add OP80 - Don't loop, just access the dictionary directly
+    is_active = check_machine_status(OP80_CONFIG['prep_model'])
+    latest_record = get_latest_machine_record(
+        OP80_CONFIG['prep_model'], 
+        OP80_CONFIG['post_model'], 
+        'op80'
+    )
+    
+    machines_data.append({
+        'name': OP80_CONFIG['name'],
+        'type': 'op80',
+        'is_active': is_active,
+        'is_assembly': False,
+        'machine_id': 'op80_leak_test',
+        'latest_record': latest_record,
+    })
+    
     return render(request, 'dashboard/dashboard.html', {'machines': machines_data})
 
 
@@ -435,6 +452,9 @@ def machine_detail_view(request, machine_name):
                 config = m
                 is_assembly = True
                 break
+    # Check OP80
+    if not config and machine_name == 'op80_leak_test':
+        config = OP80_CONFIG
     
     if not config:
         return render(request, 'dashboard/machine_detail.html', {'error': 'Machine not found'})
@@ -490,6 +510,10 @@ def machine_data_api(request, machine_name):
                 is_assembly = True
                 break
     
+    # Check OP80
+    if not config and machine_name == 'op80_leak_test':
+        config = OP80_CONFIG
+
     if not config:
         return JsonResponse({'error': 'Machine not found'}, status=404)
     
@@ -501,6 +525,9 @@ def machine_data_api(request, machine_name):
             machine_type = 'painting'
         elif config['name'] == 'Lubrication':
             machine_type = 'lubrication'
+        elif config['name'] == 'OP80 Leak Test':  # ADD THIS
+            machine_type = 'op80'
+        
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
     
     is_active = check_machine_status(config['prep_model'])
@@ -517,8 +544,7 @@ def machine_data_api(request, machine_name):
         'records': records,
         'is_assembly': is_assembly,
     })
-
-
+    
 def search_qr_code(request):
     """Search QR code across all machines"""
     qr_code = request.GET.get('qr', '')
@@ -558,7 +584,17 @@ def search_qr_code(request):
                 'preprocessing_count': prep_records.count(),
                 'postprocessing_count': 0,
             })
+    # Search OP80
+    prep_records = OP80_CONFIG['prep_model'].objects.filter(qr_data_piston__icontains=qr_code)
+    post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)
     
+    if prep_records.exists() or post_records.exists():
+        results.append({
+            'machine': OP80_CONFIG['name'],
+            'preprocessing_count': prep_records.count(),
+            'postprocessing_count': post_records.count(),
+        })
+
     return JsonResponse({'qr_code': qr_code, 'results': results})
 
 
@@ -578,7 +614,9 @@ def export_machine_data(request, machine_name):
                 config = m
                 is_assembly = True
                 break
-    
+    if not config and machine_name == 'op80_leak_test':
+        config = OP80_CONFIG
+
     if not config:
         return HttpResponse('Machine not found', status=404)
     
@@ -672,7 +710,7 @@ def sse_dashboard_stream(request):
         last_counts = {}
         
         # Initialize counts for all models
-        for config in MACHINE_CONFIGS + ASSEMBLY_CONFIGS:
+        for config in MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]:
             prep_table = config['prep_model']._meta.db_table
             post_table = config['post_model']._meta.db_table
             last_counts[prep_table] = get_latest_record_count(config['prep_model'])
@@ -747,6 +785,10 @@ def sse_machine_stream(request, machine_name):
                 config = m
                 is_assembly = True
                 break
+            
+    if not config and machine_name == 'op80_leak_test':
+        config = OP80_CONFIG
+
     
     if not config:
         return StreamingHttpResponse("Machine not found", status=404)
@@ -928,7 +970,10 @@ def get_machine_config_by_id(machine_id):
         config_id = config['name'].lower().replace(' ', '_')
         if config_id == machine_id:
             return config
-    
+    # Check OP80
+    if machine_id == 'op80_leak_test':
+        return OP80_CONFIG
+
     return None
 
 
@@ -952,7 +997,8 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     # Determine which machines to query
     configs_to_query = []
     if machine_filter == 'all':
-        configs_to_query = MACHINE_CONFIGS + ASSEMBLY_CONFIGS
+        configs_to_query = MACHINE_CONFIGS + ASSEMBLY_CONFIGS+ [OP80_CONFIG]
+
     else:
         config = get_machine_config_by_id(machine_filter)
         if config:
@@ -1007,6 +1053,10 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             elif machine_name == 'Lubrication':
                 qr_value = prep.qr_data_piston
                 post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
+                status = post.status if post else 'Pending'
+            elif machine_name == 'OP80 Leak Test':  # MOVED BEFORE else BLOCK
+                qr_value = prep.qr_data_piston
+                post = config['post_model'].objects.filter(qr_data_housing_new=qr_value).first()
                 status = post.status if post else 'Pending'
             else:
                 qr_value = prep.qr_data
