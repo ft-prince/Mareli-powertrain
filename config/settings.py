@@ -78,7 +78,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'demo',
+        'NAME': 'traceabilityv2',
         'USER': 'postgres',
         'PASSWORD': 'newpassword18',  # the password you set
         'HOST': 'localhost',

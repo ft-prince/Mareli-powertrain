@@ -592,7 +592,7 @@ class Op80Postprocessing(models.Model):
 
 
 # ============================================================================
-# PAINTING MACHINE
+# PAINTING MACHINE 
 # ============================================================================
 
 class PaintingPreprocessing(models.Model):
@@ -615,8 +615,9 @@ class PaintingPreprocessing(models.Model):
 class PaintingPostprocessing(models.Model):
     id = models.AutoField(primary_key=True)
     timestamp = models.CharField(max_length=100)
-    qr_data_piston = models.CharField(unique=True, max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=10)
+    qr_data_piston = models.CharField(unique=True, max_length=100)  
+    qr_data_housing = models.CharField(max_length=100, blank=True, null=True)  
+    status = models.CharField(max_length=50, blank=True, null=True)  
 
     class Meta:
         managed = True
@@ -625,7 +626,6 @@ class PaintingPostprocessing(models.Model):
 
     def __str__(self):
         return f"Painting Post - {self.qr_data_piston} - {self.status}"
-
 
 # ============================================================================
 # LUBRICATION MACHINE (FINAL STEP)

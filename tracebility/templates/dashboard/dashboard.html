@@ -25,9 +25,36 @@
         {% if machine.latest_record %}
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="color: var(--dark-gray); font-size: 0.85rem;">Latest QR:</span>
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">
+                    {% if machine.name == 'Painting' %}QR Housing:
+                    {% elif machine.name == 'Lubrication' %}QR Piston:
+                    {% elif machine.name == 'OP80 Leak Test' %}QR Piston:
+                    {% else %}Latest QR:{% endif %}
+                </span>
                 <strong style="font-size: 0.85rem;">{{ machine.latest_record.qr_code }}</strong>
             </div>
+            
+            {% if machine.name == 'Painting' and machine.latest_record.qr_piston %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">QR Piston:</span>
+                <span style="font-size: 0.85rem;">{{ machine.latest_record.qr_piston }}</span>
+            </div>
+            {% endif %}
+            
+            {% if machine.name == 'Lubrication' and machine.latest_record.qr_housing %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">QR Housing:</span>
+                <span style="font-size: 0.85rem;">{{ machine.latest_record.qr_housing }}</span>
+            </div>
+            {% endif %}
+            
+            {% if machine.name == 'OP80 Leak Test' and machine.latest_record.qr_housing %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: var(--dark-gray); font-size: 0.85rem;">QR Housing:</span>
+                <span style="font-size: 0.85rem;">{{ machine.latest_record.qr_housing }}</span>
+            </div>
+            {% endif %}
+            
             <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
                 <div style="display: flex; justify-content: space-between;">
                     <span style="color: var(--dark-gray); font-size: 0.85rem;">Date:</span>
@@ -118,6 +145,7 @@
 {% block scripts %}
 <script>
 let currentMachineId = null;
+let currentMachineType = null;
 let dashboardEventSource = null;
 let machineEventSource = null;
 
@@ -311,11 +339,26 @@ function updateModalConnectionStatus(connected) {
     }
 }
 
+// Helper function to get machine name from card
+function getMachineName(machineId) {
+    const card = document.getElementById(`machine-card-${machineId}`);
+    if (card) {
+        const title = card.querySelector('.machine-grid-title');
+        if (title) {
+            // Extract text, removing the status indicator
+            return title.textContent.trim();
+        }
+    }
+    return '';
+}
+
 // Update dashboard machine cards with real-time data
 function updateDashboardMachines(machines) {
     machines.forEach(machine => {
         const card = document.getElementById(`machine-card-${machine.machine_id}`);
         if (!card) return;
+        
+        const machineName = getMachineName(machine.machine_id);
         
         // Add subtle animation for update
         card.style.transition = 'box-shadow 0.3s ease';
@@ -342,12 +385,48 @@ function updateDashboardMachines(machines) {
         // Update latest record section
         if (dataSection) {
             if (machine.latest_record) {
+                let qrLabel = 'Latest QR:';
+                if (machineName === 'Painting') qrLabel = 'QR Housing:';
+                else if (machineName === 'Lubrication') qrLabel = 'QR Piston:';
+                else if (machineName === 'OP80 Leak Test') qrLabel = 'QR Piston:';
+                
                 let recordHTML = `
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Latest QR:</span>
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">${qrLabel}</span>
                             <strong style="font-size: 0.85rem;">${machine.latest_record.qr_code}</strong>
                         </div>
+                `;
+                
+                // Add additional QR codes for special machines
+                if (machineName === 'Painting' && machine.latest_record.qr_piston) {
+                    recordHTML += `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">QR Piston:</span>
+                            <span style="font-size: 0.85rem;">${machine.latest_record.qr_piston}</span>
+                        </div>
+                    `;
+                }
+                
+                if (machineName === 'Lubrication' && machine.latest_record.qr_housing) {
+                    recordHTML += `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">QR Housing:</span>
+                            <span style="font-size: 0.85rem;">${machine.latest_record.qr_housing}</span>
+                        </div>
+                    `;
+                }
+                
+                if (machineName === 'OP80 Leak Test' && machine.latest_record.qr_housing) {
+                    recordHTML += `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">QR Housing:</span>
+                            <span style="font-size: 0.85rem;">${machine.latest_record.qr_housing}</span>
+                        </div>
+                    `;
+                }
+                
+                recordHTML += `
                         <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
                             <div style="display: flex; justify-content: space-between;">
                                 <span style="color: var(--dark-gray); font-size: 0.85rem;">Date:</span>
@@ -435,6 +514,7 @@ function initMachineStream(machineId) {
         try {
             const data = JSON.parse(event.data);
             if (data.type === 'update') {
+                currentMachineType = data.machine_type || 'standard';
                 renderMachineData(data);
                 
                 // Add visual feedback for update
@@ -485,6 +565,7 @@ function openMachineModal(machineId, machineName) {
     fetch(`/api/machine/${machineId}/`)
         .then(response => response.json())
         .then(data => {
+            currentMachineType = data.machine_type || 'standard';
             renderMachineData(data);
             // Start real-time updates
             initMachineStream(machineId);
@@ -502,6 +583,7 @@ function openMachineModal(machineId, machineName) {
 function closeMachineModal() {
     document.getElementById('machineModal').style.display = 'none';
     currentMachineId = null;
+    currentMachineType = null;
     
     // Close machine stream
     if (machineEventSource) {
@@ -524,43 +606,119 @@ function renderMachineData(data) {
         return;
     }
     
-    // Create table with data
+    const machineType = data.machine_type || currentMachineType || 'standard';
+    
+    let isPainting = machineType === 'painting';
+    let isOP80 = machineType === 'op80';
+    let isLubrication = machineType === 'lubrication';
+    
+    // For Painting: Check if piston values differ
+    let pistonsDiffer = false;
+    if (isPainting) {
+        pistonsDiffer = data.records.some(record => 
+            record.qr_piston_prep && record.qr_piston_post && 
+            record.qr_piston_prep !== record.qr_piston_post
+        );
+    }
+    
+    // Calculate column counts
+    let prepColumns = 4;
+    if (isPainting) prepColumns = 4; // ID, Date, Time, Prev, Pre
+    if (isOP80) prepColumns = 4; // ID, Date, Time, Prev Status
+    
+    let qrColumns = 1;
+    if (isPainting) qrColumns = 1 + (pistonsDiffer ? 2 : 1);
+    if (isLubrication) qrColumns = 2;
+    if (isOP80) qrColumns = 3; // Piston, Housing, Housing New
+    
+    let postColumns = 4;
+    if (isOP80) postColumns = 5; // ID, Date, Time, Match Status, Status
+    
+    // Create table header
     let tableHTML = `
         <div class="data-table-container" style="max-height: 90vh; overflow-y: auto;">
-            <table class="data-table">
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th colspan="4" style="background: rgba(0, 102, 204, 0.1); text-align: center;">Preprocessing</th>
-                        <th rowspan="2" style="background: var(--light-gray); vertical-align: middle;">QR Code</th>
-                        <th colspan="4" style="background: rgba(0, 168, 204, 0.1); text-align: center;">Postprocessing</th>
+                        <th colspan="${prepColumns}" style="background: rgba(0, 102, 204, 0.1); text-align: center; padding: 8px; border: 1px solid #ddd;">Preprocessing</th>
+                        <th colspan="${qrColumns}" style="background: rgba(200, 200, 200, 0.3); text-align: center; padding: 8px; border: 1px solid #ddd;">QR Codes</th>
+                        <th colspan="${postColumns}" style="background: rgba(0, 168, 204, 0.1); text-align: center; padding: 8px; border: 1px solid #ddd;">Postprocessing</th>
                     </tr>
                     <tr>
-                        <th style="background: rgba(0, 102, 204, 0.05);">ID</th>
-                        <th style="background: rgba(0, 102, 204, 0.05);">Date</th>
-                        <th style="background: rgba(0, 102, 204, 0.05);">Time</th>
-                        <th style="background: rgba(0, 102, 204, 0.05);">Status</th>
-                        <th style="background: rgba(0, 168, 204, 0.05);">ID</th>
-                        <th style="background: rgba(0, 168, 204, 0.05);">Date</th>
-                        <th style="background: rgba(0, 168, 204, 0.05);">Time</th>
-                        <th style="background: rgba(0, 168, 204, 0.05);">Status/Values</th>
+                        <th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">ID</th>
+                        <th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Date</th>
+                        <th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Time</th>
+    `;
+    
+    // Preprocessing status columns
+    if (isPainting) {
+        tableHTML += `
+                        <th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Prev Status</th>
+                        <th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Pre Status</th>
+        `;
+    } else if (isOP80) {
+        tableHTML += `<th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Prev Status</th>`;
+    } else {
+        tableHTML += `<th style="background: rgba(0, 102, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Status</th>`;
+    }
+    
+    // QR code columns
+    if (isPainting) {
+        tableHTML += `<th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Housing</th>`;
+        if (pistonsDiffer) {
+            tableHTML += `
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Piston (Prep)</th>
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Piston (Post)</th>
+            `;
+        } else {
+            tableHTML += `<th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Piston</th>`;
+        }
+    } else if (isOP80) {
+        tableHTML += `
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Piston</th>
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Housing</th>
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Housing New</th>
+        `;
+    } else if (isLubrication) {
+        tableHTML += `
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Piston</th>
+                        <th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Housing</th>
+        `;
+    } else {
+        tableHTML += `<th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Code</th>`;
+    }
+    
+    // Postprocessing columns
+    tableHTML += `
+                        <th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">ID</th>
+                        <th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Date</th>
+                        <th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Time</th>
+    `;
+    
+    if (isOP80) {
+        tableHTML += `<th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Match Status</th>`;
+    }
+    
+    tableHTML += `
+                        <th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
     
+    // Render data rows
     data.records.forEach(record => {
         const prepDate = formatDate(record.prep_timestamp);
         const prepTime = formatTime(record.prep_timestamp);
         const postDate = record.post_timestamp ? formatDate(record.post_timestamp) : '-';
         const postTime = record.post_timestamp ? formatTime(record.post_timestamp) : '-';
         
-        // Build postprocessing status/values cell
+        // Build postprocessing status cell
         let postStatusCell = '-';
         if (record.post_status === 'Pending') {
             postStatusCell = '<span class="status-badge status-inprogress">⏳ Pending</span>';
         } else if (record.post_status === 'OK') {
             if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
-                // Show gauge values
                 let gaugeHTML = '<span class="status-badge status-ok">✅ OK</span><br><small>';
                 for (const [key, value] of Object.entries(record.gauge_values)) {
                     gaugeHTML += `${key}: ${value.toFixed(3)}<br>`;
@@ -574,26 +732,107 @@ function renderMachineData(data) {
             postStatusCell = '<span class="status-badge status-ng">❌ NG</span>';
         }
         
-        // Add assembly QR codes if applicable
-        let qrCodeCell = `<strong>${record.qr_code}</strong>`;
-        if (data.is_assembly && record.qr_external && record.qr_external !== '-') {
-            qrCodeCell += `<br><small style="color: var(--dark-gray);">
-                Ext: ${record.qr_external}<br>
-                House: ${record.qr_housing}
-            </small>`;
+        tableHTML += `
+            <tr class="${record.status_class}">
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${record.prep_id}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><small>${prepDate}</small></td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><small>${prepTime}</small></td>
+        `;
+        
+        // Preprocessing status columns
+        if (isPainting) {
+            const prevStatus = record.previous_machine_status || '-';
+            const prevStatusBadge = prevStatus === 'OK' ? 
+                `<span class="status-badge status-ok">✅ ${prevStatus}</span>` : 
+                prevStatus === 'NG' ? 
+                `<span class="status-badge status-ng">❌ ${prevStatus}</span>` : prevStatus;
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${prevStatusBadge}</td>`;
+            
+            const preStatus = record.pre_status || '-';
+            const preStatusBadge = preStatus === 'OK' ? 
+                `<span class="status-badge status-ok">✅ ${preStatus}</span>` : 
+                preStatus === 'NG' ? 
+                `<span class="status-badge status-ng">❌ ${preStatus}</span>` : preStatus;
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${preStatusBadge}</td>`;
+        } else if (isOP80) {
+            const prevStatus = record.previous_machine_status || '-';
+            const prevStatusBadge = prevStatus === 'OK' ? 
+                `<span class="status-badge status-ok">✅ ${prevStatus}</span>` : 
+                prevStatus === 'NG' ? 
+                `<span class="status-badge status-ng">❌ ${prevStatus}</span>` : prevStatus;
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${prevStatusBadge}</td>`;
+        } else {
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><span class="status-badge status-ok">✅ ${record.prep_status}</span></td>`;
+        }
+        
+        // QR code columns
+        if (isPainting) {
+            const housing = record.qr_housing_prep || record.qr_code || '-';
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${housing}</strong></td>`;
+            
+            if (pistonsDiffer) {
+                const pistonPrep = record.qr_piston_prep || '-';
+                const pistonPost = record.qr_piston_post || '-';
+                
+                if (pistonPrep !== '-' && pistonPost !== '-' && pistonPrep !== pistonPost) {
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center; background: rgba(255, 152, 0, 0.15);"><strong>${pistonPrep}</strong></td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center; background: rgba(255, 152, 0, 0.15);"><strong>${pistonPost}</strong></td>`;
+                } else {
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${pistonPrep}</strong></td>`;
+                    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${pistonPost}</strong></td>`;
+                }
+            } else {
+                const piston = record.qr_piston_prep || record.qr_piston_post || '-';
+                tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${piston}</strong></td>`;
+            }
+            
+        } else if (isOP80) {
+            const piston = record.qr_piston || '-';
+            const housing = record.qr_housing_prep || record.qr_housing_post || '-';
+            const housingNew = record.qr_housing_new || '-';
+            
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${piston}</strong></td>`;
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${housing}</strong></td>`;
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${housingNew}</strong></td>`;
+            
+        } else if (isLubrication) {
+            const piston = record.qr_code || '-';
+            const housing = record.qr_housing || '-';
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${piston}</strong></td>`;
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${housing}</strong></td>`;
+        } else {
+            const qrCode = record.qr_code || '-';
+            if (data.is_assembly && record.qr_external && record.qr_external !== '-') {
+                tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${qrCode}</strong><br><small style="color: var(--dark-gray);">Ext: ${record.qr_external}<br>House: ${record.qr_housing}</small></td>`;
+            } else {
+                tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${qrCode}</strong></td>`;
+            }
+        }
+        
+        // Postprocessing columns
+        tableHTML += `
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${record.post_id || '-'}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><small>${postDate}</small></td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><small>${postTime}</small></td>
+        `;
+        
+        // OP80: Match Status
+        if (isOP80) {
+            if (record.post_id && record.match_status) {
+                const matchStatus = record.match_status;
+                const matchBadge = (matchStatus === 'TRUE' || matchStatus === 'true') ? 
+                    '<span class="status-badge status-ok">✅ Match</span>' : 
+                    (matchStatus === 'FALSE' || matchStatus === 'false') ?
+                    '<span class="status-badge status-ng">❌ No Match</span>' :
+                    matchStatus;
+                tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${matchBadge}</td>`;
+            } else {
+                tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">-</td>`;
+            }
         }
         
         tableHTML += `
-            <tr class="${record.status_class}">
-                <td>${record.prep_id}</td>
-                <td><small>${prepDate}</small></td>
-                <td><small>${prepTime}</small></td>
-                <td><span class="status-badge status-ok">✅ ${record.prep_status}</span></td>
-                <td>${qrCodeCell}</td>
-                <td>${record.post_id || '-'}</td>
-                <td><small>${postDate}</small></td>
-                <td><small>${postTime}</small></td>
-                <td>${postStatusCell}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${postStatusCell}</td>
             </tr>
         `;
     });
@@ -606,6 +845,7 @@ function renderMachineData(data) {
     
     content.innerHTML = tableHTML;
 }
+
 
 function searchQR() {
     const qrCode = document.getElementById('qr-search').value.trim();

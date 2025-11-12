@@ -66,7 +66,6 @@ OP80_CONFIG = {
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
-
 def get_machine_data(prep_model, post_model, machine_type='standard'):
     """Aggregate preprocessing and postprocessing data"""
     records = []
@@ -75,15 +74,25 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
     for prep in prep_records:
         # Determine QR code field based on machine type
         if machine_type == 'painting':
-            qr_value = prep.qr_data_housing
-            post = post_model.objects.filter(qr_data_piston=qr_value).first()
+            # Painting: Match prep.qr_data_housing with post.qr_data_housing
+            qr_value_housing_prep = prep.qr_data_housing
+            qr_value_piston_prep = prep.qr_data_piston
+            post = post_model.objects.filter(qr_data_housing=qr_value_housing_prep).first()
+            
         elif machine_type == 'lubrication':
+            # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
             qr_value = prep.qr_data_piston
+            qr_value_housing = prep.qr_data_housing
             post = post_model.objects.filter(qr_data_piston=qr_value).first()
+            
         elif machine_type == 'op80':
-            qr_value = prep.qr_data_piston
-            post = post_model.objects.filter(qr_data_housing_new=qr_value).first()
+            # OP80: Match prep.qr_data_housing with post.qr_data_housing (NOT housing_new!)
+            qr_value_piston = prep.qr_data_piston
+            qr_value_housing = prep.qr_data_housing
+            post = post_model.objects.filter(qr_data_housing=qr_value_housing).first()
+            
         else:
+            # Standard machines: use qr_data
             qr_value = prep.qr_data
             post = post_model.objects.filter(qr_data=qr_value).first()
         
@@ -112,12 +121,13 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         # Get machine name
         machine_name = getattr(prep, 'machine_name', 'N/A')
         
-        records.append({
+        # Build record dictionary
+        record = {
             'prep_id': prep.id,
             'prep_timestamp': prep.timestamp,
             'prep_machine_name': machine_name,
             'prep_status': 'OK',
-            'qr_code': qr_value,
+            'qr_code': qr_value if machine_type not in ['painting', 'op80'] else (qr_value_housing_prep if machine_type == 'painting' else qr_value_piston),
             'post_id': post_id,
             'post_timestamp': post_timestamp,
             'post_status': post_status,
@@ -125,11 +135,40 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
             'status_class': status_class,
             'gauge_values': gauge_values,
             'sort_priority': 1 if post else 2,
-        })
+        }
+        
+        # Add additional fields for special machines
+        if machine_type == 'painting':
+            # PAINTING: Separate housing and piston QRs for prep and post
+            record['qr_housing_prep'] = qr_value_housing_prep
+            record['qr_housing_post'] = post.qr_data_housing if post else None
+            record['qr_piston_prep'] = qr_value_piston_prep
+            record['qr_piston_post'] = post.qr_data_piston if post else None
+            # PAINTING: Add status fields
+            record['previous_machine_status'] = prep.previous_machine_status
+            record['pre_status'] = prep.pre_status
+            
+        elif machine_type == 'lubrication':
+            record['qr_housing'] = qr_value_housing
+            
+        elif machine_type == 'op80':
+            # OP80 PREP: piston and housing
+            record['qr_piston'] = qr_value_piston
+            record['qr_housing_prep'] = qr_value_housing
+            # OP80 PREP STATUS: only previous_machine_status
+            record['previous_machine_status'] = prep.previous_machine_status
+            
+            # OP80 POST: housing and housing_new, match_status
+            if post:
+                record['qr_housing_post'] = post.qr_data_housing
+                record['qr_housing_new'] = post.qr_data_housing_new
+                record['match_status'] = post.match_status
+        
+        records.append(record)
     
     records.sort(key=lambda x: (x['sort_priority'], -x['prep_id']))
     return records
-
+    
 
 def get_assembly_machine_data(prep_model, post_model):
     """Special handler for assembly machines (OP40 series)"""
@@ -224,13 +263,12 @@ def parse_timestamp_to_datetime(timestamp):
     return None
 
 def check_machine_status(prep_model):
-    """Check if machine is active - DEBUG VERSION"""
+    """Check if machine is active - FIXED TIMEZONE VERSION"""
     threshold = timezone.now() - timedelta(minutes=21)
     
     try:
         latest_record = prep_model.objects.first()
         if not latest_record:
-            print(f"{prep_model.__name__}: No records - INACTIVE")
             return False
         
         # Get timestamp field
@@ -241,45 +279,37 @@ def check_machine_status(prep_model):
             timestamp = latest_record.timestamp
             field_name = 'timestamp'
         
-        # print(f"\n{prep_model.__name__}:")
-        # print(f"  Raw timestamp: {timestamp}")
-        # print(f"  Type: {type(timestamp).__name__}")
-        
         # If it's a DateTimeField
         if hasattr(timestamp, 'timestamp'):
+            # Make sure timestamp is timezone-aware
+            if timezone.is_naive(timestamp):
+                timestamp = timezone.make_aware(timestamp)
+            
             is_active = timestamp >= threshold
-            age = (timezone.now() - timestamp).total_seconds() / 60
-            # print(f"  Age: {age:.1f} minutes")
-            # print(f"  Result: {'ACTIVE' if is_active else 'INACTIVE'}")
             return is_active
         
         # If it's a CharField
         if isinstance(timestamp, str):
             parsed_dt = parse_timestamp_to_datetime(timestamp)
-            print(f"  Parsed: {parsed_dt}")
             
             if parsed_dt:
+                # Make sure parsed datetime is timezone-aware
                 if timezone.is_naive(parsed_dt):
                     parsed_dt = timezone.make_aware(parsed_dt)
                 
-                age = (timezone.now() - parsed_dt).total_seconds() / 60
                 is_active = parsed_dt >= threshold
-                # print(f"  Age: {age:.1f} minutes")
-                # print(f"  Threshold: < 5 minutes")
-                # print(f"  Result: {'ACTIVE' if is_active else 'INACTIVE'}")
                 return is_active
             else:
-                # print(f"  Could not parse - INACTIVE")
                 return False
         
-        # print(f"  Unknown type - INACTIVE")
         return False
         
     except Exception as e:
-        # print(f"{prep_model.__name__}: ERROR - {e}")
         import traceback
         traceback.print_exc()
         return False
+
+   
 
 def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
     """Get the latest record for a machine"""
@@ -287,16 +317,28 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
     if not latest_prep:
         return None
     
+    # Determine QR code field based on machine type - FINAL CORRECTED MAPPINGS
     if machine_type == 'painting':
-        qr_value = latest_prep.qr_data_housing
-        post = post_model.objects.filter(qr_data_piston=qr_value).first()
+        # Painting: Match prep.qr_data_housing with post.qr_data_housing
+        qr_value = latest_prep.qr_data_housing  # Primary display & matching
+        qr_piston = latest_prep.qr_data_piston  # Secondary display only
+        post = post_model.objects.filter(qr_data_housing=qr_value).first()
+        
     elif machine_type == 'lubrication':
-        qr_value = latest_prep.qr_data_piston
+        # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
+        qr_value = latest_prep.qr_data_piston  # Primary display & matching
+        qr_housing = latest_prep.qr_data_housing  # Secondary display only
         post = post_model.objects.filter(qr_data_piston=qr_value).first()
+        
     elif machine_type == 'op80':
-        qr_value = latest_prep.qr_data_piston
-        post = post_model.objects.filter(qr_data_housing_new=qr_value).first()
+        # OP80: Match prep.qr_data_housing with post.qr_data_housing_new
+        # Display piston as primary, but match using housing!
+        qr_value = latest_prep.qr_data_piston  # Primary display (piston)
+        qr_housing = latest_prep.qr_data_housing  # This is what we match!
+        post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
+        
     else:
+        # Standard machines: use qr_data
         qr_value = latest_prep.qr_data
         post = post_model.objects.filter(qr_data=qr_value).first()
     
@@ -311,20 +353,15 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
     # Format timestamp - handle both DateTimeField and CharField
     prep_timestamp = latest_prep.timestamp
     if hasattr(prep_timestamp, 'isoformat'):
-        # It's a DateTimeField
         timestamp_str = prep_timestamp.isoformat()
     else:
-        # It's a CharField - convert to ISO format if possible
         try:
             from datetime import datetime
-            # Try parsing common timestamp formats
             if isinstance(prep_timestamp, str):
-                # Try ISO format first
                 try:
                     dt = datetime.fromisoformat(prep_timestamp.replace('Z', '+00:00'))
                     timestamp_str = dt.isoformat()
                 except:
-                    # Try other common formats
                     for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%d-%m-%Y %H:%M:%S']:
                         try:
                             dt = datetime.strptime(prep_timestamp, fmt)
@@ -333,21 +370,33 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
                         except:
                             continue
                     else:
-                        # If all parsing fails, use the string as-is
                         timestamp_str = prep_timestamp
             else:
                 timestamp_str = str(prep_timestamp)
         except:
             timestamp_str = str(prep_timestamp)
     
-    return {
+    result = {
         'qr_code': qr_value,
         'prep_timestamp': timestamp_str,
         'post_status': post.status if post else 'Pending',
         'has_post': post is not None,
         'gauge_values': gauge_values,
     }
+    
+    # Add additional QR codes for special machines
+    if machine_type == 'painting':
+        result['qr_piston'] = qr_piston
+    elif machine_type == 'lubrication':
+        result['qr_housing'] = qr_housing
+    elif machine_type == 'op80':
+        result['qr_housing'] = qr_housing
+    
+    return result
 
+
+     
+         
 
 def get_latest_assembly_record(prep_model, post_model):
     """Get the latest record for assembly machine"""
@@ -435,7 +484,6 @@ def dashboard_view(request):
     
     return render(request, 'dashboard/dashboard.html', {'machines': machines_data})
 
-
 def machine_detail_view(request, machine_name):
     """Detail view for specific machine"""
     config = None
@@ -467,6 +515,8 @@ def machine_detail_view(request, machine_name):
             machine_type = 'painting'
         elif config['name'] == 'Lubrication':
             machine_type = 'lubrication'
+        elif config['name'] == 'OP80 Leak Test':
+            machine_type = 'op80'
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
     
     is_active = check_machine_status(config['prep_model'])
@@ -483,6 +533,7 @@ def machine_detail_view(request, machine_name):
     
     context = {
         'machine_name': config['name'],
+        'machine_type': machine_type,  # Add machine_type to context
         'is_active': is_active,
         'records': records,
         'records_json': json.dumps(records_json, cls=DjangoJSONEncoder),
@@ -490,6 +541,8 @@ def machine_detail_view(request, machine_name):
     }
     
     return render(request, 'dashboard/machine_detail.html', context)
+
+
 
 
 @csrf_exempt
@@ -519,13 +572,14 @@ def machine_data_api(request, machine_name):
     
     if is_assembly:
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
+        machine_type = 'assembly'
     else:
         machine_type = 'standard'
         if config['name'] == 'Painting':
             machine_type = 'painting'
         elif config['name'] == 'Lubrication':
             machine_type = 'lubrication'
-        elif config['name'] == 'OP80 Leak Test':  # ADD THIS
+        elif config['name'] == 'OP80 Leak Test':
             machine_type = 'op80'
         
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
@@ -540,11 +594,13 @@ def machine_data_api(request, machine_name):
     
     return JsonResponse({
         'machine_name': config['name'],
+        'machine_type': machine_type,  # Add machine_type to response
         'is_active': is_active,
         'records': records,
         'is_assembly': is_assembly,
     })
-    
+
+
 def search_qr_code(request):
     """Search QR code across all machines"""
     qr_code = request.GET.get('qr', '')
@@ -555,12 +611,29 @@ def search_qr_code(request):
     results = []
     
     for config in MACHINE_CONFIGS:
-        if config['name'] in ['Painting', 'Lubrication']:
+        if config['name'] == 'Painting':
+            # Painting: search both qr_data_housing and qr_data_piston in prep
+            # Search qr_data_housing in post
+            prep_records = config['prep_model'].objects.filter(
+                Q(qr_data_housing__icontains=qr_code) | Q(qr_data_piston__icontains=qr_code)
+            )
+            post_records = config['post_model'].objects.filter(qr_data_housing__icontains=qr_code)
+        elif config['name'] == 'Lubrication':
+            # Lubrication: search both qr_data_piston and qr_data_housing in prep
+            # Search qr_data_piston in post
             prep_records = config['prep_model'].objects.filter(
                 Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
             )
             post_records = config['post_model'].objects.filter(qr_data_piston__icontains=qr_code)
+        elif config['name'] == 'OP80 Leak Test':
+            # OP80: search qr_data_piston and qr_data_housing in prep
+            # Search qr_data_housing_new in post (FIXED!)
+            prep_records = config['prep_model'].objects.filter(
+                Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
+            )
+            post_records = config['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)  # CHANGED
         else:
+            # Standard machines: use qr_data
             prep_records = config['prep_model'].objects.filter(qr_data__icontains=qr_code)
             post_records = config['post_model'].objects.filter(qr_data__icontains=qr_code)
         
@@ -584,18 +657,24 @@ def search_qr_code(request):
                 'preprocessing_count': prep_records.count(),
                 'postprocessing_count': 0,
             })
-    # Search OP80
-    prep_records = OP80_CONFIG['prep_model'].objects.filter(qr_data_piston__icontains=qr_code)
-    post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)
     
-    if prep_records.exists() or post_records.exists():
-        results.append({
-            'machine': OP80_CONFIG['name'],
-            'preprocessing_count': prep_records.count(),
-            'postprocessing_count': post_records.count(),
-        })
+    # Search OP80 (if not already covered in MACHINE_CONFIGS)
+    if 'OP80 Leak Test' not in [config['name'] for config in MACHINE_CONFIGS]:
+        prep_records = OP80_CONFIG['prep_model'].objects.filter(
+            Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
+        )
+        post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)  # CHANGED
+        
+        if prep_records.exists() or post_records.exists():
+            results.append({
+                'machine': OP80_CONFIG['name'],
+                'preprocessing_count': prep_records.count(),
+                'postprocessing_count': post_records.count(),
+            })
 
     return JsonResponse({'qr_code': qr_code, 'results': results})
+
+
 
 
 def export_machine_data(request, machine_name):
@@ -976,7 +1055,6 @@ def get_machine_config_by_id(machine_id):
 
     return None
 
-
 def collect_analytics_data(start_date, end_date, machine_filter='all', status_filter='all'):
     """Collect analytics data from all machines"""
     data = {
@@ -997,8 +1075,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     # Determine which machines to query
     configs_to_query = []
     if machine_filter == 'all':
-        configs_to_query = MACHINE_CONFIGS + ASSEMBLY_CONFIGS+ [OP80_CONFIG]
-
+        configs_to_query = MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]
     else:
         config = get_machine_config_by_id(machine_filter)
         if config:
@@ -1018,7 +1095,6 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             pass
         
         # Get ALL preprocessing records
-        # (We filter by date in Python because timestamps are CharField)
         try:
             prep_records = config['prep_model'].objects.all()
         except Exception as e:
@@ -1042,23 +1118,32 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             if not is_in_date_range(timestamp, start_date, end_date):
                 continue
             
-            # Get QR code and status based on machine type
+            # Get QR code and status based on machine type - FINAL CORRECTED MAPPINGS
             if is_assembly:
                 qr_value = prep.qr_data_internal
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
+                
             elif machine_name == 'Painting':
+                # Painting: Match prep.qr_data_housing with post.qr_data_housing
                 qr_value = prep.qr_data_housing
-                post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
+                post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
                 status = post.status if post else 'Pending'
+                
             elif machine_name == 'Lubrication':
+                # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
                 qr_value = prep.qr_data_piston
                 post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
                 status = post.status if post else 'Pending'
-            elif machine_name == 'OP80 Leak Test':  # MOVED BEFORE else BLOCK
-                qr_value = prep.qr_data_piston
-                post = config['post_model'].objects.filter(qr_data_housing_new=qr_value).first()
+                
+            elif machine_name == 'OP80 Leak Test':
+                # OP80: Match prep.qr_data_housing with post.qr_data_housing_new
+                qr_value = prep.qr_data_piston  # Display this
+                qr_housing = prep.qr_data_housing  # Match this
+                post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
                 status = post.status if post else 'Pending'
+                
             else:
+                # Standard machines: use qr_data
                 qr_value = prep.qr_data
                 post = config['post_model'].objects.filter(qr_data=qr_value).first()
                 status = post.status if post else 'Pending'
@@ -1091,8 +1176,21 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         if machine_stats['ok'] + machine_stats['ng'] + machine_stats['pending'] > 0:
             data['machine_stats'].append(machine_stats)
     
-    # Sort records by timestamp
-    all_records.sort(key=lambda x: parse_timestamp_to_datetime(x['timestamp']) or datetime.min)
+    # Sort records by timestamp - FIX FOR TIMEZONE ISSUE
+    def safe_sort_key(record):
+        """Convert timestamp to timezone-aware datetime for sorting"""
+        dt = parse_timestamp_to_datetime(record['timestamp'])
+        if dt is None:
+            # Return a very old timezone-aware datetime for None values
+            return timezone.make_aware(datetime.min.replace(year=1900))
+        
+        # Ensure datetime is timezone-aware
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt)
+        
+        return dt
+    
+    all_records.sort(key=safe_sort_key)
     
     # Generate timeline data (daily aggregation)
     daily_data = defaultdict(lambda: {'ok': 0, 'ng': 0})
@@ -1106,7 +1204,6 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             date_key = dt.strftime('%Y-%m-%d')
             hour_key = dt.strftime('%H:00')
         else:
-            # Fallback
             continue
         
         # Daily aggregation for timeline
