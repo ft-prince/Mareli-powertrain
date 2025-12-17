@@ -10,6 +10,7 @@ class Cnc1Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     machine_name = models.CharField(max_length=50)
     qr_data = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -40,6 +41,7 @@ class Cnc2Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     machine_name = models.CharField(max_length=50)
     qr_data = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -70,6 +72,7 @@ class Cnc3Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     machine_name = models.CharField(max_length=50)
     qr_data = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -100,6 +103,7 @@ class Cnc4Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     machine_name = models.CharField(max_length=50)
     qr_data = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -130,6 +134,7 @@ class Cnc5Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     machine_name = models.CharField(max_length=50)
     qr_data = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -160,6 +165,7 @@ class Cnc6Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     machine_name = models.CharField(max_length=50)
     qr_data = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -194,6 +200,7 @@ class Gauge1Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -229,6 +236,7 @@ class Gauge2Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -265,6 +273,7 @@ class Gauge3Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -305,6 +314,7 @@ class Honing1Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -335,6 +345,7 @@ class Honing2Preprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -369,6 +380,7 @@ class DeburringPreprocessing(models.Model):
     timestamp = models.CharField(max_length=100)
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -404,6 +416,7 @@ class PrewashingPreprocessing(models.Model):
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
     status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -420,6 +433,7 @@ class PrewashingPostprocessing(models.Model):
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
     status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -436,6 +450,7 @@ class FinalwashingPreprocessing(models.Model):
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
     status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -452,6 +467,7 @@ class FinalwashingPostprocessing(models.Model):
     qr_data = models.CharField(max_length=100)
     previous_machine_status = models.CharField(max_length=10)
     status = models.CharField(max_length=10)
+    model_name = models.CharField(max_length=20)  # ADDED
 
     class Meta:
         managed = True
@@ -471,11 +487,14 @@ class Op40AProcessing(models.Model):
     timestamp_internal = models.DateTimeField()
     qr_data_internal = models.CharField(unique=True, max_length=100)
     previous_machine_internal_status = models.CharField(max_length=10)
+    model_name_internal = models.CharField(max_length=20)  # ADDED
     timestamp_external = models.DateTimeField(blank=True, null=True)
     qr_data_external = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_external = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     timestamp_housing = models.DateTimeField(blank=True, null=True)
     previous_machine_housing_status = models.CharField(max_length=10, blank=True, null=True)
     qr_data_housing = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_housing = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     status = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
 
@@ -493,11 +512,14 @@ class Op40BProcessing(models.Model):
     timestamp_internal = models.DateTimeField()
     qr_data_internal = models.CharField(unique=True, max_length=100)
     previous_machine_internal_status = models.CharField(max_length=10)
+    model_name_internal = models.CharField(max_length=20)  # ADDED
     timestamp_external = models.DateTimeField(blank=True, null=True)
     qr_data_external = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_external = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     timestamp_housing = models.DateTimeField(blank=True, null=True)
     previous_machine_housing_status = models.CharField(max_length=10, blank=True, null=True)
     qr_data_housing = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_housing = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     status = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
 
@@ -515,11 +537,14 @@ class Op40CProcessing(models.Model):
     timestamp_internal = models.DateTimeField()
     qr_data_internal = models.CharField(unique=True, max_length=100)
     previous_machine_internal_status = models.CharField(max_length=10)
+    model_name_internal = models.CharField(max_length=20)  # ADDED
     timestamp_external = models.DateTimeField(blank=True, null=True)
     qr_data_external = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_external = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     timestamp_housing = models.DateTimeField(blank=True, null=True)
     previous_machine_housing_status = models.CharField(max_length=10, blank=True, null=True)
     qr_data_housing = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_housing = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     status = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
 
@@ -537,11 +562,14 @@ class Op40DProcessing(models.Model):
     timestamp_internal = models.DateTimeField()
     qr_data_internal = models.CharField(unique=True, max_length=100)
     previous_machine_internal_status = models.CharField(max_length=10)
+    model_name_internal = models.CharField(max_length=20)  # ADDED
     timestamp_external = models.DateTimeField(blank=True, null=True)
     qr_data_external = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_external = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     timestamp_housing = models.DateTimeField(blank=True, null=True)
     previous_machine_housing_status = models.CharField(max_length=10, blank=True, null=True)
     qr_data_housing = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_housing = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     status = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
 
@@ -562,7 +590,9 @@ class Op80Preprocessing(models.Model):
     id = models.AutoField(primary_key=True)
     timestamp = models.CharField(max_length=100)
     qr_data_piston = models.CharField(unique=True, max_length=100)
+    model_name_internal = models.CharField(max_length=20)  # ADDED
     qr_data_housing = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_external = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     previous_machine_status = models.CharField(max_length=10)
 
     class Meta:
@@ -598,8 +628,10 @@ class Op80Postprocessing(models.Model):
 class PaintingPreprocessing(models.Model):
     id = models.AutoField(primary_key=True)
     timestamp = models.CharField(max_length=100)
-    qr_data_housing = models.CharField(unique=True, max_length=100)
+    qr_data_housing = models.CharField(unique=True, max_length=100, blank=True, null=True)  # UPDATED: Made nullable
+    model_name_housing = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     qr_data_piston = models.CharField(unique=True, max_length=100, blank=True, null=True)
+    model_name_piston = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     previous_machine_status = models.CharField(max_length=10)
     pre_status = models.CharField(max_length=10)
 
@@ -614,7 +646,7 @@ class PaintingPreprocessing(models.Model):
 
 class PaintingPostprocessing(models.Model):
     id = models.AutoField(primary_key=True)
-    timestamp = models.CharField(max_length=100)
+    timestamp = models.CharField(max_length=100, blank=True, null=True)  # ADDED (was missing)
     qr_data_piston = models.CharField(unique=True, max_length=100)  
     qr_data_housing = models.CharField(max_length=100, blank=True, null=True)  
     status = models.CharField(max_length=50, blank=True, null=True)  
@@ -627,6 +659,7 @@ class PaintingPostprocessing(models.Model):
     def __str__(self):
         return f"Painting Post - {self.qr_data_piston} - {self.status}"
 
+
 # ============================================================================
 # LUBRICATION MACHINE (FINAL STEP)
 # ============================================================================
@@ -635,7 +668,9 @@ class LubPreprocessing(models.Model):
     id = models.AutoField(primary_key=True)
     timestamp = models.CharField(max_length=100)
     qr_data_piston = models.CharField(unique=True, max_length=100)
+    model_name_piston = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     qr_data_housing = models.CharField(max_length=100, blank=True, null=True)
+    model_name_housing = models.CharField(max_length=20, blank=True, null=True)  # ADDED
     previous_machine_status = models.CharField(max_length=10)
 
     class Meta:
