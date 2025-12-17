@@ -13,50 +13,55 @@ from . import models
 
 
 # ============================================================================
-# MACHINE CONFIGURATIONS - Updated to match new model names
+# MACHINE CONFIGURATIONS - With IP addresses and proper names
 # ============================================================================
 
 MACHINE_CONFIGS = [
-    # CNC Machines (previously DMG MORI)
-    {'name': 'CNC 1', 'prep_model': models.Cnc1Preprocessing, 'post_model': models.Cnc1Postprocessing, 'type': 'cnc'},
-    {'name': 'CNC 2', 'prep_model': models.Cnc2Preprocessing, 'post_model': models.Cnc2Postprocessing, 'type': 'cnc'},
-    {'name': 'CNC 3', 'prep_model': models.Cnc3Preprocessing, 'post_model': models.Cnc3Postprocessing, 'type': 'cnc'},
-    {'name': 'CNC 4', 'prep_model': models.Cnc4Preprocessing, 'post_model': models.Cnc4Postprocessing, 'type': 'cnc'},
-    {'name': 'CNC 5', 'prep_model': models.Cnc5Preprocessing, 'post_model': models.Cnc5Postprocessing, 'type': 'cnc'},
-    {'name': 'CNC 6', 'prep_model': models.Cnc6Preprocessing, 'post_model': models.Cnc6Postprocessing, 'type': 'cnc'},
+    # CNC Machines (DMG MORI)
+    {'name': 'DMG MORI1(op-110A)', 'display_name': 'CNC 1', 'ip': '192.168.1.101', 'op_code': 'op-110A', 'prep_model': models.Cnc1Preprocessing, 'post_model': models.Cnc1Postprocessing, 'type': 'cnc'},
+    {'name': 'DMG MORI2(op-110B)', 'display_name': 'CNC 2', 'ip': '192.168.1.102', 'op_code': 'op-110B', 'prep_model': models.Cnc2Preprocessing, 'post_model': models.Cnc2Postprocessing, 'type': 'cnc'},
+    {'name': 'DMG MORI3(op-130D)', 'display_name': 'CNC 3', 'ip': '192.168.1.103', 'op_code': 'op-130D', 'prep_model': models.Cnc3Preprocessing, 'post_model': models.Cnc3Postprocessing, 'type': 'cnc'},
+    {'name': 'DMG MORI4(op-130C)', 'display_name': 'CNC 4', 'ip': '192.168.1.104', 'op_code': 'op-130C', 'prep_model': models.Cnc4Preprocessing, 'post_model': models.Cnc4Postprocessing, 'type': 'cnc'},
+    {'name': 'DMG MORI5(op-130B)', 'display_name': 'CNC 5', 'ip': '192.168.1.105', 'op_code': 'op-130B', 'prep_model': models.Cnc5Preprocessing, 'post_model': models.Cnc5Postprocessing, 'type': 'cnc'},
+    {'name': 'DMG MORI6(op-130A)', 'display_name': 'CNC 6', 'ip': '192.168.1.106', 'op_code': 'op-130A', 'prep_model': models.Cnc6Preprocessing, 'post_model': models.Cnc6Postprocessing, 'type': 'cnc'},
     
     # Gauge Machines
-    {'name': 'Gauge 1', 'prep_model': models.Gauge1Preprocessing, 'post_model': models.Gauge1Postprocessing, 'type': 'gauge'},
-    {'name': 'Gauge 2', 'prep_model': models.Gauge2Preprocessing, 'post_model': models.Gauge2Postprocessing, 'type': 'gauge'},
-    {'name': 'Gauge 3', 'prep_model': models.Gauge3Preprocessing, 'post_model': models.Gauge3Postprocessing, 'type': 'gauge'},
+    {'name': 'Gauge1(op-115)', 'display_name': 'Gauge 1', 'ip': '192.168.1.107', 'op_code': 'op-115', 'prep_model': models.Gauge1Preprocessing, 'post_model': models.Gauge1Postprocessing, 'type': 'gauge'},
+    {'name': 'Gauge2(op-135B)', 'display_name': 'Gauge 2', 'ip': '192.168.1.108', 'op_code': 'op-135B', 'prep_model': models.Gauge2Preprocessing, 'post_model': models.Gauge2Postprocessing, 'type': 'gauge'},
+    {'name': 'Gauge3(op-135A)', 'display_name': 'Gauge 3', 'ip': '192.168.1.109', 'op_code': 'op-135A', 'prep_model': models.Gauge3Preprocessing, 'post_model': models.Gauge3Postprocessing, 'type': 'gauge'},
     
     # Honing Machines
-    {'name': 'Honing 1', 'prep_model': models.Honing1Preprocessing, 'post_model': models.Honing1Postprocessing, 'type': 'honing'},
-    {'name': 'Honing 2', 'prep_model': models.Honing2Preprocessing, 'post_model': models.Honing2Postprocessing, 'type': 'honing'},
+    {'name': 'Honing1(140A)', 'display_name': 'Honing 1', 'ip': '192.168.1.110', 'op_code': 'op-140A', 'prep_model': models.Honing1Preprocessing, 'post_model': models.Honing1Postprocessing, 'type': 'honing'},
+    {'name': 'Honing2(140B)', 'display_name': 'Honing 2', 'ip': '192.168.1.111', 'op_code': 'op-140B', 'prep_model': models.Honing2Preprocessing, 'post_model': models.Honing2Postprocessing, 'type': 'honing'},
     
     # Processing Machines
-    {'name': 'Deburring', 'prep_model': models.DeburringPreprocessing, 'post_model': models.DeburringPostprocessing, 'type': 'processing'},
-    {'name': 'Prewashing', 'prep_model': models.PrewashingPreprocessing, 'post_model': models.PrewashingPostprocessing, 'type': 'processing'},
-    {'name': 'Final Washing', 'prep_model': models.FinalwashingPreprocessing, 'post_model': models.FinalwashingPostprocessing, 'type': 'processing'},
+    {'name': 'Prewashing_Loading(op-150)', 'display_name': 'Prewashing Load', 'ip': '192.168.1.112', 'op_code': 'op-150', 'prep_model': models.PrewashingPreprocessing, 'post_model': models.PrewashingPostprocessing, 'type': 'processing'},
+    {'name': 'Prewashing_Unloading(op-150)', 'display_name': 'Prewashing Unload', 'ip': '192.168.1.113', 'op_code': 'op-150', 'prep_model': models.PrewashingPreprocessing, 'post_model': models.PrewashingPostprocessing, 'type': 'processing'},
+    {'name': 'Deburring(op-160)', 'display_name': 'Deburring', 'ip': '192.168.1.131', 'op_code': 'op-160', 'prep_model': models.DeburringPreprocessing, 'post_model': models.DeburringPostprocessing, 'type': 'processing'},
+    {'name': 'Finlwashing_loading(op-170)', 'display_name': 'Final Washing Load', 'ip': '192.168.1.115', 'op_code': 'op-170', 'prep_model': models.FinalwashingPreprocessing, 'post_model': models.FinalwashingPostprocessing, 'type': 'processing'},
+    {'name': 'Finlwashing_Unloading(op-170)', 'display_name': 'Final Washing Unload', 'ip': '192.168.1.116', 'op_code': 'op-170', 'prep_model': models.FinalwashingPreprocessing, 'post_model': models.FinalwashingPostprocessing, 'type': 'processing'},
     
     # Painting
-    {'name': 'Painting', 'prep_model': models.PaintingPreprocessing, 'post_model': models.PaintingPostprocessing, 'type': 'painting'},
+    {'name': 'Painting(op85)', 'display_name': 'Painting', 'ip': '192.168.1.122', 'op_code': 'op-85', 'prep_model': models.PaintingPreprocessing, 'post_model': models.PaintingPostprocessing, 'type': 'painting'},
     
     # Lubrication
-    {'name': 'Lubrication', 'prep_model': models.LubPreprocessing, 'post_model': models.LubPostprocessing, 'type': 'lubrication'},
+    {'name': 'Lubrication(op90)', 'display_name': 'Lubrication', 'ip': '192.168.1.123', 'op_code': 'op-90', 'prep_model': models.LubPreprocessing, 'post_model': models.LubPostprocessing, 'type': 'lubrication'},
 ]
 
 # Assembly machines (OP40 series)
 ASSEMBLY_CONFIGS = [
-    {'name': 'Assembly OP40A', 'prep_model': models.Op40AProcessing, 'post_model': models.Op40AProcessing, 'type': 'assembly'},
-    {'name': 'Assembly OP40B', 'prep_model': models.Op40BProcessing, 'post_model': models.Op40BProcessing, 'type': 'assembly'},
-    {'name': 'Assembly OP40C', 'prep_model': models.Op40CProcessing, 'post_model': models.Op40CProcessing, 'type': 'assembly'},
-    {'name': 'Assembly OP40D', 'prep_model': models.Op40DProcessing, 'post_model': models.Op40DProcessing, 'type': 'assembly'},
+    {'name': 'OP40A', 'display_name': 'Assembly OP40A', 'ip': '192.168.1.117', 'op_code': 'op-40A', 'prep_model': models.Op40AProcessing, 'post_model': models.Op40AProcessing, 'type': 'assembly'},
+    {'name': 'OP40B', 'display_name': 'Assembly OP40B', 'ip': '192.168.1.118', 'op_code': 'op-40B', 'prep_model': models.Op40BProcessing, 'post_model': models.Op40BProcessing, 'type': 'assembly'},
+    {'name': 'OP40C', 'display_name': 'Assembly OP40C', 'ip': '192.168.1.119', 'op_code': 'op-40C', 'prep_model': models.Op40CProcessing, 'post_model': models.Op40CProcessing, 'type': 'assembly'},
+    {'name': 'OP40D', 'display_name': 'Assembly OP40D', 'ip': '192.168.1.120', 'op_code': 'op-40D', 'prep_model': models.Op40DProcessing, 'post_model': models.Op40DProcessing, 'type': 'assembly'},
 ]
 
 # OP80 - Leak Test
 OP80_CONFIG = {
-    'name': 'OP80 Leak Test', 
+    'name': 'Oring_leak(OP80)', 
+    'display_name': 'OP80 Leak Test',
+    'ip': '192.168.1.121',
+    'op_code': 'op-80',
     'prep_model': models.Op80Preprocessing, 
     'post_model': models.Op80Postprocessing, 
     'type': 'op80'
@@ -64,10 +69,53 @@ OP80_CONFIG = {
 
 
 # ============================================================================
+# API to get machine list with IPs (for frontend dropdowns)
+# ============================================================================
+@csrf_exempt
+def get_machines_list_api(request):
+    """API endpoint to get all machines with their IPs and details"""
+    machines = []
+    
+    # Add regular machines
+    for config in MACHINE_CONFIGS:
+        machines.append({
+            'id': config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_'),
+            'name': config['name'],
+            'display_name': config['display_name'],
+            'ip': config['ip'],
+            'op_code': config['op_code'],
+            'type': config['type']
+        })
+    
+    # Add assembly machines
+    for config in ASSEMBLY_CONFIGS:
+        machines.append({
+            'id': config['name'].lower().replace(' ', '_'),
+            'name': config['name'],
+            'display_name': config['display_name'],
+            'ip': config['ip'],
+            'op_code': config['op_code'],
+            'type': config['type']
+        })
+    
+    # Add OP80
+    machines.append({
+        'id': 'op80_leak_test',
+        'name': OP80_CONFIG['name'],
+        'display_name': OP80_CONFIG['display_name'],
+        'ip': OP80_CONFIG['ip'],
+        'op_code': OP80_CONFIG['op_code'],
+        'type': OP80_CONFIG['type']
+    })
+    
+    return JsonResponse({'machines': machines})
+
+
+# ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
 def get_machine_data(prep_model, post_model, machine_type='standard'):
-    """Aggregate preprocessing and postprocessing data"""
+    """Aggregate preprocessing and postprocessing data - UPDATED to include model_name"""
     records = []
     prep_records = prep_model.objects.all()[:100]
     
@@ -121,11 +169,15 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         # Get machine name
         machine_name = getattr(prep, 'machine_name', 'N/A')
         
+        # Get model_name (NEW FIELD)
+        model_name = getattr(prep, 'model_name', 'N/A')
+        
         # Build record dictionary
         record = {
             'prep_id': prep.id,
             'prep_timestamp': prep.timestamp,
             'prep_machine_name': machine_name,
+            'model_name': model_name,  # NEW FIELD
             'prep_status': 'OK',
             'qr_code': qr_value if machine_type not in ['painting', 'op80'] else (qr_value_housing_prep if machine_type == 'painting' else qr_value_piston),
             'post_id': post_id,
@@ -147,9 +199,15 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
             # PAINTING: Add status fields
             record['previous_machine_status'] = prep.previous_machine_status
             record['pre_status'] = prep.pre_status
+            # PAINTING: Add model names (NEW)
+            record['model_name_housing'] = getattr(prep, 'model_name_housing', 'N/A')
+            record['model_name_piston'] = getattr(prep, 'model_name_piston', 'N/A')
             
         elif machine_type == 'lubrication':
             record['qr_housing'] = qr_value_housing
+            # LUBRICATION: Add model names (NEW)
+            record['model_name_piston'] = getattr(prep, 'model_name_piston', 'N/A')
+            record['model_name_housing'] = getattr(prep, 'model_name_housing', 'N/A')
             
         elif machine_type == 'op80':
             # OP80 PREP: piston and housing
@@ -157,6 +215,9 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
             record['qr_housing_prep'] = qr_value_housing
             # OP80 PREP STATUS: only previous_machine_status
             record['previous_machine_status'] = prep.previous_machine_status
+            # OP80: Add model names (NEW)
+            record['model_name_internal'] = getattr(prep, 'model_name_internal', 'N/A')
+            record['model_name_external'] = getattr(prep, 'model_name_external', 'N/A')
             
             # OP80 POST: housing and housing_new, match_status
             if post:
@@ -171,12 +232,17 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
     
 
 def get_assembly_machine_data(prep_model, post_model):
-    """Special handler for assembly machines (OP40 series)"""
+    """Special handler for assembly machines (OP40 series) - UPDATED to include model_names"""
     records = []
     prep_records = prep_model.objects.all()[:100]
     
     for prep in prep_records:
         qr_internal = prep.qr_data_internal
+        
+        # Get model names (NEW)
+        model_name_internal = getattr(prep, 'model_name_internal', 'N/A')
+        model_name_external = getattr(prep, 'model_name_external', 'N/A')
+        model_name_housing = getattr(prep, 'model_name_housing', 'N/A')
         
         # For OP40 models, prep and post are the same table
         # Check if external and housing data exists
@@ -205,6 +271,9 @@ def get_assembly_machine_data(prep_model, post_model):
             'qr_code': qr_internal,
             'qr_external': qr_external,
             'qr_housing': qr_housing,
+            'model_name_internal': model_name_internal,  # NEW
+            'model_name_external': model_name_external,  # NEW
+            'model_name_housing': model_name_housing,    # NEW
             'post_id': post_id,
             'post_timestamp': post_timestamp,
             'post_status': post_status,
@@ -312,10 +381,13 @@ def check_machine_status(prep_model):
    
 
 def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
-    """Get the latest record for a machine"""
+    """Get the latest record for a machine - UPDATED to include model_name"""
     latest_prep = prep_model.objects.first()
     if not latest_prep:
         return None
+    
+    # Get model_name (NEW)
+    model_name = getattr(latest_prep, 'model_name', 'N/A')
     
     # Determine QR code field based on machine type - FINAL CORRECTED MAPPINGS
     if machine_type == 'painting':
@@ -323,12 +395,16 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         qr_value = latest_prep.qr_data_housing  # Primary display & matching
         qr_piston = latest_prep.qr_data_piston  # Secondary display only
         post = post_model.objects.filter(qr_data_housing=qr_value).first()
+        model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
+        model_name_piston = getattr(latest_prep, 'model_name_piston', 'N/A')
         
     elif machine_type == 'lubrication':
         # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
         qr_value = latest_prep.qr_data_piston  # Primary display & matching
         qr_housing = latest_prep.qr_data_housing  # Secondary display only
         post = post_model.objects.filter(qr_data_piston=qr_value).first()
+        model_name_piston = getattr(latest_prep, 'model_name_piston', 'N/A')
+        model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
         
     elif machine_type == 'op80':
         # OP80: Match prep.qr_data_housing with post.qr_data_housing_new
@@ -336,6 +412,8 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         qr_value = latest_prep.qr_data_piston  # Primary display (piston)
         qr_housing = latest_prep.qr_data_housing  # This is what we match!
         post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
+        model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
+        model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
         
     else:
         # Standard machines: use qr_data
@@ -382,15 +460,22 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         'post_status': post.status if post else 'Pending',
         'has_post': post is not None,
         'gauge_values': gauge_values,
+        'model_name': model_name,  # NEW
     }
     
-    # Add additional QR codes for special machines
+    # Add additional QR codes and model names for special machines
     if machine_type == 'painting':
         result['qr_piston'] = qr_piston
+        result['model_name_housing'] = model_name_housing
+        result['model_name_piston'] = model_name_piston
     elif machine_type == 'lubrication':
         result['qr_housing'] = qr_housing
+        result['model_name_piston'] = model_name_piston
+        result['model_name_housing'] = model_name_housing
     elif machine_type == 'op80':
         result['qr_housing'] = qr_housing
+        result['model_name_internal'] = model_name_internal
+        result['model_name_external'] = model_name_external
     
     return result
 
@@ -399,12 +484,17 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
          
 
 def get_latest_assembly_record(prep_model, post_model):
-    """Get the latest record for assembly machine"""
+    """Get the latest record for assembly machine - UPDATED to include model_names"""
     latest_prep = prep_model.objects.first()
     if not latest_prep:
         return None
     
     qr_internal = latest_prep.qr_data_internal
+    
+    # Get model names (NEW)
+    model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
+    model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
+    model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
     
     # Format timestamp - handle DateTimeField
     prep_timestamp = latest_prep.timestamp_internal
@@ -420,6 +510,9 @@ def get_latest_assembly_record(prep_model, post_model):
         'prep_timestamp': timestamp_str,
         'post_status': latest_prep.status if latest_prep.status else 'Pending',
         'has_post': latest_prep.qr_data_external is not None,
+        'model_name_internal': model_name_internal,  # NEW
+        'model_name_external': model_name_external,  # NEW
+        'model_name_housing': model_name_housing,    # NEW
     }
 
 
@@ -436,19 +529,22 @@ def dashboard_view(request):
         
         # Determine machine type for data retrieval
         machine_type = 'standard'
-        if config['name'] == 'Painting':
+        if 'Painting' in config['name']:
             machine_type = 'painting'
-        elif config['name'] == 'Lubrication':
+        elif 'Lubrication' in config['name']:
             machine_type = 'lubrication'
         
         latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
         
         machines_data.append({
             'name': config['name'],
+            'display_name': config['display_name'],
+            'ip': config['ip'],
+            'op_code': config['op_code'],
             'type': config['type'],
             'is_active': is_active,
             'is_assembly': False,
-            'machine_id': config['name'].lower().replace(' ', '_').replace('-', '_'),
+            'machine_id': config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_'),
             'latest_record': latest_record,
         })
     
@@ -458,6 +554,9 @@ def dashboard_view(request):
         
         machines_data.append({
             'name': config['name'],
+            'display_name': config['display_name'],
+            'ip': config['ip'],
+            'op_code': config['op_code'],
             'type': 'assembly',
             'is_active': is_active,
             'is_assembly': True,
@@ -475,6 +574,9 @@ def dashboard_view(request):
     
     machines_data.append({
         'name': OP80_CONFIG['name'],
+        'display_name': OP80_CONFIG['display_name'],
+        'ip': OP80_CONFIG['ip'],
+        'op_code': OP80_CONFIG['op_code'],
         'type': 'op80',
         'is_active': is_active,
         'is_assembly': False,
@@ -490,7 +592,8 @@ def machine_detail_view(request, machine_name):
     is_assembly = False
     
     for m in MACHINE_CONFIGS:
-        if m['name'].lower().replace(' ', '_').replace('-', '_') == machine_name:
+        machine_id = m['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        if machine_id == machine_name:
             config = m
             break
     
@@ -511,11 +614,11 @@ def machine_detail_view(request, machine_name):
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
     else:
         machine_type = 'standard'
-        if config['name'] == 'Painting':
+        if 'Painting' in config['name']:
             machine_type = 'painting'
-        elif config['name'] == 'Lubrication':
+        elif 'Lubrication' in config['name']:
             machine_type = 'lubrication'
-        elif config['name'] == 'OP80 Leak Test':
+        elif 'Oring_leak' in config['name']:
             machine_type = 'op80'
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
     
@@ -533,6 +636,9 @@ def machine_detail_view(request, machine_name):
     
     context = {
         'machine_name': config['name'],
+        'display_name': config.get('display_name', config['name']),
+        'ip': config.get('ip', 'N/A'),
+        'op_code': config.get('op_code', 'N/A'),
         'machine_type': machine_type,  # Add machine_type to context
         'is_active': is_active,
         'records': records,
@@ -552,7 +658,8 @@ def machine_data_api(request, machine_name):
     is_assembly = False
     
     for m in MACHINE_CONFIGS:
-        if m['name'].lower().replace(' ', '_').replace('-', '_') == machine_name:
+        machine_id = m['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        if machine_id == machine_name:
             config = m
             break
     
@@ -575,11 +682,11 @@ def machine_data_api(request, machine_name):
         machine_type = 'assembly'
     else:
         machine_type = 'standard'
-        if config['name'] == 'Painting':
+        if 'Painting' in config['name']:
             machine_type = 'painting'
-        elif config['name'] == 'Lubrication':
+        elif 'Lubrication' in config['name']:
             machine_type = 'lubrication'
-        elif config['name'] == 'OP80 Leak Test':
+        elif 'Oring_leak' in config['name']:
             machine_type = 'op80'
         
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
@@ -594,6 +701,9 @@ def machine_data_api(request, machine_name):
     
     return JsonResponse({
         'machine_name': config['name'],
+        'display_name': config.get('display_name', config['name']),
+        'ip': config.get('ip', 'N/A'),
+        'op_code': config.get('op_code', 'N/A'),
         'machine_type': machine_type,  # Add machine_type to response
         'is_active': is_active,
         'records': records,
@@ -611,21 +721,21 @@ def search_qr_code(request):
     results = []
     
     for config in MACHINE_CONFIGS:
-        if config['name'] == 'Painting':
+        if 'Painting' in config['name']:
             # Painting: search both qr_data_housing and qr_data_piston in prep
             # Search qr_data_housing in post
             prep_records = config['prep_model'].objects.filter(
                 Q(qr_data_housing__icontains=qr_code) | Q(qr_data_piston__icontains=qr_code)
             )
             post_records = config['post_model'].objects.filter(qr_data_housing__icontains=qr_code)
-        elif config['name'] == 'Lubrication':
+        elif 'Lubrication' in config['name']:
             # Lubrication: search both qr_data_piston and qr_data_housing in prep
             # Search qr_data_piston in post
             prep_records = config['prep_model'].objects.filter(
                 Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
             )
             post_records = config['post_model'].objects.filter(qr_data_piston__icontains=qr_code)
-        elif config['name'] == 'OP80 Leak Test':
+        elif 'Oring_leak' in config['name']:
             # OP80: search qr_data_piston and qr_data_housing in prep
             # Search qr_data_housing_new in post (FIXED!)
             prep_records = config['prep_model'].objects.filter(
@@ -640,6 +750,7 @@ def search_qr_code(request):
         if prep_records.exists() or post_records.exists():
             results.append({
                 'machine': config['name'],
+                'display_name': config.get('display_name', config['name']),
                 'preprocessing_count': prep_records.count(),
                 'postprocessing_count': post_records.count(),
             })
@@ -654,23 +765,24 @@ def search_qr_code(request):
         if prep_records.exists():
             results.append({
                 'machine': config['name'],
+                'display_name': config.get('display_name', config['name']),
                 'preprocessing_count': prep_records.count(),
                 'postprocessing_count': 0,
             })
     
-    # Search OP80 (if not already covered in MACHINE_CONFIGS)
-    if 'OP80 Leak Test' not in [config['name'] for config in MACHINE_CONFIGS]:
-        prep_records = OP80_CONFIG['prep_model'].objects.filter(
-            Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
-        )
-        post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)  # CHANGED
-        
-        if prep_records.exists() or post_records.exists():
-            results.append({
-                'machine': OP80_CONFIG['name'],
-                'preprocessing_count': prep_records.count(),
-                'postprocessing_count': post_records.count(),
-            })
+    # Search OP80
+    prep_records = OP80_CONFIG['prep_model'].objects.filter(
+        Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
+    )
+    post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)  # CHANGED
+    
+    if prep_records.exists() or post_records.exists():
+        results.append({
+            'machine': OP80_CONFIG['name'],
+            'display_name': OP80_CONFIG.get('display_name', OP80_CONFIG['name']),
+            'preprocessing_count': prep_records.count(),
+            'postprocessing_count': post_records.count(),
+        })
 
     return JsonResponse({'qr_code': qr_code, 'results': results})
 
@@ -683,7 +795,8 @@ def export_machine_data(request, machine_name):
     is_assembly = False
     
     for m in MACHINE_CONFIGS:
-        if m['name'].lower().replace(' ', '_').replace('-', '_') == machine_name:
+        machine_id = m['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        if machine_id == machine_name:
             config = m
             break
     
@@ -703,9 +816,9 @@ def export_machine_data(request, machine_name):
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
     else:
         machine_type = 'standard'
-        if config['name'] == 'Painting':
+        if 'Painting' in config['name']:
             machine_type = 'painting'
-        elif config['name'] == 'Lubrication':
+        elif 'Lubrication' in config['name']:
             machine_type = 'lubrication'
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
     
@@ -715,27 +828,38 @@ def export_machine_data(request, machine_name):
     writer = csv.writer(response)
     
     if is_assembly:
-        writer.writerow(['ID', 'QR Internal', 'QR External', 'QR Housing', 'Prep Timestamp', 
-                        'Post Timestamp', 'Status', 'Overall Status'])
+        writer.writerow(['ID', 'QR Internal', 'QR External', 'QR Housing', 'Model Internal', 'Model External', 'Model Housing',
+                        'Prep Timestamp', 'Post Timestamp', 'Status', 'Overall Status'])
         for record in records:
             writer.writerow([
                 record['prep_id'], record['qr_code'], record.get('qr_external', '-'),
-                record.get('qr_housing', '-'), record['prep_timestamp'],
+                record.get('qr_housing', '-'), 
+                record.get('model_name_internal', 'N/A'), record.get('model_name_external', 'N/A'), record.get('model_name_housing', 'N/A'),
+                record['prep_timestamp'],
                 record['post_timestamp'] or '-', record['post_status'] or '-',
                 record['overall_status'],
             ])
     else:
-        writer.writerow(['ID', 'QR Code', 'Prep Timestamp', 'Post Timestamp', 
+        writer.writerow(['ID', 'QR Code', 'Model Name', 'Prep Timestamp', 'Post Timestamp', 
                         'Status', 'Overall Status', 'Gauge Values'])
         for record in records:
             writer.writerow([
-                record['prep_id'], record['qr_code'], record['prep_timestamp'],
+                record['prep_id'], record['qr_code'], record.get('model_name', 'N/A'),
+                record['prep_timestamp'],
                 record['post_timestamp'] or '-', record['post_status'] or '-',
                 record['overall_status'], record.get('gauge_values', '-') or '-',
             ])
     
     return response
 
+
+# ============================================================================
+# REST OF THE FILE CONTINUES WITH SSE AND ANALYTICS (unchanged from original)
+# ... [keeping the rest of your existing code for sse_dashboard_stream, 
+#      sse_machine_stream, analytics functions, etc.]
+# ============================================================================
+
+# [COPY THE REST OF YOUR ORIGINAL VIEWS FILE HERE - SSE streaming functions and analytics]
 
 # ============================================================================
 # REAL-TIME STREAMING (SSE)
@@ -753,16 +877,19 @@ def get_dashboard_summary():
     for config in MACHINE_CONFIGS:
         is_active = check_machine_status(config['prep_model'])
         machine_type = 'standard'
-        if config['name'] == 'Painting':
+        if 'Painting' in config['name']:
             machine_type = 'painting'
-        elif config['name'] == 'Lubrication':
+        elif 'Lubrication' in config['name']:
             machine_type = 'lubrication'
         
         latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
         
         machines_data.append({
             'name': config['name'],
-            'machine_id': config['name'].lower().replace(' ', '_').replace('-', '_'),
+            'display_name': config.get('display_name', config['name']),
+            'ip': config.get('ip', 'N/A'),
+            'op_code': config.get('op_code', 'N/A'),
+            'machine_id': config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_'),
             'is_active': is_active,
             'latest_record': latest_record,
         })
@@ -773,11 +900,32 @@ def get_dashboard_summary():
         
         machines_data.append({
             'name': config['name'],
+            'display_name': config.get('display_name', config['name']),
+            'ip': config.get('ip', 'N/A'),
+            'op_code': config.get('op_code', 'N/A'),
             'machine_id': config['name'].lower().replace(' ', '_'),
             'is_active': is_active,
             'latest_record': latest_record,
             'is_assembly': True,
         })
+    
+    # Add OP80
+    is_active = check_machine_status(OP80_CONFIG['prep_model'])
+    latest_record = get_latest_machine_record(
+        OP80_CONFIG['prep_model'], 
+        OP80_CONFIG['post_model'], 
+        'op80'
+    )
+    
+    machines_data.append({
+        'name': OP80_CONFIG['name'],
+        'display_name': OP80_CONFIG.get('display_name', OP80_CONFIG['name']),
+        'ip': OP80_CONFIG.get('ip', 'N/A'),
+        'op_code': OP80_CONFIG.get('op_code', 'N/A'),
+        'machine_id': 'op80_leak_test',
+        'is_active': is_active,
+        'latest_record': latest_record,
+    })
     
     return machines_data
 
@@ -799,7 +947,7 @@ def sse_dashboard_stream(request):
             try:
                 # Check for changes
                 changed = False
-                for config in MACHINE_CONFIGS + ASSEMBLY_CONFIGS:
+                for config in MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]:
                     prep_table = config['prep_model']._meta.db_table
                     post_table = config['post_model']._meta.db_table
                     
@@ -854,7 +1002,8 @@ def sse_machine_stream(request, machine_name):
     is_assembly = False
     
     for m in MACHINE_CONFIGS:
-        if m['name'].lower().replace(' ', '_').replace('-', '_') == machine_name:
+        machine_id = m['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        if machine_id == machine_name:
             config = m
             break
     
@@ -892,10 +1041,12 @@ def sse_machine_stream(request, machine_name):
                         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
                     else:
                         machine_type = 'standard'
-                        if config['name'] == 'Painting':
+                        if 'Painting' in config['name']:
                             machine_type = 'painting'
-                        elif config['name'] == 'Lubrication':
+                        elif 'Lubrication' in config['name']:
                             machine_type = 'lubrication'
+                        elif 'Oring_leak' in config['name']:
+                            machine_type = 'op80'
                         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
                     
                     is_active = check_machine_status(config['prep_model'])
@@ -910,6 +1061,9 @@ def sse_machine_stream(request, machine_name):
                     data = json.dumps({
                         'type': 'update',
                         'machine_name': config['name'],
+                        'display_name': config.get('display_name', config['name']),
+                        'ip': config.get('ip', 'N/A'),
+                        'op_code': config.get('op_code', 'N/A'),
                         'is_active': is_active,
                         'records': records,
                         'is_assembly': is_assembly,
@@ -935,68 +1089,12 @@ def sse_machine_stream(request, machine_name):
 
 
 # ============================================================================
-# ANALYTICS VIEWS - FINAL WORKING VERSION
-# Add this section to your views.py (replace the existing analytics section)
+# ANALYTICS VIEWS
 # ============================================================================
-
-from collections import defaultdict
-from datetime import datetime, timedelta
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
-import csv
-
 
 def analytics_view(request):
     """Main analytics page"""
     return render(request, 'dashboard/analytics.html')
-
-
-def parse_timestamp_to_datetime(timestamp):
-    """Convert timestamp string "10/11/2025, 3:40:33 pm" to datetime object"""
-    if timestamp is None:
-        return None
-    
-    # Already a datetime
-    if hasattr(timestamp, 'strftime'):
-        return timestamp
-    
-    # Try parsing string
-    if isinstance(timestamp, str):
-        # Try DD/MM/YYYY format: "10/11/2025, 3:40:33 pm"
-        try:
-            return datetime.strptime(timestamp, '%d/%m/%Y, %I:%M:%S %p')
-        except:
-            pass
-        
-        # Try MM/DD/YYYY format (US)
-        try:
-            return datetime.strptime(timestamp, '%m/%d/%Y, %I:%M:%S %p')
-        except:
-            pass
-        
-        # Try other common formats
-        formats = [
-            '%Y-%m-%d %H:%M:%S',
-            '%Y-%m-%d %H:%M:%S.%f',
-            '%d-%m-%Y %H:%M:%S',
-            '%m-%d-%Y %H:%M:%S',
-        ]
-        
-        for fmt in formats:
-            try:
-                return datetime.strptime(timestamp, fmt)
-            except:
-                continue
-        
-        # Try ISO format
-        try:
-            return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-        except:
-            pass
-    
-    return None
 
 
 def is_in_date_range(timestamp, start_date, end_date):
@@ -1041,7 +1139,7 @@ def get_machine_config_by_id(machine_id):
         return None
     
     for config in MACHINE_CONFIGS:
-        config_id = config['name'].lower().replace(' ', '_').replace('-', '_')
+        config_id = config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
         if config_id == machine_id:
             return config
     
@@ -1056,7 +1154,7 @@ def get_machine_config_by_id(machine_id):
     return None
 
 def collect_analytics_data(start_date, end_date, machine_filter='all', status_filter='all'):
-    """Collect analytics data from all machines"""
+    """Collect analytics data from all machines - UPDATED to include model_name info"""
     data = {
         'total_parts': 0,
         'ok_parts': 0,
@@ -1067,7 +1165,8 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         'hourly_data': {'labels': [], 'values': []},
         'trend_data': {'labels': [], 'values': []},
         'detailed_data': [],
-        'active_machines': 0
+        'active_machines': 0,
+        'model_breakdown': {}  # NEW: breakdown by model_name
     }
     
     all_records = []
@@ -1084,7 +1183,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     # Collect data from each machine
     for config in configs_to_query:
         machine_name = config['name']
-        is_assembly = 'Assembly' in machine_name
+        is_assembly = 'OP40' in machine_name
         
         # Check if machine is active (has recent records)
         try:
@@ -1102,6 +1201,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         
         machine_stats = {
             'machine': machine_name,
+            'display_name': config.get('display_name', machine_name),
             'ok': 0,
             'ng': 0,
             'pending': 0
@@ -1118,32 +1218,34 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             if not is_in_date_range(timestamp, start_date, end_date):
                 continue
             
-            # Get QR code and status based on machine type - FINAL CORRECTED MAPPINGS
+            # Get model_name (NEW)
+            if is_assembly:
+                model_name = getattr(prep, 'model_name_internal', 'N/A')
+            else:
+                model_name = getattr(prep, 'model_name', 'N/A')
+            
+            # Get QR code and status based on machine type
             if is_assembly:
                 qr_value = prep.qr_data_internal
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
                 
-            elif machine_name == 'Painting':
-                # Painting: Match prep.qr_data_housing with post.qr_data_housing
+            elif 'Painting' in machine_name:
                 qr_value = prep.qr_data_housing
                 post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
                 status = post.status if post else 'Pending'
                 
-            elif machine_name == 'Lubrication':
-                # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
+            elif 'Lubrication' in machine_name:
                 qr_value = prep.qr_data_piston
                 post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
                 status = post.status if post else 'Pending'
                 
-            elif machine_name == 'OP80 Leak Test':
-                # OP80: Match prep.qr_data_housing with post.qr_data_housing_new
-                qr_value = prep.qr_data_piston  # Display this
-                qr_housing = prep.qr_data_housing  # Match this
+            elif 'Oring_leak' in machine_name:
+                qr_value = prep.qr_data_piston
+                qr_housing = prep.qr_data_housing
                 post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
                 status = post.status if post else 'Pending'
                 
             else:
-                # Standard machines: use qr_data
                 qr_value = prep.qr_data
                 post = config['post_model'].objects.filter(qr_data=qr_value).first()
                 status = post.status if post else 'Pending'
@@ -1164,12 +1266,25 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
                 data['pending_parts'] += 1
                 machine_stats['pending'] += 1
             
+            # Track model breakdown (NEW)
+            if model_name not in data['model_breakdown']:
+                data['model_breakdown'][model_name] = {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0}
+            data['model_breakdown'][model_name]['total'] += 1
+            if status == 'OK':
+                data['model_breakdown'][model_name]['ok'] += 1
+            elif status == 'NG':
+                data['model_breakdown'][model_name]['ng'] += 1
+            else:
+                data['model_breakdown'][model_name]['pending'] += 1
+            
             # Store record for timeline
             all_records.append({
                 'machine': machine_name,
+                'display_name': config.get('display_name', machine_name),
                 'qr_code': qr_value,
                 'timestamp': timestamp,
                 'status': status,
+                'model_name': model_name,  # NEW
             })
         
         # Add machine stats if it has data
@@ -1181,10 +1296,8 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         """Convert timestamp to timezone-aware datetime for sorting"""
         dt = parse_timestamp_to_datetime(record['timestamp'])
         if dt is None:
-            # Return a very old timezone-aware datetime for None values
             return timezone.make_aware(datetime.min.replace(year=1900))
         
-        # Ensure datetime is timezone-aware
         if timezone.is_naive(dt):
             dt = timezone.make_aware(dt)
         
@@ -1303,13 +1416,14 @@ def analytics_export(request):
     
     # Write machine breakdown
     writer.writerow(['Machine Breakdown'])
-    writer.writerow(['Machine', 'OK', 'NG', 'Pending', 'Total', 'Yield Rate %'])
+    writer.writerow(['Machine', 'Display Name', 'OK', 'NG', 'Pending', 'Total', 'Yield Rate %'])
     for machine in data['machine_stats']:
         total = machine['ok'] + machine['ng'] + machine['pending']
         completed = machine['ok'] + machine['ng']
         yield_rate = (machine['ok'] / completed * 100) if completed > 0 else 0
         writer.writerow([
             machine['machine'],
+            machine.get('display_name', machine['machine']),
             machine['ok'],
             machine['ng'],
             machine['pending'],
@@ -1318,13 +1432,32 @@ def analytics_export(request):
         ])
     writer.writerow([])
     
+    # Write model breakdown (NEW)
+    if data['model_breakdown']:
+        writer.writerow(['Model Breakdown'])
+        writer.writerow(['Model Name', 'OK', 'NG', 'Pending', 'Total', 'Yield Rate %'])
+        for model_name, stats in data['model_breakdown'].items():
+            completed = stats['ok'] + stats['ng']
+            yield_rate = (stats['ok'] / completed * 100) if completed > 0 else 0
+            writer.writerow([
+                model_name,
+                stats['ok'],
+                stats['ng'],
+                stats['pending'],
+                stats['total'],
+                f"{yield_rate:.2f}"
+            ])
+        writer.writerow([])
+    
     # Write detailed data
     writer.writerow(['Detailed Records'])
-    writer.writerow(['Machine', 'QR Code', 'Timestamp', 'Status'])
+    writer.writerow(['Machine', 'Display Name', 'Model Name', 'QR Code', 'Timestamp', 'Status'])
     for record in data['detailed_data']:
         timestamp_str = record['timestamp'] if isinstance(record['timestamp'], str) else record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
         writer.writerow([
             record['machine'],
+            record.get('display_name', record['machine']),
+            record.get('model_name', 'N/A'),
             record['qr_code'],
             timestamp_str,
             record['status'],
