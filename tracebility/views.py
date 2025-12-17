@@ -13,7 +13,7 @@ from . import models
 
 
 # ============================================================================
-# MACHINE CONFIGURATIONS - With IP addresses and proper names
+# MACHINE CONFIGURATIONS - UPDATED WITH SEPARATE LOAD/UNLOAD FOR WASHING
 # ============================================================================
 
 MACHINE_CONFIGS = [
@@ -34,12 +34,12 @@ MACHINE_CONFIGS = [
     {'name': 'Honing1(140A)', 'display_name': 'Honing 1', 'ip': '192.168.1.110', 'op_code': 'op-140A', 'prep_model': models.Honing1Preprocessing, 'post_model': models.Honing1Postprocessing, 'type': 'honing'},
     {'name': 'Honing2(140B)', 'display_name': 'Honing 2', 'ip': '192.168.1.111', 'op_code': 'op-140B', 'prep_model': models.Honing2Preprocessing, 'post_model': models.Honing2Postprocessing, 'type': 'honing'},
     
-    # Processing Machines
-    {'name': 'Prewashing_Loading(op-150)', 'display_name': 'Prewashing Load', 'ip': '192.168.1.112', 'op_code': 'op-150', 'prep_model': models.PrewashingPreprocessing, 'post_model': models.PrewashingPostprocessing, 'type': 'processing'},
-    {'name': 'Prewashing_Unloading(op-150)', 'display_name': 'Prewashing Unload', 'ip': '192.168.1.113', 'op_code': 'op-150', 'prep_model': models.PrewashingPreprocessing, 'post_model': models.PrewashingPostprocessing, 'type': 'processing'},
+    # UPDATED: Washing Machines - Separate Load and Unload
+    {'name': 'Prewashing_Loading(op-150)', 'display_name': 'Prewashing Load', 'ip': '192.168.1.112', 'op_code': 'op-150', 'prep_model': models.PrewashingPreprocessing, 'post_model': None, 'type': 'washing', 'operation': 'load'},
+    {'name': 'Prewashing_Unloading(op-150)', 'display_name': 'Prewashing Unload', 'ip': '192.168.1.113', 'op_code': 'op-150', 'prep_model': None, 'post_model': models.PrewashingPostprocessing, 'type': 'washing', 'operation': 'unload'},
     {'name': 'Deburring(op-160)', 'display_name': 'Deburring', 'ip': '192.168.1.131', 'op_code': 'op-160', 'prep_model': models.DeburringPreprocessing, 'post_model': models.DeburringPostprocessing, 'type': 'processing'},
-    {'name': 'Finlwashing_loading(op-170)', 'display_name': 'Final Washing Load', 'ip': '192.168.1.115', 'op_code': 'op-170', 'prep_model': models.FinalwashingPreprocessing, 'post_model': models.FinalwashingPostprocessing, 'type': 'processing'},
-    {'name': 'Finlwashing_Unloading(op-170)', 'display_name': 'Final Washing Unload', 'ip': '192.168.1.116', 'op_code': 'op-170', 'prep_model': models.FinalwashingPreprocessing, 'post_model': models.FinalwashingPostprocessing, 'type': 'processing'},
+    {'name': 'Finlwashing_loading(op-170)', 'display_name': 'Final Washing Load', 'ip': '192.168.1.115', 'op_code': 'op-170', 'prep_model': models.FinalwashingPreprocessing, 'post_model': None, 'type': 'washing', 'operation': 'load'},
+    {'name': 'Finlwashing_Unloading(op-170)', 'display_name': 'Final Washing Unload', 'ip': '192.168.1.116', 'op_code': 'op-170', 'prep_model': None, 'post_model': models.FinalwashingPostprocessing, 'type': 'washing', 'operation': 'unload'},
     
     # Painting
     {'name': 'Painting(op85)', 'display_name': 'Painting', 'ip': '192.168.1.122', 'op_code': 'op-85', 'prep_model': models.PaintingPreprocessing, 'post_model': models.PaintingPostprocessing, 'type': 'painting'},
@@ -112,8 +112,135 @@ def get_machines_list_api(request):
 
 
 # ============================================================================
-# HELPER FUNCTIONS
+# NEW: WASHING MACHINE HELPER FUNCTIONS
 # ============================================================================
+
+def get_washing_load_data(prep_model):
+    """Get Load data for washing machines (Preprocessing only)"""
+    records = []
+    
+    if not prep_model:
+        return records
+    
+    prep_records = prep_model.objects.all()[:100]
+    
+    for prep in prep_records:
+        model_name = getattr(prep, 'model_name', 'N/A')
+        
+        record = {
+            'prep_id': prep.id,
+            'prep_timestamp': prep.timestamp,
+            'qr_code': getattr(prep, 'qr_data', '-'),
+            'prep_status': getattr(prep, 'status', 'OK'),
+            'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+            'model_name': model_name,
+            'post_id': None,
+            'post_timestamp': None,
+            'post_status': 'N/A',  # Load doesn't have postprocessing
+            'overall_status': getattr(prep, 'status', 'OK'),
+            'status_class': 'load-only',
+            'sort_priority': 1,
+        }
+        records.append(record)
+    
+    return records
+
+
+def get_washing_unload_data(post_model):
+    """Get Unload data for washing machines (Postprocessing only)"""
+    records = []
+    
+    if not post_model:
+        return records
+    
+    post_records = post_model.objects.all()[:100]
+    
+    for post in post_records:
+        model_name = getattr(post, 'model_name', 'N/A')
+        
+        record = {
+            'prep_id': None,
+            'prep_timestamp': None,
+            'qr_code': getattr(post, 'qr_data', '-'),
+            'prep_status': 'N/A',  # Unload doesn't have preprocessing
+            'previous_machine_status': getattr(post, 'previous_machine_status', '-'),
+            'model_name': model_name,
+            'post_id': post.id,
+            'post_timestamp': post.timestamp,
+            'post_status': getattr(post, 'status', 'OK'),
+            'overall_status': getattr(post, 'status', 'OK'),
+            'status_class': 'unload-only',
+            'sort_priority': 1,
+        }
+        records.append(record)
+    
+    return records
+
+
+def get_latest_washing_load_record(prep_model):
+    """Get the latest load (preprocessing) record"""
+    if not prep_model:
+        return None
+    
+    try:
+        prep = prep_model.objects.first()
+        if not prep:
+            return None
+        
+        # Format timestamp
+        prep_timestamp = prep.timestamp
+        if hasattr(prep_timestamp, 'isoformat'):
+            timestamp_str = prep_timestamp.isoformat()
+        else:
+            timestamp_str = str(prep_timestamp)
+        
+        return {
+            'prep_timestamp': timestamp_str,
+            'qr_code': getattr(prep, 'qr_data', '-'),
+            'post_status': 'LOAD',  # Indicate this is a load operation
+            'prep_status': getattr(prep, 'status', 'OK'),
+            'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+            'model_name': getattr(prep, 'model_name', 'N/A'),
+        }
+    except Exception as e:
+        print(f"Error getting latest load record: {e}")
+        return None
+
+
+def get_latest_washing_unload_record(post_model):
+    """Get the latest unload (postprocessing) record"""
+    if not post_model:
+        return None
+    
+    try:
+        post = post_model.objects.first()
+        if not post:
+            return None
+        
+        # Format timestamp
+        post_timestamp = post.timestamp
+        if hasattr(post_timestamp, 'isoformat'):
+            timestamp_str = post_timestamp.isoformat()
+        else:
+            timestamp_str = str(post_timestamp)
+        
+        return {
+            'prep_timestamp': timestamp_str,  # Use post timestamp as main timestamp
+            'qr_code': getattr(post, 'qr_data', '-'),
+            'post_status': getattr(post, 'status', 'OK'),
+            'prep_status': 'UNLOAD',  # Indicate this is an unload operation
+            'previous_machine_status': getattr(post, 'previous_machine_status', '-'),
+            'model_name': getattr(post, 'model_name', 'N/A'),
+        }
+    except Exception as e:
+        print(f"Error getting latest unload record: {e}")
+        return None
+
+
+# ============================================================================
+# EXISTING HELPER FUNCTIONS (Keep all your existing functions here)
+# ============================================================================
+
 def get_machine_data(prep_model, post_model, machine_type='standard'):
     """Aggregate preprocessing and postprocessing data - UPDATED to include model_name"""
     records = []
@@ -122,25 +249,21 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
     for prep in prep_records:
         # Determine QR code field based on machine type
         if machine_type == 'painting':
-            # Painting: Match prep.qr_data_housing with post.qr_data_housing
             qr_value_housing_prep = prep.qr_data_housing
             qr_value_piston_prep = prep.qr_data_piston
             post = post_model.objects.filter(qr_data_housing=qr_value_housing_prep).first()
             
         elif machine_type == 'lubrication':
-            # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
             qr_value = prep.qr_data_piston
             qr_value_housing = prep.qr_data_housing
             post = post_model.objects.filter(qr_data_piston=qr_value).first()
             
         elif machine_type == 'op80':
-            # OP80: Match prep.qr_data_housing with post.qr_data_housing (NOT housing_new!)
             qr_value_piston = prep.qr_data_piston
             qr_value_housing = prep.qr_data_housing
             post = post_model.objects.filter(qr_data_housing=qr_value_housing).first()
             
         else:
-            # Standard machines: use qr_data
             qr_value = prep.qr_data
             post = post_model.objects.filter(qr_data=qr_value).first()
         
@@ -166,18 +289,14 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
                 if val is not None:
                     gauge_values[f'value{i}'] = val
         
-        # Get machine name
         machine_name = getattr(prep, 'machine_name', 'N/A')
-        
-        # Get model_name (NEW FIELD)
         model_name = getattr(prep, 'model_name', 'N/A')
         
-        # Build record dictionary
         record = {
             'prep_id': prep.id,
             'prep_timestamp': prep.timestamp,
             'prep_machine_name': machine_name,
-            'model_name': model_name,  # NEW FIELD
+            'model_name': model_name,
             'prep_status': 'OK',
             'qr_code': qr_value if machine_type not in ['painting', 'op80'] else (qr_value_housing_prep if machine_type == 'painting' else qr_value_piston),
             'post_id': post_id,
@@ -191,35 +310,27 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         
         # Add additional fields for special machines
         if machine_type == 'painting':
-            # PAINTING: Separate housing and piston QRs for prep and post
             record['qr_housing_prep'] = qr_value_housing_prep
             record['qr_housing_post'] = post.qr_data_housing if post else None
             record['qr_piston_prep'] = qr_value_piston_prep
             record['qr_piston_post'] = post.qr_data_piston if post else None
-            # PAINTING: Add status fields
             record['previous_machine_status'] = prep.previous_machine_status
             record['pre_status'] = prep.pre_status
-            # PAINTING: Add model names (NEW)
             record['model_name_housing'] = getattr(prep, 'model_name_housing', 'N/A')
             record['model_name_piston'] = getattr(prep, 'model_name_piston', 'N/A')
             
         elif machine_type == 'lubrication':
             record['qr_housing'] = qr_value_housing
-            # LUBRICATION: Add model names (NEW)
             record['model_name_piston'] = getattr(prep, 'model_name_piston', 'N/A')
             record['model_name_housing'] = getattr(prep, 'model_name_housing', 'N/A')
             
         elif machine_type == 'op80':
-            # OP80 PREP: piston and housing
             record['qr_piston'] = qr_value_piston
             record['qr_housing_prep'] = qr_value_housing
-            # OP80 PREP STATUS: only previous_machine_status
             record['previous_machine_status'] = prep.previous_machine_status
-            # OP80: Add model names (NEW)
             record['model_name_internal'] = getattr(prep, 'model_name_internal', 'N/A')
             record['model_name_external'] = getattr(prep, 'model_name_external', 'N/A')
             
-            # OP80 POST: housing and housing_new, match_status
             if post:
                 record['qr_housing_post'] = post.qr_data_housing
                 record['qr_housing_new'] = post.qr_data_housing_new
@@ -229,23 +340,20 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
     
     records.sort(key=lambda x: (x['sort_priority'], -x['prep_id']))
     return records
-    
+
 
 def get_assembly_machine_data(prep_model, post_model):
-    """Special handler for assembly machines (OP40 series) - UPDATED to include model_names"""
+    """Special handler for assembly machines (OP40 series)"""
     records = []
     prep_records = prep_model.objects.all()[:100]
     
     for prep in prep_records:
         qr_internal = prep.qr_data_internal
         
-        # Get model names (NEW)
         model_name_internal = getattr(prep, 'model_name_internal', 'N/A')
         model_name_external = getattr(prep, 'model_name_external', 'N/A')
         model_name_housing = getattr(prep, 'model_name_housing', 'N/A')
         
-        # For OP40 models, prep and post are the same table
-        # Check if external and housing data exists
         if prep.qr_data_external and prep.qr_data_housing:
             overall_status = prep.status or 'COMPLETE'
             status_class = 'completed-ok' if prep.status == 'OK' else 'completed-ng'
@@ -271,9 +379,9 @@ def get_assembly_machine_data(prep_model, post_model):
             'qr_code': qr_internal,
             'qr_external': qr_external,
             'qr_housing': qr_housing,
-            'model_name_internal': model_name_internal,  # NEW
-            'model_name_external': model_name_external,  # NEW
-            'model_name_housing': model_name_housing,    # NEW
+            'model_name_internal': model_name_internal,
+            'model_name_external': model_name_external,
+            'model_name_housing': model_name_housing,
             'post_id': post_id,
             'post_timestamp': post_timestamp,
             'post_status': post_status,
@@ -287,29 +395,24 @@ def get_assembly_machine_data(prep_model, post_model):
 
 
 def parse_timestamp_to_datetime(timestamp):
-    """Convert timestamp string "10/11/2025, 3:40:33 pm" to datetime object"""
+    """Convert timestamp string to datetime object"""
     if timestamp is None:
         return None
     
-    # Already a datetime
     if hasattr(timestamp, 'strftime'):
         return timestamp
     
-    # Try parsing string
     if isinstance(timestamp, str):
-        # Try DD/MM/YYYY format: "10/11/2025, 3:40:33 pm"
         try:
             return datetime.strptime(timestamp, '%d/%m/%Y, %I:%M:%S %p')
         except:
             pass
         
-        # Try MM/DD/YYYY format (US)
         try:
             return datetime.strptime(timestamp, '%m/%d/%Y, %I:%M:%S %p')
         except:
             pass
         
-        # Try other common formats
         formats = [
             '%Y-%m-%d %H:%M:%S',
             '%Y-%m-%d %H:%M:%S.%f',
@@ -323,7 +426,6 @@ def parse_timestamp_to_datetime(timestamp):
             except:
                 continue
         
-        # Try ISO format
         try:
             return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
         except:
@@ -331,8 +433,9 @@ def parse_timestamp_to_datetime(timestamp):
     
     return None
 
+
 def check_machine_status(prep_model):
-    """Check if machine is active - FIXED TIMEZONE VERSION"""
+    """Check if machine is active"""
     threshold = timezone.now() - timedelta(minutes=21)
     
     try:
@@ -340,7 +443,6 @@ def check_machine_status(prep_model):
         if not latest_record:
             return False
         
-        # Get timestamp field
         try:
             timestamp = latest_record.timestamp_internal
             field_name = 'timestamp_internal'
@@ -348,21 +450,17 @@ def check_machine_status(prep_model):
             timestamp = latest_record.timestamp
             field_name = 'timestamp'
         
-        # If it's a DateTimeField
         if hasattr(timestamp, 'timestamp'):
-            # Make sure timestamp is timezone-aware
             if timezone.is_naive(timestamp):
                 timestamp = timezone.make_aware(timestamp)
             
             is_active = timestamp >= threshold
             return is_active
         
-        # If it's a CharField
         if isinstance(timestamp, str):
             parsed_dt = parse_timestamp_to_datetime(timestamp)
             
             if parsed_dt:
-                # Make sure parsed datetime is timezone-aware
                 if timezone.is_naive(parsed_dt):
                     parsed_dt = timezone.make_aware(parsed_dt)
                 
@@ -378,49 +476,40 @@ def check_machine_status(prep_model):
         traceback.print_exc()
         return False
 
-   
 
 def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
-    """Get the latest record for a machine - UPDATED to include model_name"""
+    """Get the latest record for a machine"""
     latest_prep = prep_model.objects.first()
     if not latest_prep:
         return None
     
-    # Get model_name (NEW)
     model_name = getattr(latest_prep, 'model_name', 'N/A')
     
-    # Determine QR code field based on machine type - FINAL CORRECTED MAPPINGS
     if machine_type == 'painting':
-        # Painting: Match prep.qr_data_housing with post.qr_data_housing
-        qr_value = latest_prep.qr_data_housing  # Primary display & matching
-        qr_piston = latest_prep.qr_data_piston  # Secondary display only
+        qr_value = latest_prep.qr_data_housing
+        qr_piston = latest_prep.qr_data_piston
         post = post_model.objects.filter(qr_data_housing=qr_value).first()
         model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
         model_name_piston = getattr(latest_prep, 'model_name_piston', 'N/A')
         
     elif machine_type == 'lubrication':
-        # Lubrication: Match prep.qr_data_piston with post.qr_data_piston
-        qr_value = latest_prep.qr_data_piston  # Primary display & matching
-        qr_housing = latest_prep.qr_data_housing  # Secondary display only
+        qr_value = latest_prep.qr_data_piston
+        qr_housing = latest_prep.qr_data_housing
         post = post_model.objects.filter(qr_data_piston=qr_value).first()
         model_name_piston = getattr(latest_prep, 'model_name_piston', 'N/A')
         model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
         
     elif machine_type == 'op80':
-        # OP80: Match prep.qr_data_housing with post.qr_data_housing_new
-        # Display piston as primary, but match using housing!
-        qr_value = latest_prep.qr_data_piston  # Primary display (piston)
-        qr_housing = latest_prep.qr_data_housing  # This is what we match!
+        qr_value = latest_prep.qr_data_piston
+        qr_housing = latest_prep.qr_data_housing
         post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
         model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
         model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
         
     else:
-        # Standard machines: use qr_data
         qr_value = latest_prep.qr_data
         post = post_model.objects.filter(qr_data=qr_value).first()
     
-    # Get gauge values if applicable
     gauge_values = {}
     if post and hasattr(post, 'value1'):
         for i in range(1, 7):
@@ -428,31 +517,11 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
             if val is not None:
                 gauge_values[f'value{i}'] = val
     
-    # Format timestamp - handle both DateTimeField and CharField
     prep_timestamp = latest_prep.timestamp
     if hasattr(prep_timestamp, 'isoformat'):
         timestamp_str = prep_timestamp.isoformat()
     else:
-        try:
-            from datetime import datetime
-            if isinstance(prep_timestamp, str):
-                try:
-                    dt = datetime.fromisoformat(prep_timestamp.replace('Z', '+00:00'))
-                    timestamp_str = dt.isoformat()
-                except:
-                    for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%d-%m-%Y %H:%M:%S']:
-                        try:
-                            dt = datetime.strptime(prep_timestamp, fmt)
-                            timestamp_str = dt.isoformat()
-                            break
-                        except:
-                            continue
-                    else:
-                        timestamp_str = prep_timestamp
-            else:
-                timestamp_str = str(prep_timestamp)
-        except:
-            timestamp_str = str(prep_timestamp)
+        timestamp_str = str(prep_timestamp)
     
     result = {
         'qr_code': qr_value,
@@ -460,10 +529,9 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         'post_status': post.status if post else 'Pending',
         'has_post': post is not None,
         'gauge_values': gauge_values,
-        'model_name': model_name,  # NEW
+        'model_name': model_name,
     }
     
-    # Add additional QR codes and model names for special machines
     if machine_type == 'painting':
         result['qr_piston'] = qr_piston
         result['model_name_housing'] = model_name_housing
@@ -480,23 +548,18 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
     return result
 
 
-     
-         
-
 def get_latest_assembly_record(prep_model, post_model):
-    """Get the latest record for assembly machine - UPDATED to include model_names"""
+    """Get the latest record for assembly machine"""
     latest_prep = prep_model.objects.first()
     if not latest_prep:
         return None
     
     qr_internal = latest_prep.qr_data_internal
     
-    # Get model names (NEW)
     model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
     model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
     model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
     
-    # Format timestamp - handle DateTimeField
     prep_timestamp = latest_prep.timestamp_internal
     if hasattr(prep_timestamp, 'isoformat'):
         timestamp_str = prep_timestamp.isoformat()
@@ -510,31 +573,66 @@ def get_latest_assembly_record(prep_model, post_model):
         'prep_timestamp': timestamp_str,
         'post_status': latest_prep.status if latest_prep.status else 'Pending',
         'has_post': latest_prep.qr_data_external is not None,
-        'model_name_internal': model_name_internal,  # NEW
-        'model_name_external': model_name_external,  # NEW
-        'model_name_housing': model_name_housing,    # NEW
+        'model_name_internal': model_name_internal,
+        'model_name_external': model_name_external,
+        'model_name_housing': model_name_housing,
     }
 
 
 # ============================================================================
-# MAIN VIEWS
+# MAIN VIEWS - UPDATED WITH WASHING MACHINE SUPPORT
 # ============================================================================
 
 def dashboard_view(request):
-    """Main dashboard showing all machines"""
+    """Main dashboard showing all machines - UPDATED for washing machines"""
     machines_data = []
     
     for config in MACHINE_CONFIGS:
-        is_active = check_machine_status(config['prep_model'])
-        
-        # Determine machine type for data retrieval
-        machine_type = 'standard'
-        if 'Painting' in config['name']:
-            machine_type = 'painting'
-        elif 'Lubrication' in config['name']:
-            machine_type = 'lubrication'
-        
-        latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
+        # Handle washing machines separately
+        if config.get('type') == 'washing':
+            operation = config.get('operation', 'load')
+            
+            if operation == 'load' and config['prep_model']:
+                is_active = check_machine_status(config['prep_model'])
+                latest_record = get_latest_washing_load_record(config['prep_model'])
+            elif operation == 'unload' and config['post_model']:
+                try:
+                    latest_post = config['post_model'].objects.first()
+                    if latest_post:
+                        threshold = timezone.now() - timedelta(minutes=21)
+                        timestamp = latest_post.timestamp
+                        if hasattr(timestamp, 'timestamp'):
+                            if timezone.is_naive(timestamp):
+                                timestamp = timezone.make_aware(timestamp)
+                            is_active = timestamp >= threshold
+                        else:
+                            parsed_dt = parse_timestamp_to_datetime(timestamp)
+                            if parsed_dt:
+                                if timezone.is_naive(parsed_dt):
+                                    parsed_dt = timezone.make_aware(parsed_dt)
+                                is_active = parsed_dt >= threshold
+                            else:
+                                is_active = False
+                    else:
+                        is_active = False
+                except:
+                    is_active = False
+                
+                latest_record = get_latest_washing_unload_record(config['post_model'])
+            else:
+                is_active = False
+                latest_record = None
+        else:
+            # Regular machines
+            is_active = check_machine_status(config['prep_model'])
+            
+            machine_type = 'standard'
+            if 'Painting' in config['name']:
+                machine_type = 'painting'
+            elif 'Lubrication' in config['name']:
+                machine_type = 'lubrication'
+            
+            latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
         
         machines_data.append({
             'name': config['name'],
@@ -564,7 +662,7 @@ def dashboard_view(request):
             'latest_record': latest_record,
         })
     
-    # Add OP80 - Don't loop, just access the dictionary directly
+    # Add OP80
     is_active = check_machine_status(OP80_CONFIG['prep_model'])
     latest_record = get_latest_machine_record(
         OP80_CONFIG['prep_model'], 
@@ -586,6 +684,7 @@ def dashboard_view(request):
     
     return render(request, 'dashboard/dashboard.html', {'machines': machines_data})
 
+
 def machine_detail_view(request, machine_name):
     """Detail view for specific machine"""
     config = None
@@ -603,7 +702,7 @@ def machine_detail_view(request, machine_name):
                 config = m
                 is_assembly = True
                 break
-    # Check OP80
+    
     if not config and machine_name == 'op80_leak_test':
         config = OP80_CONFIG
     
@@ -612,6 +711,15 @@ def machine_detail_view(request, machine_name):
     
     if is_assembly:
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
+        machine_type = 'assembly'
+    elif config.get('type') == 'washing':
+        operation = config.get('operation', 'load')
+        machine_type = 'washing'
+        
+        if operation == 'load':
+            records = get_washing_load_data(config['prep_model'])
+        else:
+            records = get_washing_unload_data(config['post_model'])
     else:
         machine_type = 'standard'
         if 'Painting' in config['name']:
@@ -622,15 +730,14 @@ def machine_detail_view(request, machine_name):
             machine_type = 'op80'
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
     
-    is_active = check_machine_status(config['prep_model'])
+    is_active = check_machine_status(config['prep_model']) if config['prep_model'] else False
     
-    # Convert datetime objects to strings for JSON
     records_json = []
     for record in records:
         record_copy = record.copy()
-        if hasattr(record['prep_timestamp'], 'isoformat'):
+        if record.get('prep_timestamp') and hasattr(record['prep_timestamp'], 'isoformat'):
             record_copy['prep_timestamp'] = record['prep_timestamp'].isoformat()
-        if record['post_timestamp'] and hasattr(record['post_timestamp'], 'isoformat'):
+        if record.get('post_timestamp') and hasattr(record['post_timestamp'], 'isoformat'):
             record_copy['post_timestamp'] = record['post_timestamp'].isoformat()
         records_json.append(record_copy)
     
@@ -639,7 +746,7 @@ def machine_detail_view(request, machine_name):
         'display_name': config.get('display_name', config['name']),
         'ip': config.get('ip', 'N/A'),
         'op_code': config.get('op_code', 'N/A'),
-        'machine_type': machine_type,  # Add machine_type to context
+        'machine_type': machine_type,
         'is_active': is_active,
         'records': records,
         'records_json': json.dumps(records_json, cls=DjangoJSONEncoder),
@@ -649,11 +756,9 @@ def machine_detail_view(request, machine_name):
     return render(request, 'dashboard/machine_detail.html', context)
 
 
-
-
 @csrf_exempt
 def machine_data_api(request, machine_name):
-    """API endpoint for real-time updates and modal data"""
+    """API endpoint for real-time updates and modal data - UPDATED for washing machines"""
     config = None
     is_assembly = False
     
@@ -670,12 +775,55 @@ def machine_data_api(request, machine_name):
                 is_assembly = True
                 break
     
-    # Check OP80
     if not config and machine_name == 'op80_leak_test':
         config = OP80_CONFIG
 
     if not config:
         return JsonResponse({'error': 'Machine not found'}, status=404)
+    
+    # Handle washing machines
+    if config.get('type') == 'washing':
+        operation = config.get('operation', 'load')
+        machine_type = 'washing'
+        
+        if operation == 'load':
+            records = get_washing_load_data(config['prep_model'])
+            is_active = check_machine_status(config['prep_model']) if config['prep_model'] else False
+        else:
+            records = get_washing_unload_data(config['post_model'])
+            try:
+                latest_post = config['post_model'].objects.first()
+                if latest_post:
+                    threshold = timezone.now() - timedelta(minutes=21)
+                    timestamp = latest_post.timestamp
+                    if hasattr(timestamp, 'timestamp'):
+                        if timezone.is_naive(timestamp):
+                            timestamp = timezone.make_aware(timestamp)
+                        is_active = timestamp >= threshold
+                    else:
+                        is_active = False
+                else:
+                    is_active = False
+            except:
+                is_active = False
+        
+        for record in records:
+            if record.get('prep_timestamp') and hasattr(record['prep_timestamp'], 'isoformat'):
+                record['prep_timestamp'] = record['prep_timestamp'].isoformat()
+            if record.get('post_timestamp') and hasattr(record['post_timestamp'], 'isoformat'):
+                record['post_timestamp'] = record['post_timestamp'].isoformat()
+        
+        return JsonResponse({
+            'machine_name': config['name'],
+            'display_name': config.get('display_name', config['name']),
+            'ip': config.get('ip', 'N/A'),
+            'op_code': config.get('op_code', 'N/A'),
+            'machine_type': machine_type,
+            'operation': operation,
+            'is_active': is_active,
+            'records': records,
+            'is_assembly': False,
+        })
     
     if is_assembly:
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
@@ -704,7 +852,7 @@ def machine_data_api(request, machine_name):
         'display_name': config.get('display_name', config['name']),
         'ip': config.get('ip', 'N/A'),
         'op_code': config.get('op_code', 'N/A'),
-        'machine_type': machine_type,  # Add machine_type to response
+        'machine_type': machine_type,
         'is_active': is_active,
         'records': records,
         'is_assembly': is_assembly,
@@ -721,38 +869,54 @@ def search_qr_code(request):
     results = []
     
     for config in MACHINE_CONFIGS:
+        # Skip washing machines or handle specially
+        if config.get('type') == 'washing':
+            operation = config.get('operation', 'load')
+            if operation == 'load' and config['prep_model']:
+                prep_records = config['prep_model'].objects.filter(qr_data__icontains=qr_code)
+                if prep_records.exists():
+                    results.append({
+                        'machine': config['name'],
+                        'display_name': config.get('display_name', config['name']),
+                        'preprocessing_count': prep_records.count(),
+                        'postprocessing_count': 0,
+                    })
+            elif operation == 'unload' and config['post_model']:
+                post_records = config['post_model'].objects.filter(qr_data__icontains=qr_code)
+                if post_records.exists():
+                    results.append({
+                        'machine': config['name'],
+                        'display_name': config.get('display_name', config['name']),
+                        'preprocessing_count': 0,
+                        'postprocessing_count': post_records.count(),
+                    })
+            continue
+        
         if 'Painting' in config['name']:
-            # Painting: search both qr_data_housing and qr_data_piston in prep
-            # Search qr_data_housing in post
             prep_records = config['prep_model'].objects.filter(
                 Q(qr_data_housing__icontains=qr_code) | Q(qr_data_piston__icontains=qr_code)
             )
             post_records = config['post_model'].objects.filter(qr_data_housing__icontains=qr_code)
         elif 'Lubrication' in config['name']:
-            # Lubrication: search both qr_data_piston and qr_data_housing in prep
-            # Search qr_data_piston in post
             prep_records = config['prep_model'].objects.filter(
                 Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
             )
             post_records = config['post_model'].objects.filter(qr_data_piston__icontains=qr_code)
         elif 'Oring_leak' in config['name']:
-            # OP80: search qr_data_piston and qr_data_housing in prep
-            # Search qr_data_housing_new in post (FIXED!)
             prep_records = config['prep_model'].objects.filter(
                 Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
             )
-            post_records = config['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)  # CHANGED
+            post_records = config['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)
         else:
-            # Standard machines: use qr_data
             prep_records = config['prep_model'].objects.filter(qr_data__icontains=qr_code)
-            post_records = config['post_model'].objects.filter(qr_data__icontains=qr_code)
+            post_records = config['post_model'].objects.filter(qr_data__icontains=qr_code) if config['post_model'] else []
         
-        if prep_records.exists() or post_records.exists():
+        if prep_records.exists() or (post_records and post_records.exists()):
             results.append({
                 'machine': config['name'],
                 'display_name': config.get('display_name', config['name']),
                 'preprocessing_count': prep_records.count(),
-                'postprocessing_count': post_records.count(),
+                'postprocessing_count': post_records.count() if post_records else 0,
             })
     
     for config in ASSEMBLY_CONFIGS:
@@ -770,11 +934,10 @@ def search_qr_code(request):
                 'postprocessing_count': 0,
             })
     
-    # Search OP80
     prep_records = OP80_CONFIG['prep_model'].objects.filter(
         Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code)
     )
-    post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)  # CHANGED
+    post_records = OP80_CONFIG['post_model'].objects.filter(qr_data_housing_new__icontains=qr_code)
     
     if prep_records.exists() or post_records.exists():
         results.append({
@@ -785,8 +948,6 @@ def search_qr_code(request):
         })
 
     return JsonResponse({'qr_code': qr_code, 'results': results})
-
-
 
 
 def export_machine_data(request, machine_name):
@@ -814,6 +975,12 @@ def export_machine_data(request, machine_name):
     
     if is_assembly:
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
+    elif config.get('type') == 'washing':
+        operation = config.get('operation', 'load')
+        if operation == 'load':
+            records = get_washing_load_data(config['prep_model'])
+        else:
+            records = get_washing_unload_data(config['post_model'])
     else:
         machine_type = 'standard'
         if 'Painting' in config['name']:
@@ -844,9 +1011,9 @@ def export_machine_data(request, machine_name):
                         'Status', 'Overall Status', 'Gauge Values'])
         for record in records:
             writer.writerow([
-                record['prep_id'], record['qr_code'], record.get('model_name', 'N/A'),
-                record['prep_timestamp'],
-                record['post_timestamp'] or '-', record['post_status'] or '-',
+                record.get('prep_id') or record.get('post_id'), record['qr_code'], record.get('model_name', 'N/A'),
+                record.get('prep_timestamp') or '-',
+                record.get('post_timestamp') or '-', record.get('post_status') or '-',
                 record['overall_status'], record.get('gauge_values', '-') or '-',
             ])
     
@@ -854,19 +1021,13 @@ def export_machine_data(request, machine_name):
 
 
 # ============================================================================
-# REST OF THE FILE CONTINUES WITH SSE AND ANALYTICS (unchanged from original)
-# ... [keeping the rest of your existing code for sse_dashboard_stream, 
-#      sse_machine_stream, analytics functions, etc.]
-# ============================================================================
-
-# [COPY THE REST OF YOUR ORIGINAL VIEWS FILE HERE - SSE streaming functions and analytics]
-
-# ============================================================================
-# REAL-TIME STREAMING (SSE)
+# REAL-TIME STREAMING (SSE) - UPDATED FOR WASHING MACHINES
 # ============================================================================
 
 def get_latest_record_count(model):
     """Get the count of records for change detection"""
+    if not model:
+        return 0
     return model.objects.count()
 
 
@@ -875,14 +1036,42 @@ def get_dashboard_summary():
     machines_data = []
     
     for config in MACHINE_CONFIGS:
-        is_active = check_machine_status(config['prep_model'])
-        machine_type = 'standard'
-        if 'Painting' in config['name']:
-            machine_type = 'painting'
-        elif 'Lubrication' in config['name']:
-            machine_type = 'lubrication'
-        
-        latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
+        if config.get('type') == 'washing':
+            operation = config.get('operation', 'load')
+            
+            if operation == 'load' and config['prep_model']:
+                is_active = check_machine_status(config['prep_model'])
+                latest_record = get_latest_washing_load_record(config['prep_model'])
+            elif operation == 'unload' and config['post_model']:
+                try:
+                    latest_post = config['post_model'].objects.first()
+                    if latest_post:
+                        threshold = timezone.now() - timedelta(minutes=21)
+                        timestamp = latest_post.timestamp
+                        if hasattr(timestamp, 'timestamp'):
+                            if timezone.is_naive(timestamp):
+                                timestamp = timezone.make_aware(timestamp)
+                            is_active = timestamp >= threshold
+                        else:
+                            is_active = False
+                    else:
+                        is_active = False
+                except:
+                    is_active = False
+                
+                latest_record = get_latest_washing_unload_record(config['post_model'])
+            else:
+                is_active = False
+                latest_record = None
+        else:
+            is_active = check_machine_status(config['prep_model'])
+            machine_type = 'standard'
+            if 'Painting' in config['name']:
+                machine_type = 'painting'
+            elif 'Lubrication' in config['name']:
+                machine_type = 'lubrication'
+            
+            latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
         
         machines_data.append({
             'name': config['name'],
@@ -892,6 +1081,7 @@ def get_dashboard_summary():
             'machine_id': config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_'),
             'is_active': is_active,
             'latest_record': latest_record,
+            'type': config['type'],
         })
     
     for config in ASSEMBLY_CONFIGS:
@@ -907,9 +1097,9 @@ def get_dashboard_summary():
             'is_active': is_active,
             'latest_record': latest_record,
             'is_assembly': True,
+            'type': 'assembly',
         })
     
-    # Add OP80
     is_active = check_machine_status(OP80_CONFIG['prep_model'])
     latest_record = get_latest_machine_record(
         OP80_CONFIG['prep_model'], 
@@ -925,6 +1115,7 @@ def get_dashboard_summary():
         'machine_id': 'op80_leak_test',
         'is_active': is_active,
         'latest_record': latest_record,
+        'type': 'op80',
     })
     
     return machines_data
@@ -936,35 +1127,37 @@ def sse_dashboard_stream(request):
     def event_stream():
         last_counts = {}
         
-        # Initialize counts for all models
         for config in MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]:
-            prep_table = config['prep_model']._meta.db_table
-            post_table = config['post_model']._meta.db_table
-            last_counts[prep_table] = get_latest_record_count(config['prep_model'])
-            last_counts[post_table] = get_latest_record_count(config['post_model'])
+            if config.get('prep_model'):
+                prep_table = config['prep_model']._meta.db_table
+                last_counts[prep_table] = get_latest_record_count(config['prep_model'])
+            if config.get('post_model'):
+                post_table = config['post_model']._meta.db_table
+                last_counts[post_table] = get_latest_record_count(config['post_model'])
         
         while True:
             try:
-                # Check for changes
                 changed = False
                 for config in MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]:
-                    prep_table = config['prep_model']._meta.db_table
-                    post_table = config['post_model']._meta.db_table
+                    if config.get('prep_model'):
+                        prep_table = config['prep_model']._meta.db_table
+                        current_prep_count = get_latest_record_count(config['prep_model'])
+                        
+                        if current_prep_count != last_counts.get(prep_table, 0):
+                            changed = True
+                            last_counts[prep_table] = current_prep_count
                     
-                    current_prep_count = get_latest_record_count(config['prep_model'])
-                    current_post_count = get_latest_record_count(config['post_model'])
-                    
-                    if (current_prep_count != last_counts[prep_table] or 
-                        current_post_count != last_counts[post_table]):
-                        changed = True
-                        last_counts[prep_table] = current_prep_count
-                        last_counts[post_table] = current_post_count
+                    if config.get('post_model'):
+                        post_table = config['post_model']._meta.db_table
+                        current_post_count = get_latest_record_count(config['post_model'])
+                        
+                        if current_post_count != last_counts.get(post_table, 0):
+                            changed = True
+                            last_counts[post_table] = current_post_count
                 
                 if changed:
-                    # Get fresh data
                     machines_data = get_dashboard_summary()
                     
-                    # Prepare data for JSON serialization
                     for machine in machines_data:
                         if machine.get('latest_record') and machine['latest_record'].get('prep_timestamp'):
                             if hasattr(machine['latest_record']['prep_timestamp'], 'isoformat'):
@@ -977,9 +1170,8 @@ def sse_dashboard_stream(request):
                     
                     yield f"data: {data}\n\n"
                 
-                # Send heartbeat every 15 seconds
                 yield f": heartbeat\n\n"
-                time.sleep(2)  # Check every 2 seconds
+                time.sleep(2)
                 
             except GeneratorExit:
                 break
@@ -995,9 +1187,8 @@ def sse_dashboard_stream(request):
 
 
 def sse_machine_stream(request, machine_name):
-    """Server-Sent Events stream for specific machine updates"""
+    """Server-Sent Events stream for specific machine updates - UPDATED for washing machines"""
     
-    # Find the machine configuration
     config = None
     is_assembly = False
     
@@ -1016,19 +1207,37 @@ def sse_machine_stream(request, machine_name):
             
     if not config and machine_name == 'op80_leak_test':
         config = OP80_CONFIG
-
     
     if not config:
         return StreamingHttpResponse("Machine not found", status=404)
     
     def event_stream():
-        last_prep_count = get_latest_record_count(config['prep_model'])
-        last_post_count = get_latest_record_count(config['post_model'])
+        # Handle washing machines separately for counting
+        if config.get('type') == 'washing':
+            operation = config.get('operation', 'load')
+            if operation == 'load':
+                last_prep_count = get_latest_record_count(config['prep_model']) if config['prep_model'] else 0
+                last_post_count = 0
+            else:
+                last_prep_count = 0
+                last_post_count = get_latest_record_count(config['post_model']) if config['post_model'] else 0
+        else:
+            last_prep_count = get_latest_record_count(config.get('prep_model'))
+            last_post_count = get_latest_record_count(config.get('post_model'))
         
         while True:
             try:
-                current_prep_count = get_latest_record_count(config['prep_model'])
-                current_post_count = get_latest_record_count(config['post_model'])
+                if config.get('type') == 'washing':
+                    operation = config.get('operation', 'load')
+                    if operation == 'load':
+                        current_prep_count = get_latest_record_count(config['prep_model']) if config['prep_model'] else 0
+                        current_post_count = 0
+                    else:
+                        current_prep_count = 0
+                        current_post_count = get_latest_record_count(config['post_model']) if config['post_model'] else 0
+                else:
+                    current_prep_count = get_latest_record_count(config.get('prep_model'))
+                    current_post_count = get_latest_record_count(config.get('post_model'))
                 
                 if (current_prep_count != last_prep_count or 
                     current_post_count != last_post_count):
@@ -1037,8 +1246,35 @@ def sse_machine_stream(request, machine_name):
                     last_post_count = current_post_count
                     
                     # Get updated machine data
-                    if is_assembly:
+                    if config.get('type') == 'washing':
+                        operation = config.get('operation', 'load')
+                        machine_type = 'washing'
+                        
+                        if operation == 'load':
+                            records = get_washing_load_data(config['prep_model'])
+                            is_active = check_machine_status(config['prep_model']) if config['prep_model'] else False
+                        else:
+                            records = get_washing_unload_data(config['post_model'])
+                            try:
+                                latest_post = config['post_model'].objects.first()
+                                if latest_post:
+                                    threshold = timezone.now() - timedelta(minutes=21)
+                                    timestamp = latest_post.timestamp
+                                    if hasattr(timestamp, 'timestamp'):
+                                        if timezone.is_naive(timestamp):
+                                            timestamp = timezone.make_aware(timestamp)
+                                        is_active = timestamp >= threshold
+                                    else:
+                                        is_active = False
+                                else:
+                                    is_active = False
+                            except:
+                                is_active = False
+                    
+                    elif is_assembly:
                         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
+                        machine_type = 'assembly'
+                        is_active = check_machine_status(config['prep_model'])
                     else:
                         machine_type = 'standard'
                         if 'Painting' in config['name']:
@@ -1048,32 +1284,35 @@ def sse_machine_stream(request, machine_name):
                         elif 'Oring_leak' in config['name']:
                             machine_type = 'op80'
                         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
+                        is_active = check_machine_status(config['prep_model'])
                     
-                    is_active = check_machine_status(config['prep_model'])
-                    
-                    # Serialize timestamps
                     for record in records:
-                        if hasattr(record['prep_timestamp'], 'isoformat'):
+                        if record.get('prep_timestamp') and hasattr(record['prep_timestamp'], 'isoformat'):
                             record['prep_timestamp'] = record['prep_timestamp'].isoformat()
-                        if record['post_timestamp'] and hasattr(record['post_timestamp'], 'isoformat'):
+                        if record.get('post_timestamp') and hasattr(record['post_timestamp'], 'isoformat'):
                             record['post_timestamp'] = record['post_timestamp'].isoformat()
                     
-                    data = json.dumps({
+                    response_data = {
                         'type': 'update',
                         'machine_name': config['name'],
                         'display_name': config.get('display_name', config['name']),
                         'ip': config.get('ip', 'N/A'),
                         'op_code': config.get('op_code', 'N/A'),
+                        'machine_type': machine_type,
                         'is_active': is_active,
                         'records': records,
                         'is_assembly': is_assembly,
-                    }, cls=DjangoJSONEncoder)
+                    }
+                    
+                    if config.get('type') == 'washing':
+                        response_data['operation'] = config.get('operation', 'load')
+                    
+                    data = json.dumps(response_data, cls=DjangoJSONEncoder)
                     
                     yield f"data: {data}\n\n"
                 
-                # Send heartbeat
                 yield f": heartbeat\n\n"
-                time.sleep(2)  # Check every 2 seconds
+                time.sleep(2)
                 
             except GeneratorExit:
                 break

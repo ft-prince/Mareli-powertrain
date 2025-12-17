@@ -71,9 +71,9 @@
             <div class="machine-grid-title" style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span class="status-indicator {% if machine.is_active %}status-active{% else %}status-inactive{% endif %}"></span>
-                    <span style="font-size: 1.1rem; font-weight: 600;">{{ machine.name }}</span>
+                    <span style="font-size: 1.1rem; font-weight: 600;">{{ machine.display_name }}</span>
                 </div>
-                <span class="machine-type-badge type-{{ machine.type }}">{{ machine.ip|upper }}</span>
+                <span class="machine-type-badge type-{{ machine.type }}">{{ machine.op_code|upper }}</span>
             </div>
             
             <!-- Machine Details Row -->
@@ -82,7 +82,7 @@
                     <span style="opacity: 0.8;">🌐</span>
                     <span style="font-family: 'Courier New', monospace;">{{ machine.ip }}</span>
                     <span style="opacity: 0.6;">|</span>
-                    <span style="opacity: 0.8;">{{ machine.op_code }}</span>
+                    <span style="opacity: 0.8;">{{ machine.name }}</span>
                 </div>
             </div>
         </div>
@@ -91,6 +91,104 @@
         <div class="machine-data-section" data-machine-id="{{ machine.machine_id }}">
         {% if machine.latest_record %}
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
+            <!-- Model Name Display (NEW) -->
+            {% if machine.latest_record.model_name and machine.latest_record.model_name != 'N/A' %}
+            <div style="margin-bottom: 0.75rem; padding: 0.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="color: white; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🏷️ Model</span>
+                    <span style="color: white; font-size: 0.85rem; font-weight: 700;">{{ machine.latest_record.model_name }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Assembly Model Names (NEW) -->
+            {% if machine.is_assembly %}
+                {% if machine.latest_record.model_name_internal and machine.latest_record.model_name_internal != 'N/A' %}
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Internal Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_internal }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if machine.latest_record.model_name_external and machine.latest_record.model_name_external != 'N/A' %}
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">External Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_external }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if machine.latest_record.model_name_housing and machine.latest_record.model_name_housing != 'N/A' %}
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Housing Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_housing }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            <!-- Painting Model Names (NEW) -->
+            {% if 'Painting' in machine.name %}
+                {% if machine.latest_record.model_name_housing and machine.latest_record.model_name_housing != 'N/A' %}
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Housing Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_housing }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if machine.latest_record.model_name_piston and machine.latest_record.model_name_piston != 'N/A' %}
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Piston Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_piston }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            <!-- Lubrication Model Names (NEW) -->
+            {% if 'Lubrication' in machine.name %}
+                {% if machine.latest_record.model_name_piston and machine.latest_record.model_name_piston != 'N/A' %}
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Piston Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_piston }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if machine.latest_record.model_name_housing and machine.latest_record.model_name_housing != 'N/A' %}
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Housing Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_housing }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            <!-- OP80 Model Names (NEW) -->
+            {% if 'Oring_leak' in machine.name %}
+                {% if machine.latest_record.model_name_internal and machine.latest_record.model_name_internal != 'N/A' %}
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Internal Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_internal }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if machine.latest_record.model_name_external and machine.latest_record.model_name_external != 'N/A' %}
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">External Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">{{ machine.latest_record.model_name_external }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span style="color: var(--dark-gray); font-size: 0.85rem;">
                     {% if 'Painting' in machine.name %}QR Housing:
@@ -303,7 +401,6 @@ let dashboardEventSource = null;
 let machineEventSource = null;
 let currentGroup = 'all';
 
-// Machine grouping logic
 function getMachineGroup(machineId) {
     if (machineId.includes('dmg_mori')) return 'dmg_mori';
     if (machineId.includes('gauge')) return 'gauge';
@@ -315,17 +412,14 @@ function getMachineGroup(machineId) {
     return 'other';
 }
 
-// Filter machines by group
 function filterMachineGroup(group) {
     currentGroup = group;
     
-    // Update active button
     document.querySelectorAll('.group-button').forEach(btn => {
         btn.classList.remove('active');
     });
     document.querySelector(`[data-group="${group}"]`).classList.add('active');
     
-    // Filter machine cards
     const allCards = document.querySelectorAll('.machine-grid-card');
     
     allCards.forEach(card => {
@@ -339,7 +433,6 @@ function filterMachineGroup(group) {
     });
 }
 
-// Update group counts
 function updateGroupCounts() {
     const groups = {
         all: 0,
@@ -360,7 +453,6 @@ function updateGroupCounts() {
         }
     });
     
-    // Update count badges
     Object.keys(groups).forEach(group => {
         const countEl = document.getElementById(`count-${group}`);
         if (countEl) {
@@ -369,26 +461,21 @@ function updateGroupCounts() {
     });
 }
 
-// Parse timestamp string "10/11/2025, 3:40:33 pm" to Date object
 function parseCustomTimestamp(timestamp) {
     if (!timestamp) return null;
     
     try {
-        // Already a Date object
         if (timestamp instanceof Date) return timestamp;
         
-        // Try standard ISO format first
         if (timestamp.includes('T') || (timestamp.includes('-') && !timestamp.includes(','))) {
             const date = new Date(timestamp);
             if (!isNaN(date.getTime())) return date;
         }
         
-        // Parse custom format: "10/11/2025, 3:40:33 pm" or "10/11/2025, 3:40:33 PM"
         const match = timestamp.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})\s*(am|pm|AM|PM)/i);
         if (match) {
             let [, day, month, year, hour, minute, second, meridiem] = match;
             
-            // Convert to numbers
             day = parseInt(day);
             month = parseInt(month);
             year = parseInt(year);
@@ -396,27 +483,23 @@ function parseCustomTimestamp(timestamp) {
             minute = parseInt(minute);
             second = parseInt(second);
             
-            // Convert 12-hour to 24-hour format
             if (meridiem.toLowerCase() === 'pm' && hour !== 12) {
                 hour += 12;
             } else if (meridiem.toLowerCase() === 'am' && hour === 12) {
                 hour = 0;
             }
             
-            // Try DD/MM/YYYY format first (more common internationally)
             let date = new Date(year, month - 1, day, hour, minute, second);
             if (!isNaN(date.getTime()) && date.getDate() === day) {
                 return date;
             }
             
-            // Try MM/DD/YYYY format (US format)
             date = new Date(year, day - 1, month, hour, minute, second);
             if (!isNaN(date.getTime())) {
                 return date;
             }
         }
         
-        // Fallback: try native Date parsing
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) return date;
         
@@ -427,13 +510,10 @@ function parseCustomTimestamp(timestamp) {
     }
 }
 
-// Format date only (e.g., "Nov 10, 2025")
 function formatDate(timestamp) {
     if (!timestamp) return '-';
-    
     const date = parseCustomTimestamp(timestamp);
     if (!date) return timestamp;
-    
     return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -441,13 +521,10 @@ function formatDate(timestamp) {
     });
 }
 
-// Format time only in 12-hour format (e.g., "3:40:33 PM")
 function formatTime(timestamp) {
     if (!timestamp) return '-';
-    
     const date = parseCustomTimestamp(timestamp);
     if (!date) return timestamp;
-    
     return date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
@@ -456,13 +533,10 @@ function formatTime(timestamp) {
     });
 }
 
-// Format full date and time (e.g., "Nov 10, 2025, 3:40:33 PM")
 function formatDateTime(timestamp) {
     if (!timestamp) return '-';
-    
     const date = parseCustomTimestamp(timestamp);
     if (!date) return timestamp;
-    
     return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -475,28 +549,23 @@ function formatDateTime(timestamp) {
     });
 }
 
-// Format timestamps on page load
 function formatAllTimestamps() {
-    // Format date elements
     document.querySelectorAll('[data-timestamp-date]').forEach(element => {
         const timestamp = element.getAttribute('data-timestamp-date');
         element.textContent = formatDate(timestamp);
     });
     
-    // Format time elements
     document.querySelectorAll('[data-timestamp-time]').forEach(element => {
         const timestamp = element.getAttribute('data-timestamp-time');
         element.textContent = formatTime(timestamp);
     });
     
-    // Format full datetime elements
     document.querySelectorAll('[data-timestamp-full]').forEach(element => {
         const timestamp = element.getAttribute('data-timestamp-full');
         element.textContent = formatDateTime(timestamp);
     });
 }
 
-// Initialize dashboard real-time updates
 function initDashboardStream() {
     if (dashboardEventSource) {
         dashboardEventSource.close();
@@ -519,7 +588,6 @@ function initDashboardStream() {
         console.error('Dashboard stream error:', error);
         updateConnectionStatus(false);
         
-        // Attempt to reconnect after 5 seconds
         setTimeout(() => {
             console.log('Attempting to reconnect dashboard stream...');
             initDashboardStream();
@@ -532,7 +600,6 @@ function initDashboardStream() {
     };
 }
 
-// Update connection status indicator
 function updateConnectionStatus(connected) {
     const statusEl = document.getElementById('connectionStatus');
     if (statusEl) {
@@ -547,7 +614,6 @@ function updateConnectionStatus(connected) {
     }
 }
 
-// Update modal connection status
 function updateModalConnectionStatus(connected) {
     const statusEl = document.getElementById('modalConnectionStatus');
     if (statusEl) {
@@ -559,20 +625,144 @@ function updateModalConnectionStatus(connected) {
     }
 }
 
-// Helper function to get machine name from card
 function getMachineName(machineId) {
     const card = document.getElementById(`machine-card-${machineId}`);
     if (card) {
         const title = card.querySelector('.machine-grid-title');
         if (title) {
-            // Extract text, removing the status indicator
             return title.textContent.trim();
         }
     }
     return '';
 }
 
-// Update dashboard machine cards with real-time data
+// Helper function to generate model name badges HTML
+function generateModelBadges(machine) {
+    let badgesHTML = '';
+    
+    // Standard machines - single model_name
+    if (machine.latest_record.model_name && machine.latest_record.model_name !== 'N/A' && 
+        !machine.is_assembly && !machine.name.includes('Painting') && 
+        !machine.name.includes('Lubrication') && !machine.name.includes('Oring_leak')) {
+        badgesHTML += `
+            <div style="margin-bottom: 0.75rem; padding: 0.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="color: white; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🏷️ Model</span>
+                    <span style="color: white; font-size: 0.85rem; font-weight: 700;">${machine.latest_record.model_name}</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Assembly machines - three models
+    if (machine.is_assembly) {
+        if (machine.latest_record.model_name_internal && machine.latest_record.model_name_internal !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Internal Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_internal}</span>
+                    </div>
+                </div>
+            `;
+        }
+        if (machine.latest_record.model_name_external && machine.latest_record.model_name_external !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">External Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_external}</span>
+                    </div>
+                </div>
+            `;
+        }
+        if (machine.latest_record.model_name_housing && machine.latest_record.model_name_housing !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Housing Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_housing}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Painting - housing and piston models
+    if (machine.name && machine.name.includes('Painting')) {
+        if (machine.latest_record.model_name_housing && machine.latest_record.model_name_housing !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Housing Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_housing}</span>
+                    </div>
+                </div>
+            `;
+        }
+        if (machine.latest_record.model_name_piston && machine.latest_record.model_name_piston !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Piston Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_piston}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Lubrication - piston and housing models
+    if (machine.name && machine.name.includes('Lubrication')) {
+        if (machine.latest_record.model_name_piston && machine.latest_record.model_name_piston !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Piston Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_piston}</span>
+                    </div>
+                </div>
+            `;
+        }
+        if (machine.latest_record.model_name_housing && machine.latest_record.model_name_housing !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Housing Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_housing}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // OP80 - internal and external models
+    if (machine.name && machine.name.includes('Oring_leak')) {
+        if (machine.latest_record.model_name_internal && machine.latest_record.model_name_internal !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.5rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">Internal Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_internal}</span>
+                    </div>
+                </div>
+            `;
+        }
+        if (machine.latest_record.model_name_external && machine.latest_record.model_name_external !== 'N/A') {
+            badgesHTML += `
+                <div style="margin-bottom: 0.75rem; padding: 0.4rem 0.6rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-size: 0.65rem; font-weight: 600;">External Model:</span>
+                        <span style="color: white; font-size: 0.75rem; font-weight: 700;">${machine.latest_record.model_name_external}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    return badgesHTML;
+}
+
 function updateDashboardMachines(machines) {
     machines.forEach(machine => {
         const card = document.getElementById(`machine-card-${machine.machine_id}`);
@@ -580,29 +770,100 @@ function updateDashboardMachines(machines) {
         
         const machineName = machine.display_name || getMachineName(machine.machine_id);
         
-        // Add subtle animation for update
         card.style.transition = 'box-shadow 0.3s ease';
         card.style.boxShadow = '0 0 15px rgba(0, 102, 204, 0.3)';
         setTimeout(() => {
             card.style.boxShadow = '';
         }, 1000);
         
-        // Update the machine card HTML with fresh data
         const machineHeader = card.querySelector('.machine-grid-header');
         const statusIndicator = machineHeader.querySelector('.status-indicator');
         
-        // Update status indicator in header
         if (statusIndicator && machine.is_active !== undefined) {
             statusIndicator.className = machine.is_active ? 
                 'status-indicator status-active' : 
                 'status-indicator status-inactive';
         }
         
-        // Find sections using data attributes (more reliable)
         const dataSection = card.querySelector(`.machine-data-section[data-machine-id="${machine.machine_id}"]`);
         const activeStatusSection = card.querySelector(`.machine-status-section[data-machine-id="${machine.machine_id}"]`);
         
-        // Update latest record section
+        // Washing machines with Load/Unload
+        if (machine.type === 'washing' && machine.latest_record && dataSection) {
+            const isLoad = machine.latest_record.prep_status === 'LOAD';
+            const isUnload = machine.latest_record.prep_status === 'UNLOAD';
+            
+            let operationLabel = 'Latest QR:';
+            let operationIcon = '';
+            let operationBadge = '';
+            
+            if (isLoad) {
+                operationLabel = '📥 Loaded:';
+                operationIcon = '<div style="font-size: 0.7rem; color: #1565c0; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Load Operation</div>';
+                operationBadge = '<span class="status-badge" style="font-size: 0.75rem; background: #e3f2fd; color: #1565c0;">📥 LOADED</span>';
+            } else if (isUnload) {
+                operationLabel = '📤 Unloaded:';
+                operationIcon = '<div style="font-size: 0.7rem; color: #e65100; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Unload Operation</div>';
+                operationBadge = '<span class="status-badge" style="font-size: 0.75rem; background: #fff3e0; color: #e65100;">📤 UNLOADED</span>';
+            }
+            
+            // Add model name badge for washing machines
+            let modelBadgeHTML = '';
+            if (machine.latest_record.model_name && machine.latest_record.model_name !== 'N/A') {
+                modelBadgeHTML = `
+                    <div style="margin-bottom: 0.75rem; padding: 0.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="color: white; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🏷️ Model</span>
+                            <span style="color: white; font-size: 0.85rem; font-weight: 700;">${machine.latest_record.model_name}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let recordHTML = `
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
+                    ${operationIcon}
+                    ${modelBadgeHTML}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: var(--dark-gray); font-size: 0.85rem;">${operationLabel}</span>
+                        <strong style="font-size: 0.85rem;">${machine.latest_record.qr_code}</strong>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Date:</span>
+                            <span style="font-size: 0.85rem;">${formatDate(machine.latest_record.prep_timestamp)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--dark-gray); font-size: 0.85rem;">Time:</span>
+                            <span style="font-size: 0.85rem;">${formatTime(machine.latest_record.prep_timestamp)}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
+                        ${machine.latest_record.post_status === 'OK' || machine.latest_record.prep_status === 'OK' ? 
+                            '<span class="status-badge status-ok" style="font-size: 0.8rem;">✅ OK</span>' :
+                            machine.latest_record.post_status === 'NG' ? 
+                            '<span class="status-badge status-ng" style="font-size: 0.8rem;">❌ NG</span>' :
+                            operationBadge
+                        }
+                    </div>
+                </div>
+            `;
+            
+            dataSection.innerHTML = recordHTML;
+            
+            if (activeStatusSection) {
+                if (machine.is_active) {
+                    activeStatusSection.innerHTML = '<span style="color: var(--success-green); font-weight: 600;">● ACTIVE</span>';
+                } else {
+                    activeStatusSection.innerHTML = '<span style="color: var(--danger-red); font-weight: 600;">● INACTIVE</span>';
+                }
+            }
+            
+            return;
+        }
+        
+        // Regular machine card update
         if (dataSection) {
             if (machine.latest_record) {
                 let qrLabel = 'Latest QR:';
@@ -610,15 +871,18 @@ function updateDashboardMachines(machines) {
                 else if (machine.name && machine.name.includes('Lubrication')) qrLabel = 'QR Piston:';
                 else if (machine.name && machine.name.includes('Oring_leak')) qrLabel = 'QR Piston:';
                 
+                // Generate model badges
+                const modelBadges = generateModelBadges(machine);
+                
                 let recordHTML = `
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--light-gray);">
+                        ${modelBadges}
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                             <span style="color: var(--dark-gray); font-size: 0.85rem;">${qrLabel}</span>
                             <strong style="font-size: 0.85rem;">${machine.latest_record.qr_code}</strong>
                         </div>
                 `;
                 
-                // Add additional QR codes for special machines
                 if (machine.name && machine.name.includes('Painting') && machine.latest_record.qr_piston) {
                     recordHTML += `
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -661,7 +925,6 @@ function updateDashboardMachines(machines) {
                             <span style="color: var(--dark-gray); font-size: 0.85rem;">Status:</span>
                 `;
                 
-                // Add status badge
                 if (machine.latest_record.post_status === 'OK') {
                     recordHTML += '<span class="status-badge status-ok" style="font-size: 0.8rem;">✅ OK</span>';
                 } else if (machine.latest_record.post_status === 'NG') {
@@ -671,7 +934,6 @@ function updateDashboardMachines(machines) {
                 }
                 recordHTML += '</div>';
                 
-                // Add gauge values if present
                 if (machine.latest_record.gauge_values && Object.keys(machine.latest_record.gauge_values).length > 0) {
                     recordHTML += `
                         <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0;">
@@ -688,7 +950,6 @@ function updateDashboardMachines(machines) {
                     recordHTML += '</div>';
                 }
                 
-                // Add assembly QR codes if present
                 if (machine.is_assembly && machine.latest_record.qr_external && machine.latest_record.qr_external !== '-') {
                     recordHTML += `
                         <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0; font-size: 0.75rem;">
@@ -711,7 +972,6 @@ function updateDashboardMachines(machines) {
             }
         }
         
-        // Update active/inactive status
         if (activeStatusSection) {
             if (machine.is_active) {
                 activeStatusSection.innerHTML = '<span style="color: var(--success-green); font-weight: 600;">● ACTIVE</span>';
@@ -722,7 +982,6 @@ function updateDashboardMachines(machines) {
     });
 }
 
-// Initialize machine modal real-time updates
 function initMachineStream(machineId) {
     if (machineEventSource) {
         machineEventSource.close();
@@ -737,7 +996,6 @@ function initMachineStream(machineId) {
                 currentMachineType = data.machine_type || 'standard';
                 renderMachineData(data);
                 
-                // Add visual feedback for update
                 const content = document.getElementById('machineModalContent');
                 if (content) {
                     content.style.transition = 'opacity 0.2s ease';
@@ -756,7 +1014,6 @@ function initMachineStream(machineId) {
         console.error('Machine stream error:', error);
         updateModalConnectionStatus(false);
         
-        // Attempt to reconnect after 5 seconds
         setTimeout(() => {
             if (currentMachineId === machineId) {
                 console.log('Attempting to reconnect machine stream...');
@@ -781,13 +1038,11 @@ function openMachineModal(machineId, machineName) {
     `;
     document.getElementById('machineModal').style.display = 'flex';
     
-    // Load initial machine data
     fetch(`/api/machine/${machineId}/`)
         .then(response => response.json())
         .then(data => {
             currentMachineType = data.machine_type || 'standard';
             renderMachineData(data);
-            // Start real-time updates
             initMachineStream(machineId);
         })
         .catch(error => {
@@ -805,13 +1060,122 @@ function closeMachineModal() {
     currentMachineId = null;
     currentMachineType = null;
     
-    // Close machine stream
     if (machineEventSource) {
         machineEventSource.close();
         machineEventSource = null;
     }
 }
 
+// Washing machine modal rendering
+function renderWashingMachineData(data, operation) {
+    const content = document.getElementById('machineModalContent');
+    const isLoad = operation === 'load';
+    
+    let tableHTML = `
+        <div style="margin-bottom: 1.5rem; padding: 1.5rem; background: ${isLoad ? '#e3f2fd' : '#fff3e0'}; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 0.5rem 0; color: var(--dark-blue); display: flex; align-items: center; gap: 0.5rem;">
+                ${isLoad ? '📥 LOAD Operation' : '📤 UNLOAD Operation'}
+            </h3>
+            <p style="margin: 0; color: var(--dark-gray); font-size: 0.95rem;">
+                ${isLoad ? 
+                    'Parts entering the washing machine (Preprocessing data)' : 
+                    'Parts exiting the washing machine (Postprocessing data)'}
+            </p>
+        </div>
+        
+        <div class="data-table-container" style="max-height: 75vh; overflow-y: auto;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
+                    <tr>
+                        <th colspan="4" style="background: ${isLoad ? 'rgba(25, 118, 210, 0.1)' : 'rgba(255, 152, 0, 0.1)'}; text-align: center; padding: 12px; border: 1px solid #ddd; font-size: 1rem;">
+                            ${isLoad ? '📥 Load Details' : '📤 Unload Details'}
+                        </th>
+                        <th colspan="2" style="background: rgba(200, 200, 200, 0.3); text-align: center; padding: 12px; border: 1px solid #ddd; font-size: 1rem;">
+                            Part Information
+                        </th>
+                    </tr>
+                    <tr>
+                        <th style="background: rgba(240, 240, 240, 0.95); padding: 10px; border: 1px solid #ddd; font-size: 0.9rem; font-weight: 600;">ID</th>
+                        <th style="background: rgba(240, 240, 240, 0.95); padding: 10px; border: 1px solid #ddd; font-size: 0.9rem; font-weight: 600;">Date</th>
+                        <th style="background: rgba(240, 240, 240, 0.95); padding: 10px; border: 1px solid #ddd; font-size: 0.9rem; font-weight: 600;">Time</th>
+                        <th style="background: rgba(240, 240, 240, 0.95); padding: 10px; border: 1px solid #ddd; font-size: 0.9rem; font-weight: 600;">Status</th>
+                        <th style="background: rgba(240, 240, 240, 0.95); padding: 10px; border: 1px solid #ddd; font-size: 0.9rem; font-weight: 600;">QR Code</th>
+                        <th style="background: rgba(240, 240, 240, 0.95); padding: 10px; border: 1px solid #ddd; font-size: 0.9rem; font-weight: 600;">🏷️ Model</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    if (!data.records || data.records.length === 0) {
+        tableHTML += `
+            <tr>
+                <td colspan="6" style="padding: 3rem; text-align: center; color: var(--dark-gray);">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📊</div>
+                    <p style="font-size: 1.1rem; margin: 0;">No data available</p>
+                    <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0; opacity: 0.7;">
+                        Waiting for ${isLoad ? 'load' : 'unload'} operations...
+                    </p>
+                </td>
+            </tr>
+        `;
+    } else {
+        data.records.forEach(record => {
+            const timestamp = record.prep_timestamp || record.post_timestamp;
+            const recDate = formatDate(timestamp);
+            const recTime = formatTime(timestamp);
+            const recordId = isLoad ? record.prep_id : record.post_id;
+            const status = isLoad ? record.prep_status : record.post_status;
+            const qrCode = record.qr_code || '-';
+            const modelName = record.model_name || 'N/A';
+            
+            let statusBadge = '';
+            if (status === 'OK') {
+                statusBadge = '<span class="status-badge status-ok">✅ OK</span>';
+            } else if (status === 'NG') {
+                statusBadge = '<span class="status-badge status-ng">❌ NG</span>';
+            } else if (status === 'LOAD' || status === 'N/A' && isLoad) {
+                statusBadge = '<span class="status-badge" style="background: #e3f2fd; color: #1565c0; font-weight: 600;">📥 LOADED</span>';
+            } else if (status === 'UNLOAD' || status === 'N/A' && !isLoad) {
+                statusBadge = '<span class="status-badge" style="background: #fff3e0; color: #e65100; font-weight: 600;">📤 UNLOADED</span>';
+            } else {
+                statusBadge = `<span class="status-badge status-inprogress">${status}</span>`;
+            }
+            
+            tableHTML += `
+                <tr style="border-bottom: 1px solid #e0e0e0;">
+                    <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${recordId || '-'}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;"><small>${recDate}</small></td>
+                    <td style="padding: 12px; border: 1px solid #ddd;"><small>${recTime}</small></td>
+                    <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">${statusBadge}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd; text-align: center;"><strong style="font-family: 'Courier New', monospace;">${qrCode}</strong></td>
+                    <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 700;">${modelName}</span>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-left: 4px solid ${isLoad ? '#1976d2' : '#f57c00'}; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.9rem; color: var(--dark-gray); line-height: 1.6;">
+                <strong style="color: var(--dark-blue);">Note:</strong> 
+                ${isLoad ? 
+                    'Load operation records when parts <strong>enter</strong> the washing machine. This shows <strong>preprocessing data only</strong> — no postprocessing status is tracked at this stage.' :
+                    'Unload operation records when parts <strong>exit</strong> the washing machine. This shows <strong>postprocessing data only</strong> — no preprocessing data is tracked at this stage.'
+                }
+            </p>
+        </div>
+    `;
+    
+    content.innerHTML = tableHTML;
+}
+
+// Main render function with washing machine support
 function renderMachineData(data) {
     const content = document.getElementById('machineModalContent');
     
@@ -827,17 +1191,27 @@ function renderMachineData(data) {
     }
     
     const machineType = data.machine_type || currentMachineType || 'standard';
+    const operation = data.operation;
+    
+    // Handle washing machines separately
+    if (machineType === 'washing') {
+        renderWashingMachineData(data, operation);
+        return;
+    }
+    
+    // Rest of modal rendering for other machines (continues with existing code...)
+    // (Your existing renderMachineData code for CNC, Gauge, Assembly, Painting, etc.)
+    // I'll continue with the table rendering code that was in your original file
     
     let isPainting = machineType === 'painting';
     let isOP80 = machineType === 'op80';
     let isLubrication = machineType === 'lubrication';
     let isAssembly = machineType === 'assembly';
     
-    // Build the table
     let tableHTML = `
         <div class="data-table-container" style="max-height: 90vh; overflow-y: auto;">
             <table class="data-table" style="width: 100%; border-collapse: collapse;">
-                <thead>
+                <thead style="position: sticky; top: 0; z-index: 10; background: white;">
                     <tr>
                         <th colspan="4" style="background: rgba(0, 102, 204, 0.1); text-align: center; padding: 8px; border: 1px solid #ddd;">Preprocessing</th>
     `;
@@ -849,6 +1223,17 @@ function renderMachineData(data) {
         tableHTML += `<th colspan="2" style="background: rgba(200, 200, 200, 0.3); text-align: center; padding: 8px; border: 1px solid #ddd;">QR Codes</th>`;
     } else {
         tableHTML += `<th style="background: rgba(200, 200, 200, 0.3); text-align: center; padding: 8px; border: 1px solid #ddd;">QR Code</th>`;
+    }
+    
+    // Add Model column header
+    if (isAssembly) {
+        tableHTML += `<th colspan="3" style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Models</th>`;
+    } else if (isPainting || isLubrication) {
+        tableHTML += `<th colspan="2" style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Models</th>`;
+    } else if (isOP80) {
+        tableHTML += `<th colspan="2" style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Models</th>`;
+    } else {
+        tableHTML += `<th style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Model</th>`;
     }
     
     // Postprocessing columns header
@@ -893,6 +1278,32 @@ function renderMachineData(data) {
         tableHTML += `<th style="background: rgba(200, 200, 200, 0.2); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">QR Code</th>`;
     }
     
+    // Model column headers
+    if (isAssembly) {
+        tableHTML += `
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Internal</th>
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">External</th>
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Housing</th>
+        `;
+    } else if (isPainting) {
+        tableHTML += `
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Housing</th>
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Piston</th>
+        `;
+    } else if (isLubrication) {
+        tableHTML += `
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Piston</th>
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Housing</th>
+        `;
+    } else if (isOP80) {
+        tableHTML += `
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Internal</th>
+            <th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">External</th>
+        `;
+    } else {
+        tableHTML += `<th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Model Name</th>`;
+    }
+    
     // Postprocessing column headers
     tableHTML += `
             <th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">ID</th>
@@ -911,7 +1322,7 @@ function renderMachineData(data) {
                 <tbody>
     `;
     
-    // Render data rows
+    // Render data rows with model names
     data.records.forEach(record => {
         const prepDate = formatDate(record.prep_timestamp);
         const prepTime = formatTime(record.prep_timestamp);
@@ -936,7 +1347,7 @@ function renderMachineData(data) {
         } else if (isPainting) {
             tableHTML += `
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_code || '-'}</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_piston || '-'}</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_piston_prep || record.qr_piston || '-'}</strong></td>
             `;
         } else if (isLubrication) {
             tableHTML += `
@@ -945,11 +1356,59 @@ function renderMachineData(data) {
             `;
         } else if (isOP80) {
             tableHTML += `
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_code || '-'}</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_housing || '-'}</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_code || record.qr_piston || '-'}</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_housing_prep || '-'}</strong></td>
             `;
         } else {
             tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_code || '-'}</strong></td>`;
+        }
+        
+        // Model name cells with colored badges
+        if (isAssembly) {
+            tableHTML += `
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_internal || 'N/A'}</span>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_external || 'N/A'}</span>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_housing || 'N/A'}</span>
+                </td>
+            `;
+        } else if (isPainting) {
+            tableHTML += `
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_housing || 'N/A'}</span>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_piston || 'N/A'}</span>
+                </td>
+            `;
+        } else if (isLubrication) {
+            tableHTML += `
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_piston || 'N/A'}</span>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_housing || 'N/A'}</span>
+                </td>
+            `;
+        } else if (isOP80) {
+            tableHTML += `
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_internal || 'N/A'}</span>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name_external || 'N/A'}</span>
+                </td>
+            `;
+        } else {
+            tableHTML += `
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${record.model_name || 'N/A'}</span>
+                </td>
+            `;
         }
         
         // Postprocessing cells
@@ -998,7 +1457,6 @@ function renderMachineData(data) {
     content.innerHTML = tableHTML;
 }
 
-// Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('machineModal');
     if (event.target == modal) {
@@ -1006,16 +1464,13 @@ window.onclick = function(event) {
     }
 }
 
-// Close modal with Escape key
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeMachineModal();
     }
 });
 
-// Initialize dashboard stream and format timestamps on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Assign groups to all cards
     document.querySelectorAll('.machine-grid-card').forEach(card => {
         const machineId = card.id.replace('machine-card-', '');
         const group = getMachineGroup(machineId);
@@ -1027,7 +1482,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initDashboardStream();
 });
 
-// Clean up on page unload
 window.addEventListener('beforeunload', function() {
     if (dashboardEventSource) {
         dashboardEventSource.close();
