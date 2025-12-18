@@ -90,10 +90,148 @@ def get_machine_list():
     return machines
 
 
+def search_washing_load(config, qr_code, model_name, start_dt, end_dt, status_filter):
+    """Search washing machine loading (preprocessing) stage"""
+    results = []
+    prep_model = config['prep_model']
+    
+    query = Q()
+    if qr_code:
+        query &= Q(qr_data__icontains=qr_code)
+    if model_name and model_name != 'all':
+        query &= Q(model_name=model_name)
+    
+    try:
+        prep_records = prep_model.objects.filter(query)[:500]
+    except Exception as e:
+        print(f"Error querying {config['name']}: {e}")
+        return results
+    
+    for prep in prep_records:
+        timestamp = prep.timestamp
+        
+        # Date filter
+        if start_dt or end_dt:
+            dt = parse_timestamp_to_datetime(timestamp)
+            if dt:
+                if timezone.is_naive(dt):
+                    dt = timezone.make_aware(dt)
+                if start_dt and dt < start_dt:
+                    continue
+                if end_dt and dt > end_dt:
+                    continue
+        
+        # Get status from preprocessing
+        status = getattr(prep, 'status', 'OK')
+        
+        # Status filter
+        if status_filter and status_filter != 'all' and status != status_filter:
+            continue
+        
+        # Format timestamp
+        if hasattr(timestamp, 'isoformat'):
+            timestamp_str = timestamp.isoformat()
+        else:
+            timestamp_str = str(timestamp)
+        
+        # Build complete record with all fields
+        record = {
+            'prep_id': prep.id,
+            'post_id': None,
+            'machine_name': config['name'],
+            'display_name': config['display_name'],
+            'machine_type': 'washing',
+            'operation': 'load',
+            'stage': 'Loading (Preprocessing)',
+            'qr_code': prep.qr_data,
+            'model_name': getattr(prep, 'model_name', 'N/A'),
+            'timestamp': timestamp_str,
+            'status': status,
+            'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+            # Additional fields
+            'qr_external': '-',
+            'qr_housing': '-',
+            'qr_internal': '-',
+        }
+        
+        results.append(record)
+    
+    return results
+
+
+def search_washing_unload(config, qr_code, model_name, start_dt, end_dt, status_filter):
+    """Search washing machine unloading (postprocessing) stage"""
+    results = []
+    post_model = config['post_model']
+    
+    query = Q()
+    if qr_code:
+        query &= Q(qr_data__icontains=qr_code)
+    if model_name and model_name != 'all':
+        query &= Q(model_name=model_name)
+    
+    try:
+        post_records = post_model.objects.filter(query)[:500]
+    except Exception as e:
+        print(f"Error querying {config['name']}: {e}")
+        return results
+    
+    for post in post_records:
+        timestamp = post.timestamp
+        
+        # Date filter
+        if start_dt or end_dt:
+            dt = parse_timestamp_to_datetime(timestamp)
+            if dt:
+                if timezone.is_naive(dt):
+                    dt = timezone.make_aware(dt)
+                if start_dt and dt < start_dt:
+                    continue
+                if end_dt and dt > end_dt:
+                    continue
+        
+        # Get status from postprocessing
+        status = getattr(post, 'status', 'OK')
+        
+        # Status filter
+        if status_filter and status_filter != 'all' and status != status_filter:
+            continue
+        
+        # Format timestamp
+        if hasattr(timestamp, 'isoformat'):
+            timestamp_str = timestamp.isoformat()
+        else:
+            timestamp_str = str(timestamp)
+        
+        # Build complete record with all fields
+        record = {
+            'prep_id': None,
+            'post_id': post.id,
+            'machine_name': config['name'],
+            'display_name': config['display_name'],
+            'machine_type': 'washing',
+            'operation': 'unload',
+            'stage': 'Unloading (Postprocessing)',
+            'qr_code': post.qr_data,
+            'model_name': getattr(post, 'model_name', 'N/A'),
+            'timestamp': timestamp_str,
+            'status': status,
+            'previous_machine_status': getattr(post, 'previous_machine_status', '-'),
+            # Additional fields
+            'qr_external': '-',
+            'qr_housing': '-',
+            'qr_internal': '-',
+        }
+        
+        results.append(record)
+    
+    return results
+
+
 def search_across_all_machines(filters):
     """
     Search across all machines based on filters
-    Returns list of records with machine info
+    Returns list of records with machine info and ALL relevant fields
     """
     results = []
     
@@ -147,7 +285,19 @@ def search_across_all_machines(filters):
         machine_name = config['name']
         display_name = config.get('display_name', machine_name)
         machine_type = config.get('type', 'standard')
+        operation = config.get('operation', None)  # For washing machines
         is_assembly = 'OP40' in machine_name
+        is_washing = machine_type == 'washing'
+        
+        # Handle washing machines separately
+        if is_washing:
+            if operation == 'load' and config.get('prep_model'):
+                # Search Preprocessing (Loading stage)
+                results.extend(search_washing_load(config, qr_code, model_name, start_dt, end_dt, status_filter))
+            elif operation == 'unload' and config.get('post_model'):
+                # Search Postprocessing (Unloading stage)
+                results.extend(search_washing_unload(config, qr_code, model_name, start_dt, end_dt, status_filter))
+            continue
         
         if not config.get('prep_model'):
             continue
@@ -218,31 +368,45 @@ def search_across_all_machines(filters):
                 qr_external = prep.qr_data_external or '-'
                 qr_housing = prep.qr_data_housing or '-'
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
-                model_value = getattr(prep, 'model_name_internal', 'N/A')
+                model_internal = getattr(prep, 'model_name_internal', 'N/A')
+                model_external = getattr(prep, 'model_name_external', 'N/A')
+                model_housing = getattr(prep, 'model_name_housing', 'N/A')
                 
             elif 'Painting' in machine_name:
                 qr_value = prep.qr_data_housing
-                qr_external = prep.qr_data_piston
-                qr_housing = '-'
+                qr_piston = prep.qr_data_piston
+                qr_external = '-'
+                qr_housing = qr_value
                 post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
                 status = post.status if post else 'Pending'
-                model_value = getattr(prep, 'model_name_housing', 'N/A')
+                model_housing = getattr(prep, 'model_name_housing', 'N/A')
+                model_piston = getattr(prep, 'model_name_piston', 'N/A')
+                previous_machine_status = getattr(prep, 'previous_machine_status', '-')
+                pre_status = getattr(prep, 'pre_status', '-')
                 
             elif 'Lubrication' in machine_name:
                 qr_value = prep.qr_data_piston
-                qr_external = '-'
+                qr_piston = qr_value
                 qr_housing = prep.qr_data_housing
+                qr_external = '-'
                 post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
                 status = post.status if post else 'Pending'
-                model_value = getattr(prep, 'model_name_piston', 'N/A')
+                model_piston = getattr(prep, 'model_name_piston', 'N/A')
+                model_housing = getattr(prep, 'model_name_housing', 'N/A')
+                previous_machine_status = getattr(prep, 'previous_machine_status', '-')
                 
             elif 'Oring_leak' in machine_name:
-                qr_value = prep.qr_data_piston
-                qr_external = '-'
+                qr_piston = prep.qr_data_piston
                 qr_housing = prep.qr_data_housing
+                qr_value = qr_piston
+                qr_external = '-'
                 post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
                 status = post.status if post else 'Pending'
-                model_value = getattr(prep, 'model_name_internal', 'N/A')
+                model_internal = getattr(prep, 'model_name_internal', 'N/A')
+                model_external = getattr(prep, 'model_name_external', 'N/A')
+                previous_machine_status = getattr(prep, 'previous_machine_status', '-')
+                match_status = post.match_status if post else '-'
+                qr_housing_new = post.qr_data_housing_new if post else '-'
                 
             else:
                 qr_value = prep.qr_data
@@ -251,6 +415,8 @@ def search_across_all_machines(filters):
                 post = config['post_model'].objects.filter(qr_data=qr_value).first() if config['post_model'] else None
                 status = post.status if post else 'Pending'
                 model_value = getattr(prep, 'model_name', 'N/A')
+                previous_machine_status = getattr(prep, 'previous_machine_status', '-')
+                machine_name_field = getattr(prep, 'machine_name', '-')
             
             # Status filter
             if status_filter and status_filter != 'all' and status != status_filter:
@@ -262,7 +428,7 @@ def search_across_all_machines(filters):
             else:
                 timestamp_str = str(timestamp)
             
-            # Build record
+            # Build record with ALL relevant fields
             record = {
                 'prep_id': prep.id,
                 'post_id': post.id if 'post' in locals() and post else None,
@@ -270,13 +436,82 @@ def search_across_all_machines(filters):
                 'display_name': display_name,
                 'machine_type': machine_type,
                 'qr_code': qr_value,
-                'qr_external': qr_external,
-                'qr_housing': qr_housing,
-                'model_name': model_value,
                 'timestamp': timestamp_str,
                 'status': status,
-                'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+                'stage': 'Preprocessing & Postprocessing' if 'post' in locals() and post else 'Preprocessing Only',
             }
+            
+            # Add machine-specific fields
+            if is_assembly:
+                record.update({
+                    'qr_internal': qr_value,
+                    'qr_external': qr_external,
+                    'qr_housing': qr_housing,
+                    'model_name': model_internal,  # Primary model for display
+                    'model_name_internal': model_internal,
+                    'model_name_external': model_external,
+                    'model_name_housing': model_housing,
+                    'previous_machine_status': getattr(prep, 'previous_machine_internal_status', '-'),
+                })
+                
+            elif 'Painting' in machine_name:
+                record.update({
+                    'qr_housing': qr_housing,
+                    'qr_piston': qr_piston,
+                    'qr_external': '-',
+                    'qr_internal': '-',
+                    'model_name': model_housing,  # Primary model for display
+                    'model_name_housing': model_housing,
+                    'model_name_piston': model_piston,
+                    'previous_machine_status': previous_machine_status,
+                    'pre_status': pre_status,
+                })
+                
+            elif 'Lubrication' in machine_name:
+                record.update({
+                    'qr_piston': qr_piston,
+                    'qr_housing': qr_housing,
+                    'qr_external': '-',
+                    'qr_internal': '-',
+                    'model_name': model_piston,  # Primary model for display
+                    'model_name_piston': model_piston,
+                    'model_name_housing': model_housing,
+                    'previous_machine_status': previous_machine_status,
+                })
+                
+            elif 'Oring_leak' in machine_name:
+                record.update({
+                    'qr_piston': qr_piston,
+                    'qr_housing': qr_housing,
+                    'qr_housing_new': qr_housing_new,
+                    'qr_external': '-',
+                    'qr_internal': qr_piston,
+                    'model_name': model_internal,  # Primary model for display
+                    'model_name_internal': model_internal,
+                    'model_name_external': model_external,
+                    'previous_machine_status': previous_machine_status,
+                    'match_status': match_status,
+                })
+                
+            else:
+                # Standard machines (CNC, Gauge, Honing, Deburring)
+                record.update({
+                    'model_name': model_value,
+                    'previous_machine_status': previous_machine_status,
+                    'machine_name_field': machine_name_field,
+                    'qr_external': '-',
+                    'qr_housing': '-',
+                    'qr_internal': '-',
+                })
+                
+                # Add gauge values if available
+                if post and hasattr(post, 'value1'):
+                    gauge_values = {}
+                    for i in range(1, 7):
+                        val = getattr(post, f'value{i}', None)
+                        if val is not None:
+                            gauge_values[f'value{i}'] = val
+                    record['gauge_values'] = gauge_values
             
             results.append(record)
     
@@ -354,24 +589,47 @@ def rework_update_api(request):
         # Update the appropriate record
         updated = False
         
-        # For most machines, update postprocessing
-        if post_id and config.get('post_model'):
-            try:
-                post_record = config['post_model'].objects.get(id=post_id)
-                post_record.status = new_status
-                post_record.save()
-                updated = True
-            except config['post_model'].DoesNotExist:
-                pass
+        # Handle washing machines
+        if machine_type == 'washing':
+            operation = config.get('operation')
+            
+            if operation == 'load' and prep_id:
+                # Update preprocessing (loading stage)
+                try:
+                    prep_record = config['prep_model'].objects.get(id=prep_id)
+                    prep_record.status = new_status
+                    prep_record.save()
+                    updated = True
+                except config['prep_model'].DoesNotExist:
+                    pass
+            elif operation == 'unload' and post_id:
+                # Update postprocessing (unloading stage)
+                try:
+                    post_record = config['post_model'].objects.get(id=post_id)
+                    post_record.status = new_status
+                    post_record.save()
+                    updated = True
+                except config['post_model'].DoesNotExist:
+                    pass
         
-        # For assembly machines, update preprocessing (since they use same model)
-        if machine_type == 'assembly' and prep_id:
+        # Handle assembly machines (use prep_model which contains status)
+        elif machine_type == 'assembly' and prep_id:
             try:
                 prep_record = config['prep_model'].objects.get(id=prep_id)
                 prep_record.status = new_status
                 prep_record.save()
                 updated = True
             except config['prep_model'].DoesNotExist:
+                pass
+        
+        # Handle all other machines (update postprocessing)
+        elif post_id and config.get('post_model'):
+            try:
+                post_record = config['post_model'].objects.get(id=post_id)
+                post_record.status = new_status
+                post_record.save()
+                updated = True
+            except config['post_model'].DoesNotExist:
                 pass
         
         if updated:

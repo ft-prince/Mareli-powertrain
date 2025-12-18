@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'dashboard/base.html' %}
 {% load static %}
 
 {% block title %}Rework Management | Manufacturing Traceability{% endblock %}
@@ -427,17 +427,19 @@
             <thead>
                 <tr>
                     <th>Machine</th>
+                    <th>Stage</th>
                     <th>QR Code</th>
                     <th>Model Name</th>
                     <th>Timestamp</th>
                     <th>Status</th>
-                    <th>Prev. Machine Status</th>
+                    <th>Prev. Status</th>
+                    <th>Details</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody id="resultsBody">
                 <tr>
-                    <td colspan="7" class="empty-results">
+                    <td colspan="9" class="empty-results">
                         <div class="empty-results-icon">🔍</div>
                         <p>Use the filters above to search for records</p>
                     </td>
@@ -527,7 +529,7 @@
 
         const queryString = new URLSearchParams(filters).toString();
 
-        fetch(`/dashboard/rework/api/search/?${queryString}`)
+        fetch(`/rework/api/search/?${queryString}`)
             .then(response => response.json())
             .then(data => {
                 hideLoading();
@@ -552,7 +554,7 @@
         if (results.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="empty-results">
+                    <td colspan="9" class="empty-results">
                         <div class="empty-results-icon">📭</div>
                         <p>No records found matching your criteria</p>
                     </td>
@@ -575,14 +577,92 @@
                 hour12: true
             });
 
+            // Build details column based on machine type
+            let detailsHtml = '';
+            
+            // Assembly machines
+            if (record.machine_type === 'assembly') {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        <strong>Internal:</strong> ${record.qr_internal || '-'}<br>
+                        <strong>External:</strong> ${record.qr_external || '-'}<br>
+                        <strong>Housing:</strong> ${record.qr_housing || '-'}<br>
+                        ${record.model_name_internal ? `<strong>Model (Int):</strong> ${record.model_name_internal}<br>` : ''}
+                        ${record.model_name_external && record.model_name_external !== 'N/A' ? `<strong>Model (Ext):</strong> ${record.model_name_external}<br>` : ''}
+                        ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `<strong>Model (Hsg):</strong> ${record.model_name_housing}` : ''}
+                    </div>
+                `;
+            }
+            // Painting machines
+            else if (record.qr_piston || record.model_name_piston) {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
+                        ${record.qr_piston ? `<strong>Piston:</strong> ${record.qr_piston}<br>` : ''}
+                        ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `<strong>Model (Hsg):</strong> ${record.model_name_housing}<br>` : ''}
+                        ${record.model_name_piston && record.model_name_piston !== 'N/A' ? `<strong>Model (Pst):</strong> ${record.model_name_piston}<br>` : ''}
+                        ${record.pre_status && record.pre_status !== '-' ? `<strong>Pre-Status:</strong> ${record.pre_status}` : ''}
+                    </div>
+                `;
+            }
+            // Lubrication machines
+            else if (record.qr_housing && (record.model_name_piston || record.model_name_housing)) {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        ${record.qr_piston ? `<strong>Piston:</strong> ${record.qr_piston}<br>` : ''}
+                        ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
+                        ${record.model_name_piston && record.model_name_piston !== 'N/A' ? `<strong>Model (Pst):</strong> ${record.model_name_piston}<br>` : ''}
+                        ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `<strong>Model (Hsg):</strong> ${record.model_name_housing}` : ''}
+                    </div>
+                `;
+            }
+            // OP80 machines
+            else if (record.match_status || record.qr_housing_new) {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        ${record.qr_piston ? `<strong>Piston:</strong> ${record.qr_piston}<br>` : ''}
+                        ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
+                        ${record.qr_housing_new && record.qr_housing_new !== '-' ? `<strong>Housing New:</strong> ${record.qr_housing_new}<br>` : ''}
+                        ${record.match_status && record.match_status !== '-' ? `<strong>Match:</strong> ${record.match_status}<br>` : ''}
+                        ${record.model_name_internal && record.model_name_internal !== 'N/A' ? `<strong>Model (Int):</strong> ${record.model_name_internal}<br>` : ''}
+                        ${record.model_name_external && record.model_name_external !== 'N/A' ? `<strong>Model (Ext):</strong> ${record.model_name_external}` : ''}
+                    </div>
+                `;
+            }
+            // Gauge machines with values
+            else if (record.gauge_values) {
+                const gaugeValuesHtml = Object.entries(record.gauge_values)
+                    .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                    .join('<br>');
+                detailsHtml = `<div style="font-size: 0.85rem;">${gaugeValuesHtml}</div>`;
+            }
+            // Washing machines
+            else if (record.operation) {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        <strong>Operation:</strong> ${record.operation === 'load' ? 'Loading' : 'Unloading'}
+                    </div>
+                `;
+            }
+            // Standard machines
+            else {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        ${record.machine_name_field && record.machine_name_field !== '-' ? `<strong>Machine:</strong> ${record.machine_name_field}` : '-'}
+                    </div>
+                `;
+            }
+
             return `
                 <tr>
-                    <td>${record.display_name}</td>
+                    <td><strong>${record.display_name}</strong></td>
+                    <td style="font-size: 0.85rem;">${record.stage || '-'}</td>
                     <td><strong>${record.qr_code}</strong></td>
                     <td>${record.model_name}</td>
-                    <td>${timestamp}</td>
+                    <td style="font-size: 0.9rem;">${timestamp}</td>
                     <td><span class="status-badge ${statusClass}">${record.status}</span></td>
-                    <td>${record.previous_machine_status}</td>
+                    <td>${record.previous_machine_status || '-'}</td>
+                    <td>${detailsHtml}</td>
                     <td>
                         <button class="edit-btn" onclick="openEditModal(${index})">
                             Edit
@@ -617,12 +697,15 @@
     function openEditModal(index) {
         const record = currentResults[index];
         
-        // Populate record info
-        const recordInfo = document.getElementById('recordInfo');
-        recordInfo.innerHTML = `
+        // Build record info HTML based on machine type
+        let recordInfoHtml = `
             <div class="info-item">
                 <span class="info-label">Machine</span>
                 <span class="info-value">${record.display_name}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Stage</span>
+                <span class="info-value">${record.stage || '-'}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Model Name</span>
@@ -632,23 +715,139 @@
                 <span class="info-label">Timestamp</span>
                 <span class="info-value">${new Date(record.timestamp).toLocaleString('en-IN')}</span>
             </div>
-            ${record.qr_external !== '-' ? `
-            <div class="info-item">
-                <span class="info-label">QR External</span>
-                <span class="info-value">${record.qr_external}</span>
-            </div>
-            ` : ''}
-            ${record.qr_housing !== '-' ? `
-            <div class="info-item">
-                <span class="info-label">QR Housing</span>
-                <span class="info-value">${record.qr_housing}</span>
-            </div>
-            ` : ''}
         `;
+
+        // Add machine-specific fields
+        if (record.machine_type === 'assembly') {
+            recordInfoHtml += `
+                <div class="info-item">
+                    <span class="info-label">QR Internal</span>
+                    <span class="info-value">${record.qr_internal || '-'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">QR External</span>
+                    <span class="info-value">${record.qr_external || '-'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">QR Housing</span>
+                    <span class="info-value">${record.qr_housing || '-'}</span>
+                </div>
+                ${record.model_name_internal ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Internal)</span>
+                    <span class="info-value">${record.model_name_internal}</span>
+                </div>` : ''}
+                ${record.model_name_external && record.model_name_external !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (External)</span>
+                    <span class="info-value">${record.model_name_external}</span>
+                </div>` : ''}
+                ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Housing)</span>
+                    <span class="info-value">${record.model_name_housing}</span>
+                </div>` : ''}
+            `;
+        } else if (record.qr_piston || record.model_name_piston) {
+            // Painting or Lubrication
+            recordInfoHtml += `
+                ${record.qr_housing ? `
+                <div class="info-item">
+                    <span class="info-label">QR Housing</span>
+                    <span class="info-value">${record.qr_housing}</span>
+                </div>` : ''}
+                ${record.qr_piston ? `
+                <div class="info-item">
+                    <span class="info-label">QR Piston</span>
+                    <span class="info-value">${record.qr_piston}</span>
+                </div>` : ''}
+                ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Housing)</span>
+                    <span class="info-value">${record.model_name_housing}</span>
+                </div>` : ''}
+                ${record.model_name_piston && record.model_name_piston !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Piston)</span>
+                    <span class="info-value">${record.model_name_piston}</span>
+                </div>` : ''}
+                ${record.pre_status && record.pre_status !== '-' ? `
+                <div class="info-item">
+                    <span class="info-label">Pre-Status</span>
+                    <span class="info-value">${record.pre_status}</span>
+                </div>` : ''}
+            `;
+        } else if (record.match_status || record.qr_housing_new) {
+            // OP80
+            recordInfoHtml += `
+                ${record.qr_piston ? `
+                <div class="info-item">
+                    <span class="info-label">QR Piston</span>
+                    <span class="info-value">${record.qr_piston}</span>
+                </div>` : ''}
+                ${record.qr_housing ? `
+                <div class="info-item">
+                    <span class="info-label">QR Housing</span>
+                    <span class="info-value">${record.qr_housing}</span>
+                </div>` : ''}
+                ${record.qr_housing_new && record.qr_housing_new !== '-' ? `
+                <div class="info-item">
+                    <span class="info-label">QR Housing New</span>
+                    <span class="info-value">${record.qr_housing_new}</span>
+                </div>` : ''}
+                ${record.match_status && record.match_status !== '-' ? `
+                <div class="info-item">
+                    <span class="info-label">Match Status</span>
+                    <span class="info-value">${record.match_status}</span>
+                </div>` : ''}
+                ${record.model_name_internal && record.model_name_internal !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Internal)</span>
+                    <span class="info-value">${record.model_name_internal}</span>
+                </div>` : ''}
+                ${record.model_name_external && record.model_name_external !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (External)</span>
+                    <span class="info-value">${record.model_name_external}</span>
+                </div>` : ''}
+            `;
+        } else if (record.gauge_values) {
+            // Gauge machines
+            Object.entries(record.gauge_values).forEach(([key, value]) => {
+                recordInfoHtml += `
+                    <div class="info-item">
+                        <span class="info-label">${key}</span>
+                        <span class="info-value">${value}</span>
+                    </div>
+                `;
+            });
+        } else if (record.operation) {
+            // Washing machines
+            recordInfoHtml += `
+                <div class="info-item">
+                    <span class="info-label">Operation</span>
+                    <span class="info-value">${record.operation === 'load' ? 'Loading (Preprocessing)' : 'Unloading (Postprocessing)'}</span>
+                </div>
+            `;
+        }
+
+        // Add previous machine status if available
+        if (record.previous_machine_status && record.previous_machine_status !== '-') {
+            recordInfoHtml += `
+                <div class="info-item">
+                    <span class="info-label">Previous Machine Status</span>
+                    <span class="info-value">${record.previous_machine_status}</span>
+                </div>
+            `;
+        }
+
+        // Populate record info
+        const recordInfo = document.getElementById('recordInfo');
+        recordInfo.innerHTML = recordInfoHtml;
 
         // Populate form fields
         document.getElementById('edit_machine_name').value = record.machine_name;
-        document.getElementById('edit_prep_id').value = record.prep_id;
+        document.getElementById('edit_prep_id').value = record.prep_id || '';
         document.getElementById('edit_post_id').value = record.post_id || '';
         document.getElementById('edit_machine_type').value = record.machine_type;
         document.getElementById('edit_qr_code').value = record.qr_code;
@@ -670,7 +869,8 @@
         
         const updateData = {
             machine_name: document.getElementById('edit_machine_name').value,
-            prep_id: parseInt(document.getElementById('edit_prep_id').value),
+            prep_id: document.getElementById('edit_prep_id').value ? 
+                     parseInt(document.getElementById('edit_prep_id').value) : null,
             post_id: document.getElementById('edit_post_id').value ? 
                      parseInt(document.getElementById('edit_post_id').value) : null,
             machine_type: document.getElementById('edit_machine_type').value,
@@ -679,7 +879,7 @@
 
         showLoading();
 
-        fetch('/dashboard/rework/api/update/', {
+        fetch('/rework/api/update/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
