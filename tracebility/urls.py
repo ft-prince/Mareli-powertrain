@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from . import rework_views
-
+from . import monitoring_views
 app_name = 'dashboard'
 
 urlpatterns = [
@@ -32,4 +32,14 @@ urlpatterns = [
         rework_views.rework_get_record_api,
         name='rework_get_record_api'
     ),
+    
+    
+    
+    path('monitoring/', monitoring_views.monitoring_page, name='monitoring_page'),
+    
+    # API endpoints
+    path('monitoring/search/', monitoring_views.monitoring_search_api, name='monitoring_search_api'),
+    path('monitoring/export-excel/', monitoring_views.monitoring_export_excel, name='monitoring_export_excel'),
+    path('monitoring/chart-data/', monitoring_views.monitoring_chart_data_api, name='monitoring_chart_data_api'),
+
 ]

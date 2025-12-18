@@ -1199,10 +1199,6 @@ function renderMachineData(data) {
         return;
     }
     
-    // Rest of modal rendering for other machines (continues with existing code...)
-    // (Your existing renderMachineData code for CNC, Gauge, Assembly, Painting, etc.)
-    // I'll continue with the table rendering code that was in your original file
-    
     let isPainting = machineType === 'painting';
     let isOP80 = machineType === 'op80';
     let isLubrication = machineType === 'lubrication';
@@ -1225,7 +1221,7 @@ function renderMachineData(data) {
         tableHTML += `<th style="background: rgba(200, 200, 200, 0.3); text-align: center; padding: 8px; border: 1px solid #ddd;">QR Code</th>`;
     }
     
-    // Add Model column header
+    // Model column header
     if (isAssembly) {
         tableHTML += `<th colspan="3" style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Models</th>`;
     } else if (isPainting || isLubrication) {
@@ -1234,6 +1230,20 @@ function renderMachineData(data) {
         tableHTML += `<th colspan="2" style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Models</th>`;
     } else {
         tableHTML += `<th style="background: rgba(102, 126, 234, 0.15); text-align: center; padding: 8px; border: 1px solid #ddd;">🏷️ Model</th>`;
+    }
+    
+    // Previous Machine Status column (NEW)
+    if (!isAssembly) { // Assembly uses different field
+        tableHTML += `<th style="background: rgba(255, 193, 7, 0.1); text-align: center; padding: 8px; border: 1px solid #ddd;">Prev. Machine</th>`;
+    }
+    
+    // Additional special fields headers
+    if (isPainting) {
+        tableHTML += `<th style="background: rgba(156, 39, 176, 0.1); text-align: center; padding: 8px; border: 1px solid #ddd;">Pre-Status</th>`;
+    }
+    
+    if (isOP80) {
+        tableHTML += `<th style="background: rgba(233, 30, 99, 0.1); text-align: center; padding: 8px; border: 1px solid #ddd;">QR Housing New</th>`;
     }
     
     // Postprocessing columns header
@@ -1304,6 +1314,20 @@ function renderMachineData(data) {
         tableHTML += `<th style="background: rgba(102, 126, 234, 0.1); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Model Name</th>`;
     }
     
+    // Previous Machine Status header (NEW)
+    if (!isAssembly) {
+        tableHTML += `<th style="background: rgba(255, 193, 7, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Prev Status</th>`;
+    }
+    
+    // Additional special fields
+    if (isPainting) {
+        tableHTML += `<th style="background: rgba(156, 39, 176, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Pre-Status</th>`;
+    }
+    
+    if (isOP80) {
+        tableHTML += `<th style="background: rgba(233, 30, 99, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.85rem;">Hsg New</th>`;
+    }
+    
     // Postprocessing column headers
     tableHTML += `
             <th style="background: rgba(0, 168, 204, 0.05); padding: 6px; border: 1px solid #ddd; font-size: 0.9rem;">ID</th>
@@ -1322,7 +1346,7 @@ function renderMachineData(data) {
                 <tbody>
     `;
     
-    // Render data rows with model names
+    // Render data rows with ALL fields
     data.records.forEach(record => {
         const prepDate = formatDate(record.prep_timestamp);
         const prepTime = formatTime(record.prep_timestamp);
@@ -1346,7 +1370,7 @@ function renderMachineData(data) {
             `;
         } else if (isPainting) {
             tableHTML += `
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_code || '-'}</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_code || record.qr_housing_prep || '-'}</strong></td>
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${record.qr_piston_prep || record.qr_piston || '-'}</strong></td>
             `;
         } else if (isLubrication) {
@@ -1411,6 +1435,36 @@ function renderMachineData(data) {
             `;
         }
         
+        // Previous Machine Status cell (NEW)
+        if (!isAssembly) {
+            const prevStatus = record.previous_machine_status || '-';
+            let prevStatusBadge = prevStatus;
+            if (prevStatus === 'OK') {
+                prevStatusBadge = '<span class="status-badge status-ok" style="font-size: 0.75rem;">✅ OK</span>';
+            } else if (prevStatus === 'NG') {
+                prevStatusBadge = '<span class="status-badge status-ng" style="font-size: 0.75rem;">❌ NG</span>';
+            } else if (prevStatus !== '-') {
+                prevStatusBadge = `<small>${prevStatus}</small>`;
+            }
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${prevStatusBadge}</td>`;
+        }
+        
+        // Additional special fields
+        if (isPainting) {
+            const preStatus = record.pre_status || '-';
+            let preStatusBadge = preStatus;
+            if (preStatus === 'OK') {
+                preStatusBadge = '<span class="status-badge status-ok" style="font-size: 0.75rem;">✅</span>';
+            } else if (preStatus === 'NG') {
+                preStatusBadge = '<span class="status-badge status-ng" style="font-size: 0.75rem;">❌</span>';
+            }
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${preStatusBadge}</td>`;
+        }
+        
+        if (isOP80) {
+            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><small>${record.qr_housing_new || '-'}</small></td>`;
+        }
+        
         // Postprocessing cells
         tableHTML += `
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${record.post_id || '-'}</td>
@@ -1419,7 +1473,7 @@ function renderMachineData(data) {
         `;
         
         if (isOP80 && record.match_status) {
-            const matchBadge = (record.match_status === 'TRUE' || record.match_status === 'true') ? 
+            const matchBadge = (record.match_status === 'TRUE' || record.match_status === 'true' || record.match_status === true) ? 
                 '<span class="status-badge status-ok">✅ Match</span>' : 
                 '<span class="status-badge status-ng">❌ No Match</span>';
             tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${matchBadge}</td>`;
@@ -1456,6 +1510,7 @@ function renderMachineData(data) {
     
     content.innerHTML = tableHTML;
 }
+
 
 window.onclick = function(event) {
     const modal = document.getElementById('machineModal');

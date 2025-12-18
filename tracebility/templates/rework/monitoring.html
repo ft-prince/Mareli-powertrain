@@ -1,0 +1,933 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Production Monitoring{% endblock %}
+
+{% block content %}
+<style>
+    .monitoring-container {
+        max-width: 100%;
+        padding: 2rem;
+    }
+
+    .monitoring-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid var(--dark-coral);
+    }
+
+    .monitoring-title {
+        font-size: 2rem;
+        color: var(--dark-coral);
+        font-weight: 700;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--dark-coral) 0%, var(--accent-orange) 100%);
+        color: var(--white);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow);
+    }
+
+    .btn-secondary {
+        background: var(--light-gray);
+        color: var(--dark-coral);
+        border: 2px solid var(--dark-coral);
+    }
+
+    .btn-secondary:hover {
+        background: var(--dark-coral);
+        color: var(--white);
+    }
+
+    .filters-section {
+        background: var(--white);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px var(--shadow);
+        margin-bottom: 2rem;
+    }
+
+    .filters-title {
+        font-size: 1.3rem;
+        color: var(--dark-coral);
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: var(--dark-gray);
+        font-size: 0.9rem;
+    }
+
+    .filter-input, .filter-select {
+        padding: 0.75rem;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .filter-input:focus, .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-coral);
+        box-shadow: 0 0 0 3px rgba(255, 119, 85, 0.1);
+    }
+
+    .time-filters {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .time-filter-btn {
+        padding: 0.6rem 1.2rem;
+        background: var(--white);
+        color: var(--dark-coral);
+        border: 2px solid var(--medium-gray);
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .time-filter-btn:hover {
+        border-color: var(--dark-coral);
+        background: var(--light-coral);
+        color: var(--white);
+    }
+
+    .time-filter-btn.active {
+        background: linear-gradient(135deg, var(--dark-coral) 0%, var(--accent-orange) 100%);
+        color: var(--white);
+        border-color: var(--dark-coral);
+    }
+
+    .custom-range-toggle {
+        color: var(--dark-coral);
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .custom-date-range {
+        display: none;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--medium-gray);
+    }
+
+    .custom-date-range.active {
+        display: flex;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .results-section {
+        background: var(--white);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px var(--shadow);
+        margin-bottom: 2rem;
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .results-count {
+        font-size: 1.2rem;
+        color: var(--dark-gray);
+        font-weight: 600;
+    }
+
+    .results-count span {
+        color: var(--dark-coral);
+        font-size: 1.5rem;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        padding: 3rem;
+        color: var(--dark-gray);
+    }
+
+    .spinner {
+        border: 4px solid var(--light-gray);
+        border-top: 4px solid var(--dark-coral);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: var(--dark-gray);
+    }
+
+    .no-results-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .results-table thead {
+        background: var(--light-gray);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .results-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--dark-coral);
+        border-bottom: 2px solid var(--medium-gray);
+    }
+
+    .results-table td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--medium-gray);
+    }
+
+    .results-table tbody tr {
+        transition: background 0.2s;
+    }
+
+    .results-table tbody tr:hover {
+        background: var(--light-gray);
+    }
+
+    .chart-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+    }
+
+    .chart-modal-content {
+        background-color: var(--white);
+        margin: 2% auto;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .chart-close {
+        color: var(--dark-gray);
+        float: right;
+        font-size: 2rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .chart-close:hover {
+        color: var(--danger-red);
+    }
+
+    .chart-container {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: var(--light-gray);
+        border-radius: 8px;
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        color: var(--dark-coral);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px var(--shadow);
+        text-align: center;
+    }
+
+    .summary-card-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-card-label {
+        font-size: 0.9rem;
+        color: var(--dark-gray);
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .summary-card.ok .summary-card-value {
+        color: var(--success-green);
+    }
+
+    .summary-card.ng .summary-card-value {
+        color: var(--danger-red);
+    }
+
+    .summary-card.pending .summary-card-value {
+        color: var(--warning-orange);
+    }
+
+    .summary-card.total .summary-card-value {
+        color: var(--dark-coral);
+    }
+</style>
+
+<div class="monitoring-container">
+    <div class="monitoring-header">
+        <h1 class="monitoring-title">📊 Production Monitoring</h1>
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="viewCharts()">
+                📈 View Charts
+            </button>
+            <button class="btn btn-primary" onclick="exportToExcel()">
+                📥 Export to Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <h2 class="filters-title">⚙️ Filters & Search</h2>
+        
+        <!-- Time Filters -->
+        <div class="filter-group">
+            <label class="filter-label">⏱️ Time Range</label>
+            <div class="time-filters">
+                <button class="time-filter-btn active" data-filter="15min">Last 15 min</button>
+                <button class="time-filter-btn" data-filter="30min">Last 30 min</button>
+                <button class="time-filter-btn" data-filter="1hour">Last 1 hour</button>
+                <button class="time-filter-btn" data-filter="2hour">Last 2 hours</button>
+                <button class="time-filter-btn" data-filter="4hour">Last 4 hours</button>
+                <button class="time-filter-btn" data-filter="6hour">Last 6 hours</button>
+                <button class="time-filter-btn" data-filter="12hour">Last 12 hours</button>
+                <button class="time-filter-btn" data-filter="24hour">Last 24 hours</button>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; align-items: center;">
+                <div class="filter-group" style="flex: 0 0 auto; margin: 0;">
+                    <label class="filter-label">🕐 Custom Hours</label>
+                    <input type="number" class="filter-input" id="customHours" placeholder="Hours" min="1" max="720" style="width: 120px;">
+                </div>
+                <button class="btn btn-secondary" onclick="applyCustomHours()" style="margin-top: 1.5rem;">Apply</button>
+            </div>
+            <div class="custom-range-toggle" onclick="toggleCustomRange()">
+                📅 Use Custom Date Range
+            </div>
+            <div class="custom-date-range" id="customDateRange">
+                <div class="filter-group" style="flex: 1;">
+                    <label class="filter-label">Start Date</label>
+                    <input type="date" class="filter-input" id="startDate">
+                </div>
+                <div class="filter-group" style="flex: 1;">
+                    <label class="filter-label">End Date</label>
+                    <input type="date" class="filter-input" id="endDate">
+                </div>
+                <button class="btn btn-primary" onclick="applyCustomRange()">Apply</button>
+            </div>
+        </div>
+
+        <!-- Search Filters -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label class="filter-label">🔍 QR Code</label>
+                <input type="text" class="filter-input" id="qrCodeInput" placeholder="Search QR code...">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">🏭 Machine</label>
+                <select class="filter-select" id="machineSelect">
+                    <option value="all">All Machines</option>
+                    {% for machine in machines %}
+                    <option value="{{ machine.id }}">{{ machine.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">📦 Model</label>
+                <select class="filter-select" id="modelSelect">
+                    <option value="all">All Models</option>
+                    {% for model in model_names %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">✅ Status</label>
+                <select class="filter-select" id="statusSelect">
+                    <option value="all">All Status</option>
+                    <option value="OK">OK</option>
+                    <option value="NG">NG</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+            <button class="btn btn-primary" onclick="searchRecords()" style="width: 100%;">
+                🔎 Search Records
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section">
+        <div class="results-header">
+            <div class="results-count">
+                Found <span id="resultsCount">0</span> records
+            </div>
+        </div>
+
+        <div id="resultsContainer">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading data...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Modal -->
+<div id="chartModal" class="chart-modal">
+    <div class="chart-modal-content">
+        <span class="chart-close" onclick="closeChartModal()">&times;</span>
+        <h2 style="color: var(--dark-coral); margin-bottom: 2rem;">📊 Production Charts</h2>
+        
+        <div class="summary-cards" id="summaryCards"></div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">⏰ Time Series - Status Over Time</h3>
+            <canvas id="timeSeriesChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">🏭 Machine Breakdown</h3>
+            <canvas id="machineChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">📦 Model Breakdown</h3>
+            <canvas id="modelChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTimeFilter = '15min';
+    let currentResults = [];
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        searchRecords();
+        
+        // Setup time filter buttons
+        document.querySelectorAll('.time-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTimeFilter = this.dataset.filter;
+                
+                // Hide custom range if time filter is selected
+                document.getElementById('customDateRange').classList.remove('active');
+                
+                searchRecords();
+            });
+        });
+
+        // Setup enter key on QR input
+        document.getElementById('qrCodeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchRecords();
+            }
+        });
+    });
+
+    function toggleCustomRange() {
+        const customRange = document.getElementById('customDateRange');
+        customRange.classList.toggle('active');
+        
+        if (customRange.classList.contains('active')) {
+            // Deactivate time filter buttons
+            document.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
+        }
+    }
+
+    function applyCustomRange() {
+        searchRecords();
+    }
+
+    function applyCustomHours() {
+        const hours = document.getElementById('customHours').value;
+        if (hours && hours > 0) {
+            // Deactivate all time filter buttons
+            document.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
+            
+            // Hide custom date range
+            document.getElementById('customDateRange').classList.remove('active');
+            
+            // Set custom time filter
+            currentTimeFilter = `${hours}hour`;
+            
+            // Search with custom hours
+            searchRecords();
+        }
+    }
+
+    function searchRecords() {
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Searching...</p></div>';
+
+        // Build query parameters
+        const params = new URLSearchParams();
+        
+        const qrCode = document.getElementById('qrCodeInput').value;
+        const machine = document.getElementById('machineSelect').value;
+        const model = document.getElementById('modelSelect').value;
+        const status = document.getElementById('statusSelect').value;
+
+        if (qrCode) params.append('qr_code', qrCode);
+        if (machine) params.append('machine', machine);
+        if (model) params.append('model_name', model);
+        if (status) params.append('status', status);
+
+        // Check if custom date range is active
+        const customRange = document.getElementById('customDateRange');
+        if (customRange.classList.contains('active')) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+        } else {
+            params.append('time_filter', currentTimeFilter);
+        }
+
+        fetch(`/monitoring/search/?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentResults = data.results;
+                    displayResults(data.results);
+                    document.getElementById('resultsCount').textContent = data.count;
+                } else {
+                    resultsContainer.innerHTML = `<div class="no-results"><div class="no-results-icon">❌</div><p>Error: ${data.error}</p></div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultsContainer.innerHTML = '<div class="no-results"><div class="no-results-icon">❌</div><p>Error loading data</p></div>';
+            });
+    }
+
+    function displayResults(results) {
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        if (results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">📭</div>
+                    <p>No records found matching your criteria</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Determine if we have washing machines in results
+        const hasWashing = results.some(r => r.machine_type === 'washing');
+        const hasAssembly = results.some(r => r.machine_type === 'assembly');
+
+        let html = `
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Machine</th>
+                        <th>Type</th>
+                        ${hasWashing ? '<th>Stage</th>' : ''}
+                        <th>QR Code</th>
+                        ${hasAssembly ? '<th>QR Internal</th><th>QR External</th><th>QR Housing</th>' : ''}
+                        <th>Model</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        ${hasWashing ? '<th>Previous Status</th>' : ''}
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        results.forEach(record => {
+            const timestamp = new Date(record.timestamp);
+            const date = timestamp.toLocaleDateString();
+            const time = timestamp.toLocaleTimeString();
+            const statusClass = record.status.toLowerCase().replace(' ', '-');
+            const isWashing = record.machine_type === 'washing';
+            const isAssembly = record.machine_type === 'assembly';
+            
+            html += `
+                <tr class="${record.status === 'OK' ? 'completed-ok' : record.status === 'NG' ? 'completed-ng' : 'in-progress'}">
+                    <td>${record.prep_id || record.post_id}</td>
+                    <td><strong>${record.display_name}</strong></td>
+                    <td><span class="machine-type-badge type-${record.machine_type}">${record.machine_type}</span></td>
+                    ${hasWashing ? `<td>${isWashing ? (record.operation === 'load' ? '📥 Loading' : '📤 Unloading') : '-'}</td>` : ''}
+                    <td><strong>${record.qr_code}</strong></td>
+            `;
+
+            // Add assembly-specific QR codes
+            if (hasAssembly) {
+                if (isAssembly) {
+                    html += `
+                        <td>${record.qr_internal || '-'}</td>
+                        <td>${record.qr_external || '-'}</td>
+                        <td>${record.qr_housing || '-'}</td>
+                    `;
+                } else {
+                    html += `<td>-</td><td>-</td><td>-</td>`;
+                }
+            }
+
+            html += `
+                    <td>${record.model_name || 'N/A'}</td>
+                    <td>${date}</td>
+                    <td>${time}</td>
+                    <td><span class="status-badge status-${statusClass}">${record.status}</span></td>
+            `;
+
+            // Add previous status for washing machines
+            if (hasWashing) {
+                html += `<td>${isWashing && record.previous_machine_status ? record.previous_machine_status : '-'}</td>`;
+            }
+
+            html += `</tr>`;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        resultsContainer.innerHTML = html;
+    }
+
+    function exportToExcel() {
+        // Build query parameters (same as search)
+        const params = new URLSearchParams();
+        
+        const qrCode = document.getElementById('qrCodeInput').value;
+        const machine = document.getElementById('machineSelect').value;
+        const model = document.getElementById('modelSelect').value;
+        const status = document.getElementById('statusSelect').value;
+
+        if (qrCode) params.append('qr_code', qrCode);
+        if (machine) params.append('machine', machine);
+        if (model) params.append('model_name', model);
+        if (status) params.append('status', status);
+
+        // Check if custom date range is active
+        const customRange = document.getElementById('customDateRange');
+        if (customRange.classList.contains('active')) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+        } else {
+            params.append('time_filter', currentTimeFilter);
+        }
+
+        // Trigger download
+        window.location.href = `/monitoring/export-excel/?${params.toString()}`;
+    }
+
+    function viewCharts() {
+        const modal = document.getElementById('chartModal');
+        modal.style.display = 'flex';
+
+        // Fetch chart data
+        const params = new URLSearchParams();
+        
+        const qrCode = document.getElementById('qrCodeInput').value;
+        const machine = document.getElementById('machineSelect').value;
+        const model = document.getElementById('modelSelect').value;
+        const status = document.getElementById('statusSelect').value;
+
+        if (qrCode) params.append('qr_code', qrCode);
+        if (machine) params.append('machine', machine);
+        if (model) params.append('model_name', model);
+        if (status) params.append('status', status);
+
+        const customRange = document.getElementById('customDateRange');
+        if (customRange.classList.contains('active')) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+        } else {
+            params.append('time_filter', currentTimeFilter);
+        }
+
+        fetch(`/monitoring/chart-data/?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderCharts(data.data);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function closeChartModal() {
+        document.getElementById('chartModal').style.display = 'none';
+    }
+
+    function renderCharts(data) {
+        // Summary cards
+        const summaryHTML = `
+            <div class="summary-card total">
+                <div class="summary-card-value">${data.summary.total}</div>
+                <div class="summary-card-label">Total Records</div>
+            </div>
+            <div class="summary-card ok">
+                <div class="summary-card-value">${data.summary.ok}</div>
+                <div class="summary-card-label">OK</div>
+            </div>
+            <div class="summary-card ng">
+                <div class="summary-card-value">${data.summary.ng}</div>
+                <div class="summary-card-label">NG</div>
+            </div>
+            <div class="summary-card pending">
+                <div class="summary-card-value">${data.summary.pending}</div>
+                <div class="summary-card-label">Pending</div>
+            </div>
+        `;
+        document.getElementById('summaryCards').innerHTML = summaryHTML;
+
+        // Destroy existing charts properly
+        if (window.timeSeriesChart && typeof window.timeSeriesChart.destroy === 'function') {
+            window.timeSeriesChart.destroy();
+        }
+        if (window.machineChart && typeof window.machineChart.destroy === 'function') {
+            window.machineChart.destroy();
+        }
+        if (window.modelChart && typeof window.modelChart.destroy === 'function') {
+            window.modelChart.destroy();
+        }
+
+        // Time Series Chart
+        const timeCtx = document.getElementById('timeSeriesChart').getContext('2d');
+        window.timeSeriesChart = new Chart(timeCtx, {
+            type: 'line',
+            data: {
+                labels: data.time_series.labels,
+                datasets: [
+                    {
+                        label: 'OK',
+                        data: data.time_series.ok,
+                        borderColor: '#00cc66',
+                        backgroundColor: 'rgba(0, 204, 102, 0.1)',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'NG',
+                        data: data.time_series.ng,
+                        borderColor: '#cc3333',
+                        backgroundColor: 'rgba(204, 51, 51, 0.1)',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Pending',
+                        data: data.time_series.pending,
+                        borderColor: '#ff9933',
+                        backgroundColor: 'rgba(255, 153, 51, 0.1)',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Machine Breakdown Chart
+        const machineCtx = document.getElementById('machineChart').getContext('2d');
+        window.machineChart = new Chart(machineCtx, {
+            type: 'bar',
+            data: {
+                labels: data.machine_breakdown.machines,
+                datasets: [
+                    {
+                        label: 'OK',
+                        data: data.machine_breakdown.ok,
+                        backgroundColor: '#00cc66'
+                    },
+                    {
+                        label: 'NG',
+                        data: data.machine_breakdown.ng,
+                        backgroundColor: '#cc3333'
+                    },
+                    {
+                        label: 'Pending',
+                        data: data.machine_breakdown.pending,
+                        backgroundColor: '#ff9933'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Model Breakdown Chart
+        const modelCtx = document.getElementById('modelChart').getContext('2d');
+        window.modelChart = new Chart(modelCtx, {
+            type: 'bar',
+            data: {
+                labels: data.model_breakdown.models,
+                datasets: [
+                    {
+                        label: 'OK',
+                        data: data.model_breakdown.ok,
+                        backgroundColor: '#00cc66'
+                    },
+                    {
+                        label: 'NG',
+                        data: data.model_breakdown.ng,
+                        backgroundColor: '#cc3333'
+                    },
+                    {
+                        label: 'Pending',
+                        data: data.model_breakdown.pending,
+                        backgroundColor: '#ff9933'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+        const modal = document.getElementById('chartModal');
+        if (event.target == modal) {
+            closeChartModal();
+        }
+    }
+</script>
+{% endblock %}

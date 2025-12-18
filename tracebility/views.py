@@ -341,6 +341,8 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
     records.sort(key=lambda x: (x['sort_priority'], -x['prep_id']))
     return records
 
+   
+
 
 def get_assembly_machine_data(prep_model, post_model):
     """Special handler for assembly machines (OP40 series)"""
@@ -392,6 +394,8 @@ def get_assembly_machine_data(prep_model, post_model):
     
     records.sort(key=lambda x: (x['sort_priority'], -x['prep_id']))
     return records
+   
+
 
 
 def parse_timestamp_to_datetime(timestamp):
@@ -1703,3 +1707,16 @@ def analytics_export(request):
         ])
     
     return response
+
+
+
+
+
+
+
+
+
+
+
+
+# 

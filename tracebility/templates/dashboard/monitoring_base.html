@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Production Monitoring{% endblock %}</title>
+    
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Color Variables */
+        :root {
+            --primary-blue: #0066cc;
+            --success-green: #28a745;
+            --warning-orange: #ff9800;
+            --danger-red: #dc3545;
+            --light-gray: #f8f9fa;
+            --border-gray: #dee2e6;
+            --text-dark: #2c3e50;
+            --dark-gray: #6c757d;
+            --white: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--light-gray) 0%, #e0e6ed 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .header {
+            background: var(--white);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .header-logo {
+            max-width: 200px;
+            height: auto;
+            flex-shrink: 0;
+        }
+
+        .header-text {
+            flex: 1;
+            text-align: right;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ff7755 0%, #ffaa77 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+            margin-top: 0.25rem;
+        }
+
+        /* Main Content */
+        main {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header-logo {
+                max-width: 150px;
+            }
+
+            .header-text {
+                text-align: center;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="{% static 'logo.png' %}" alt='Renata IoT' class="header-logo"/> 
+            <div class="header-text">
+                <h1>Renata <> Traceability</h1>
+                <div class="header-subtitle">Marelli Powertrain India - Production Monitoring</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
