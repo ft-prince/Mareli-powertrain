@@ -1687,7 +1687,7 @@ def analytics_export(request):
                 f"{yield_rate:.2f}"
             ])
         writer.writerow([])
-    
+                                        
     # Write detailed data
     writer.writerow(['Detailed Records'])
     writer.writerow(['Machine', 'Display Name', 'Model Name', 'QR Code', 'Timestamp', 'Status'])

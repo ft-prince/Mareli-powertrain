@@ -71,9 +71,9 @@
             <div class="machine-grid-title" style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span class="status-indicator {% if machine.is_active %}status-active{% else %}status-inactive{% endif %}"></span>
-                    <span style="font-size: 1.1rem; font-weight: 600;">{{ machine.display_name }}</span>
+                    <span style="font-size: 1.1rem; font-weight: 600;">{{ machine.name }}</span>
                 </div>
-                <span class="machine-type-badge type-{{ machine.type }}">{{ machine.op_code|upper }}</span>
+                <span class="machine-type-badge type-{{ machine.type }}">{{ machine.ip|upper }}</span>
             </div>
             
             <!-- Machine Details Row -->

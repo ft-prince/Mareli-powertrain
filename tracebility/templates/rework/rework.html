@@ -1,0 +1,739 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rework Management | Manufacturing Traceability{% endblock %}
+
+{% block search %}
+<div class="search-container">
+    <div class="search-wrapper">
+        <h2 style="color: var(--dark-coral); margin-bottom: 1rem; width: 100%;">Rework Management</h2>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .filter-section {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px var(--shadow);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: var(--dark-coral);
+        font-size: 0.9rem;
+    }
+
+    .filter-input, .filter-select {
+        padding: 0.75rem;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .filter-input:focus, .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-coral);
+        box-shadow: 0 0 0 3px rgba(255, 119, 85, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--dark-coral) 0%, var(--accent-orange) 100%);
+        color: var(--white);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow);
+    }
+
+    .btn-secondary {
+        background: var(--medium-gray);
+        color: var(--dark-gray);
+    }
+
+    .btn-secondary:hover {
+        background: var(--dark-gray);
+        color: var(--white);
+    }
+
+    .results-section {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px var(--shadow);
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--medium-gray);
+    }
+
+    .results-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-coral);
+    }
+
+    .results-count {
+        font-size: 1rem;
+        color: var(--dark-gray);
+        background: var(--light-gray);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+    }
+
+    .results-table-container {
+        overflow-x: auto;
+    }
+
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .results-table thead {
+        background: var(--light-gray);
+    }
+
+    .results-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--dark-coral);
+        border-bottom: 2px solid var(--medium-gray);
+        white-space: nowrap;
+    }
+
+    .results-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--medium-gray);
+    }
+
+    .results-table tbody tr {
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+
+    .results-table tbody tr:hover {
+        background: var(--light-gray);
+    }
+
+    .edit-btn {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, var(--dark-coral) 0%, var(--accent-orange) 100%);
+        color: var(--white);
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .edit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 6px var(--shadow);
+    }
+
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid var(--light-gray);
+        border-top-color: var(--primary-coral);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .empty-results {
+        text-align: center;
+        padding: 3rem;
+        color: var(--dark-gray);
+    }
+
+    .empty-results-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    /* Edit Modal Styles */
+    .edit-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .edit-modal-content {
+        background-color: var(--white);
+        padding: 2rem;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        animation: modalFadeIn 0.3s ease-out;
+    }
+
+    .edit-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--medium-gray);
+    }
+
+    .edit-modal-title {
+        font-size: 1.8rem;
+        color: var(--dark-coral);
+        font-weight: 600;
+    }
+
+    .edit-modal-close {
+        font-size: 2rem;
+        color: var(--dark-gray);
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+    .edit-modal-close:hover {
+        color: var(--danger-red);
+    }
+
+    .edit-form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .edit-form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--dark-coral);
+        margin-bottom: 0.5rem;
+    }
+
+    .edit-form-input, .edit-form-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .edit-form-input:focus, .edit-form-select:focus {
+        outline: none;
+        border-color: var(--primary-coral);
+        box-shadow: 0 0 0 3px rgba(255, 119, 85, 0.1);
+    }
+
+    .edit-form-input:disabled {
+        background: var(--light-gray);
+        color: var(--dark-gray);
+        cursor: not-allowed;
+    }
+
+    .edit-form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--medium-gray);
+    }
+
+    .status-badge-large {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--light-gray);
+        border-radius: 8px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: var(--dark-gray);
+        font-weight: 600;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        color: var(--text-dark);
+    }
+
+    @media (max-width: 768px) {
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Search & Filter</h3>
+    
+    <form id="filterForm">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label class="filter-label">QR Code</label>
+                <input type="text" id="qr_code" class="filter-input" placeholder="Enter QR code...">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Model Name</label>
+                <select id="model_name" class="filter-select">
+                    <option value="all">All Models</option>
+                    {% for model in model_names %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Machine</label>
+                <select id="machine" class="filter-select">
+                    <option value="all">All Machines</option>
+                    {% for machine in machines %}
+                    <option value="{{ machine.id }}">{{ machine.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select id="status" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="OK">OK</option>
+                    <option value="NG">NG</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Start Date</label>
+                <input type="date" id="start_date" class="filter-input">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">End Date</label>
+                <input type="date" id="end_date" class="filter-input">
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <button type="button" id="clearBtn" class="btn btn-secondary">Clear Filters</button>
+            <button type="submit" class="btn btn-primary">Search Records</button>
+        </div>
+    </form>
+</div>
+
+<!-- Results Section -->
+<div class="results-section">
+    <div class="results-header">
+        <h3 class="results-title">Search Results</h3>
+        <span class="results-count" id="resultsCount">0 records</span>
+    </div>
+
+    <div class="results-table-container">
+        <table class="results-table" id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Machine</th>
+                    <th>QR Code</th>
+                    <th>Model Name</th>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                    <th>Prev. Machine Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+                <tr>
+                    <td colspan="7" class="empty-results">
+                        <div class="empty-results-icon">🔍</div>
+                        <p>Use the filters above to search for records</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <h2 class="edit-modal-title">Edit Record</h2>
+            <span class="edit-modal-close" onclick="closeEditModal()">&times;</span>
+        </div>
+
+        <div class="info-grid" id="recordInfo">
+            <!-- Record info will be populated here -->
+        </div>
+
+        <form id="editForm">
+            <input type="hidden" id="edit_machine_name">
+            <input type="hidden" id="edit_prep_id">
+            <input type="hidden" id="edit_post_id">
+            <input type="hidden" id="edit_machine_type">
+
+            <div class="edit-form-group">
+                <label class="edit-form-label">QR Code</label>
+                <input type="text" id="edit_qr_code" class="edit-form-input" disabled>
+            </div>
+
+            <div class="edit-form-group">
+                <label class="edit-form-label">Status *</label>
+                <select id="edit_status" class="edit-form-select" required>
+                    <option value="">Select Status</option>
+                    <option value="OK">OK</option>
+                    <option value="NG">NG</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+
+            <div class="edit-form-actions">
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let currentResults = [];
+
+    // Form submission handler
+    document.getElementById('filterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        searchRecords();
+    });
+
+    // Clear button handler
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        document.getElementById('filterForm').reset();
+        clearResults();
+    });
+
+    // Search records
+    function searchRecords() {
+        showLoading();
+
+        const filters = {
+            qr_code: document.getElementById('qr_code').value,
+            model_name: document.getElementById('model_name').value,
+            machine: document.getElementById('machine').value,
+            status: document.getElementById('status').value,
+            start_date: document.getElementById('start_date').value,
+            end_date: document.getElementById('end_date').value,
+        };
+
+        const queryString = new URLSearchParams(filters).toString();
+
+        fetch(`/dashboard/rework/api/search/?${queryString}`)
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    currentResults = data.results;
+                    displayResults(data.results);
+                    updateResultsCount(data.count);
+                } else {
+                    showError('Search failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+    }
+
+    // Display results in table
+    function displayResults(results) {
+        const tbody = document.getElementById('resultsBody');
+        
+        if (results.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty-results">
+                        <div class="empty-results-icon">📭</div>
+                        <p>No records found matching your criteria</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = results.map((record, index) => {
+            const statusClass = record.status === 'OK' ? 'status-ok' : 
+                               record.status === 'NG' ? 'status-ng' : 'status-inprogress';
+            
+            const timestamp = new Date(record.timestamp).toLocaleString('en-IN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+
+            return `
+                <tr>
+                    <td>${record.display_name}</td>
+                    <td><strong>${record.qr_code}</strong></td>
+                    <td>${record.model_name}</td>
+                    <td>${timestamp}</td>
+                    <td><span class="status-badge ${statusClass}">${record.status}</span></td>
+                    <td>${record.previous_machine_status}</td>
+                    <td>
+                        <button class="edit-btn" onclick="openEditModal(${index})">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Update results count
+    function updateResultsCount(count) {
+        document.getElementById('resultsCount').textContent = `${count} record${count !== 1 ? 's' : ''}`;
+    }
+
+    // Clear results
+    function clearResults() {
+        currentResults = [];
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="empty-results">
+                    <div class="empty-results-icon">🔍</div>
+                    <p>Use the filters above to search for records</p>
+                </td>
+            </tr>
+        `;
+        updateResultsCount(0);
+    }
+
+    // Open edit modal
+    function openEditModal(index) {
+        const record = currentResults[index];
+        
+        // Populate record info
+        const recordInfo = document.getElementById('recordInfo');
+        recordInfo.innerHTML = `
+            <div class="info-item">
+                <span class="info-label">Machine</span>
+                <span class="info-value">${record.display_name}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Model Name</span>
+                <span class="info-value">${record.model_name}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Timestamp</span>
+                <span class="info-value">${new Date(record.timestamp).toLocaleString('en-IN')}</span>
+            </div>
+            ${record.qr_external !== '-' ? `
+            <div class="info-item">
+                <span class="info-label">QR External</span>
+                <span class="info-value">${record.qr_external}</span>
+            </div>
+            ` : ''}
+            ${record.qr_housing !== '-' ? `
+            <div class="info-item">
+                <span class="info-label">QR Housing</span>
+                <span class="info-value">${record.qr_housing}</span>
+            </div>
+            ` : ''}
+        `;
+
+        // Populate form fields
+        document.getElementById('edit_machine_name').value = record.machine_name;
+        document.getElementById('edit_prep_id').value = record.prep_id;
+        document.getElementById('edit_post_id').value = record.post_id || '';
+        document.getElementById('edit_machine_type').value = record.machine_type;
+        document.getElementById('edit_qr_code').value = record.qr_code;
+        document.getElementById('edit_status').value = record.status;
+
+        // Show modal
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+        document.getElementById('editForm').reset();
+    }
+
+    // Handle edit form submission
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const updateData = {
+            machine_name: document.getElementById('edit_machine_name').value,
+            prep_id: parseInt(document.getElementById('edit_prep_id').value),
+            post_id: document.getElementById('edit_post_id').value ? 
+                     parseInt(document.getElementById('edit_post_id').value) : null,
+            machine_type: document.getElementById('edit_machine_type').value,
+            status: document.getElementById('edit_status').value,
+        };
+
+        showLoading();
+
+        fetch('/dashboard/rework/api/update/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showSuccess('Record updated successfully!');
+                closeEditModal();
+                // Refresh search results
+                searchRecords();
+            } else {
+                showError('Update failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('Network error: ' + error.message);
+        });
+    });
+
+    // Utility functions
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showError(message) {
+        alert('Error: ' + message);
+    }
+
+    function showSuccess(message) {
+        alert('Success: ' + message);
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('editModal');
+        if (event.target === modal) {
+            closeEditModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeEditModal();
+        }
+    });
+</script>
+{% endblock %}
