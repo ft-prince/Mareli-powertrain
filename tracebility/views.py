@@ -69,6 +69,101 @@ OP80_CONFIG = {
 
 
 # ============================================================================
+# HELPER FUNCTION TO GET OK/NG COUNTS
+# ============================================================================
+
+def get_machine_counts(prep_model, post_model, machine_type='standard'):
+    """Get OK and NG counts for a machine"""
+    counts = {'ok': 0, 'ng': 0, 'pending': 0}
+    
+    try:
+        prep_records = prep_model.objects.all()[:100]
+        
+        for prep in prep_records:
+            if machine_type == 'painting':
+                qr_value = prep.qr_data_housing
+                post = post_model.objects.filter(qr_data_housing=qr_value).first()
+            elif machine_type == 'lubrication':
+                qr_value = prep.qr_data_piston
+                post = post_model.objects.filter(qr_data_piston=qr_value).first()
+            elif machine_type == 'op80':
+                qr_housing = prep.qr_data_housing
+                post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
+            else:
+                qr_value = prep.qr_data
+                post = post_model.objects.filter(qr_data=qr_value).first()
+            
+            if post:
+                if post.status == 'OK':
+                    counts['ok'] += 1
+                elif post.status == 'NG':
+                    counts['ng'] += 1
+                else:
+                    counts['pending'] += 1
+            else:
+                counts['pending'] += 1
+    except Exception as e:
+        print(f"Error getting counts: {e}")
+    
+    return counts
+
+
+def get_assembly_counts(prep_model):
+    """Get OK and NG counts for assembly machines"""
+    counts = {'ok': 0, 'ng': 0, 'pending': 0}
+    
+    try:
+        prep_records = prep_model.objects.all()[:100]
+        
+        for prep in prep_records:
+            if prep.qr_data_external and prep.qr_data_housing:
+                status = prep.status or 'OK'
+                if status == 'OK':
+                    counts['ok'] += 1
+                elif status == 'NG':
+                    counts['ng'] += 1
+                else:
+                    counts['pending'] += 1
+            else:
+                counts['pending'] += 1
+    except Exception as e:
+        print(f"Error getting assembly counts: {e}")
+    
+    return counts
+
+
+def get_washing_counts(prep_model, post_model, operation='load'):
+    """Get counts for washing machines"""
+    counts = {'ok': 0, 'ng': 0, 'pending': 0}
+    
+    try:
+        if operation == 'load' and prep_model:
+            records = prep_model.objects.all()[:100]
+            for record in records:
+                status = getattr(record, 'status', 'OK')
+                if status == 'OK':
+                    counts['ok'] += 1
+                elif status == 'NG':
+                    counts['ng'] += 1
+                else:
+                    counts['pending'] += 1
+        elif operation == 'unload' and post_model:
+            records = post_model.objects.all()[:100]
+            for record in records:
+                status = getattr(record, 'status', 'OK')
+                if status == 'OK':
+                    counts['ok'] += 1
+                elif status == 'NG':
+                    counts['ng'] += 1
+                else:
+                    counts['pending'] += 1
+    except Exception as e:
+        print(f"Error getting washing counts: {e}")
+    
+    return counts
+
+
+# ============================================================================
 # API to get machine list with IPs (for frontend dropdowns)
 # ============================================================================
 @csrf_exempt
@@ -126,17 +221,18 @@ def get_washing_load_data(prep_model):
     
     for prep in prep_records:
         model_name = getattr(prep, 'model_name', 'N/A')
+        previous_machine_status = getattr(prep, 'previous_machine_status', '-')
         
         record = {
             'prep_id': prep.id,
             'prep_timestamp': prep.timestamp,
             'qr_code': getattr(prep, 'qr_data', '-'),
             'prep_status': getattr(prep, 'status', 'OK'),
-            'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+            'previous_machine_status': previous_machine_status,
             'model_name': model_name,
             'post_id': None,
             'post_timestamp': None,
-            'post_status': 'N/A',  # Load doesn't have postprocessing
+            'post_status': 'N/A',
             'overall_status': getattr(prep, 'status', 'OK'),
             'status_class': 'load-only',
             'sort_priority': 1,
@@ -157,13 +253,14 @@ def get_washing_unload_data(post_model):
     
     for post in post_records:
         model_name = getattr(post, 'model_name', 'N/A')
+        previous_machine_status = getattr(post, 'previous_machine_status', '-')
         
         record = {
             'prep_id': None,
             'prep_timestamp': None,
             'qr_code': getattr(post, 'qr_data', '-'),
-            'prep_status': 'N/A',  # Unload doesn't have preprocessing
-            'previous_machine_status': getattr(post, 'previous_machine_status', '-'),
+            'prep_status': 'N/A',
+            'previous_machine_status': previous_machine_status,
             'model_name': model_name,
             'post_id': post.id,
             'post_timestamp': post.timestamp,
@@ -197,7 +294,7 @@ def get_latest_washing_load_record(prep_model):
         return {
             'prep_timestamp': timestamp_str,
             'qr_code': getattr(prep, 'qr_data', '-'),
-            'post_status': 'LOAD',  # Indicate this is a load operation
+            'post_status': 'LOAD',
             'prep_status': getattr(prep, 'status', 'OK'),
             'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
             'model_name': getattr(prep, 'model_name', 'N/A'),
@@ -225,10 +322,10 @@ def get_latest_washing_unload_record(post_model):
             timestamp_str = str(post_timestamp)
         
         return {
-            'prep_timestamp': timestamp_str,  # Use post timestamp as main timestamp
+            'prep_timestamp': timestamp_str,
             'qr_code': getattr(post, 'qr_data', '-'),
             'post_status': getattr(post, 'status', 'OK'),
-            'prep_status': 'UNLOAD',  # Indicate this is an unload operation
+            'prep_status': 'UNLOAD',
             'previous_machine_status': getattr(post, 'previous_machine_status', '-'),
             'model_name': getattr(post, 'model_name', 'N/A'),
         }
@@ -242,7 +339,7 @@ def get_latest_washing_unload_record(post_model):
 # ============================================================================
 
 def get_machine_data(prep_model, post_model, machine_type='standard'):
-    """Aggregate preprocessing and postprocessing data - UPDATED to include model_name"""
+    """Aggregate preprocessing and postprocessing data - UPDATED to include model_name and previous_machine_status"""
     records = []
     prep_records = prep_model.objects.all()[:100]
     
@@ -261,7 +358,7 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         elif machine_type == 'op80':
             qr_value_piston = prep.qr_data_piston
             qr_value_housing = prep.qr_data_housing
-            post = post_model.objects.filter(qr_data_housing=qr_value_housing).first()
+            post = post_model.objects.filter(qr_data_housing_new=qr_value_housing).first()
             
         else:
             qr_value = prep.qr_data
@@ -291,12 +388,14 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         
         machine_name = getattr(prep, 'machine_name', 'N/A')
         model_name = getattr(prep, 'model_name', 'N/A')
+        previous_machine_status = getattr(prep, 'previous_machine_status', '-')
         
         record = {
             'prep_id': prep.id,
             'prep_timestamp': prep.timestamp,
             'prep_machine_name': machine_name,
             'model_name': model_name,
+            'previous_machine_status': previous_machine_status,
             'prep_status': 'OK',
             'qr_code': qr_value if machine_type not in ['painting', 'op80'] else (qr_value_housing_prep if machine_type == 'painting' else qr_value_piston),
             'post_id': post_id,
@@ -314,7 +413,6 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
             record['qr_housing_post'] = post.qr_data_housing if post else None
             record['qr_piston_prep'] = qr_value_piston_prep
             record['qr_piston_post'] = post.qr_data_piston if post else None
-            record['previous_machine_status'] = prep.previous_machine_status
             record['pre_status'] = prep.pre_status
             record['model_name_housing'] = getattr(prep, 'model_name_housing', 'N/A')
             record['model_name_piston'] = getattr(prep, 'model_name_piston', 'N/A')
@@ -327,7 +425,6 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         elif machine_type == 'op80':
             record['qr_piston'] = qr_value_piston
             record['qr_housing_prep'] = qr_value_housing
-            record['previous_machine_status'] = prep.previous_machine_status
             record['model_name_internal'] = getattr(prep, 'model_name_internal', 'N/A')
             record['model_name_external'] = getattr(prep, 'model_name_external', 'N/A')
             
@@ -355,6 +452,8 @@ def get_assembly_machine_data(prep_model, post_model):
         model_name_internal = getattr(prep, 'model_name_internal', 'N/A')
         model_name_external = getattr(prep, 'model_name_external', 'N/A')
         model_name_housing = getattr(prep, 'model_name_housing', 'N/A')
+        previous_machine_internal_status = getattr(prep, 'previous_machine_internal_status', '-')
+        previous_machine_housing_status = getattr(prep, 'previous_machine_housing_status', '-')
         
         if prep.qr_data_external and prep.qr_data_housing:
             overall_status = prep.status or 'COMPLETE'
@@ -384,6 +483,8 @@ def get_assembly_machine_data(prep_model, post_model):
             'model_name_internal': model_name_internal,
             'model_name_external': model_name_external,
             'model_name_housing': model_name_housing,
+            'previous_machine_internal_status': previous_machine_internal_status,
+            'previous_machine_housing_status': previous_machine_housing_status,
             'post_id': post_id,
             'post_timestamp': post_timestamp,
             'post_status': post_status,
@@ -488,6 +589,7 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         return None
     
     model_name = getattr(latest_prep, 'model_name', 'N/A')
+    previous_machine_status = getattr(latest_prep, 'previous_machine_status', '-')
     
     if machine_type == 'painting':
         qr_value = latest_prep.qr_data_housing
@@ -534,6 +636,7 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         'has_post': post is not None,
         'gauge_values': gauge_values,
         'model_name': model_name,
+        'previous_machine_status': previous_machine_status,
     }
     
     if machine_type == 'painting':
@@ -563,6 +666,8 @@ def get_latest_assembly_record(prep_model, post_model):
     model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
     model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
     model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
+    previous_machine_internal_status = getattr(latest_prep, 'previous_machine_internal_status', '-')
+    previous_machine_housing_status = getattr(latest_prep, 'previous_machine_housing_status', '-')
     
     prep_timestamp = latest_prep.timestamp_internal
     if hasattr(prep_timestamp, 'isoformat'):
@@ -580,15 +685,17 @@ def get_latest_assembly_record(prep_model, post_model):
         'model_name_internal': model_name_internal,
         'model_name_external': model_name_external,
         'model_name_housing': model_name_housing,
+        'previous_machine_internal_status': previous_machine_internal_status,
+        'previous_machine_housing_status': previous_machine_housing_status,
     }
 
 
 # ============================================================================
-# MAIN VIEWS - UPDATED WITH WASHING MACHINE SUPPORT
+# MAIN VIEWS - UPDATED WITH WASHING MACHINE SUPPORT AND COUNTS
 # ============================================================================
 
 def dashboard_view(request):
-    """Main dashboard showing all machines - UPDATED for washing machines"""
+    """Main dashboard showing all machines - UPDATED for washing machines and counts"""
     machines_data = []
     
     for config in MACHINE_CONFIGS:
@@ -599,6 +706,7 @@ def dashboard_view(request):
             if operation == 'load' and config['prep_model']:
                 is_active = check_machine_status(config['prep_model'])
                 latest_record = get_latest_washing_load_record(config['prep_model'])
+                counts = get_washing_counts(config['prep_model'], None, 'load')
             elif operation == 'unload' and config['post_model']:
                 try:
                     latest_post = config['post_model'].objects.first()
@@ -623,9 +731,11 @@ def dashboard_view(request):
                     is_active = False
                 
                 latest_record = get_latest_washing_unload_record(config['post_model'])
+                counts = get_washing_counts(None, config['post_model'], 'unload')
             else:
                 is_active = False
                 latest_record = None
+                counts = {'ok': 0, 'ng': 0, 'pending': 0}
         else:
             # Regular machines
             is_active = check_machine_status(config['prep_model'])
@@ -637,6 +747,7 @@ def dashboard_view(request):
                 machine_type = 'lubrication'
             
             latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
+            counts = get_machine_counts(config['prep_model'], config['post_model'], machine_type)
         
         machines_data.append({
             'name': config['name'],
@@ -648,11 +759,13 @@ def dashboard_view(request):
             'is_assembly': False,
             'machine_id': config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_'),
             'latest_record': latest_record,
+            'counts': counts,
         })
     
     for config in ASSEMBLY_CONFIGS:
         is_active = check_machine_status(config['prep_model'])
         latest_record = get_latest_assembly_record(config['prep_model'], config['post_model'])
+        counts = get_assembly_counts(config['prep_model'])
         
         machines_data.append({
             'name': config['name'],
@@ -664,6 +777,7 @@ def dashboard_view(request):
             'is_assembly': True,
             'machine_id': config['name'].lower().replace(' ', '_'),
             'latest_record': latest_record,
+            'counts': counts,
         })
     
     # Add OP80
@@ -673,6 +787,7 @@ def dashboard_view(request):
         OP80_CONFIG['post_model'], 
         'op80'
     )
+    counts = get_machine_counts(OP80_CONFIG['prep_model'], OP80_CONFIG['post_model'], 'op80')
     
     machines_data.append({
         'name': OP80_CONFIG['name'],
@@ -684,6 +799,7 @@ def dashboard_view(request):
         'is_assembly': False,
         'machine_id': 'op80_leak_test',
         'latest_record': latest_record,
+        'counts': counts,
     })
     
     return render(request, 'dashboard/dashboard.html', {'machines': machines_data})
@@ -762,7 +878,7 @@ def machine_detail_view(request, machine_name):
 
 @csrf_exempt
 def machine_data_api(request, machine_name):
-    """API endpoint for real-time updates and modal data - UPDATED for washing machines"""
+    """API endpoint for real-time updates and modal data - UPDATED for washing machines and counts"""
     config = None
     is_assembly = False
     
@@ -793,6 +909,7 @@ def machine_data_api(request, machine_name):
         if operation == 'load':
             records = get_washing_load_data(config['prep_model'])
             is_active = check_machine_status(config['prep_model']) if config['prep_model'] else False
+            counts = get_washing_counts(config['prep_model'], None, 'load')
         else:
             records = get_washing_unload_data(config['post_model'])
             try:
@@ -810,6 +927,7 @@ def machine_data_api(request, machine_name):
                     is_active = False
             except:
                 is_active = False
+            counts = get_washing_counts(None, config['post_model'], 'unload')
         
         for record in records:
             if record.get('prep_timestamp') and hasattr(record['prep_timestamp'], 'isoformat'):
@@ -827,11 +945,13 @@ def machine_data_api(request, machine_name):
             'is_active': is_active,
             'records': records,
             'is_assembly': False,
+            'counts': counts,
         })
     
     if is_assembly:
         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
         machine_type = 'assembly'
+        counts = get_assembly_counts(config['prep_model'])
     else:
         machine_type = 'standard'
         if 'Painting' in config['name']:
@@ -842,6 +962,7 @@ def machine_data_api(request, machine_name):
             machine_type = 'op80'
         
         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
+        counts = get_machine_counts(config['prep_model'], config['post_model'], machine_type)
     
     is_active = check_machine_status(config['prep_model'])
     
@@ -860,6 +981,7 @@ def machine_data_api(request, machine_name):
         'is_active': is_active,
         'records': records,
         'is_assembly': is_assembly,
+        'counts': counts,
     })
 
 
@@ -1000,7 +1122,7 @@ def export_machine_data(request, machine_name):
     
     if is_assembly:
         writer.writerow(['ID', 'QR Internal', 'QR External', 'QR Housing', 'Model Internal', 'Model External', 'Model Housing',
-                        'Prep Timestamp', 'Post Timestamp', 'Status', 'Overall Status'])
+                        'Prep Timestamp', 'Post Timestamp', 'Status', 'Overall Status', 'Prev Machine Internal', 'Prev Machine Housing'])
         for record in records:
             writer.writerow([
                 record['prep_id'], record['qr_code'], record.get('qr_external', '-'),
@@ -1009,23 +1131,24 @@ def export_machine_data(request, machine_name):
                 record['prep_timestamp'],
                 record['post_timestamp'] or '-', record['post_status'] or '-',
                 record['overall_status'],
+                record.get('previous_machine_internal_status', '-'), record.get('previous_machine_housing_status', '-'),
             ])
     else:
         writer.writerow(['ID', 'QR Code', 'Model Name', 'Prep Timestamp', 'Post Timestamp', 
-                        'Status', 'Overall Status', 'Gauge Values'])
+                        'Status', 'Overall Status', 'Previous Machine Status', 'Gauge Values'])
         for record in records:
             writer.writerow([
                 record.get('prep_id') or record.get('post_id'), record['qr_code'], record.get('model_name', 'N/A'),
                 record.get('prep_timestamp') or '-',
                 record.get('post_timestamp') or '-', record.get('post_status') or '-',
-                record['overall_status'], record.get('gauge_values', '-') or '-',
+                record['overall_status'], record.get('previous_machine_status', '-'), record.get('gauge_values', '-') or '-',
             ])
     
     return response
 
 
 # ============================================================================
-# REAL-TIME STREAMING (SSE) - UPDATED FOR WASHING MACHINES
+# REAL-TIME STREAMING (SSE) - UPDATED FOR WASHING MACHINES AND COUNTS
 # ============================================================================
 
 def get_latest_record_count(model):
@@ -1046,6 +1169,7 @@ def get_dashboard_summary():
             if operation == 'load' and config['prep_model']:
                 is_active = check_machine_status(config['prep_model'])
                 latest_record = get_latest_washing_load_record(config['prep_model'])
+                counts = get_washing_counts(config['prep_model'], None, 'load')
             elif operation == 'unload' and config['post_model']:
                 try:
                     latest_post = config['post_model'].objects.first()
@@ -1064,9 +1188,11 @@ def get_dashboard_summary():
                     is_active = False
                 
                 latest_record = get_latest_washing_unload_record(config['post_model'])
+                counts = get_washing_counts(None, config['post_model'], 'unload')
             else:
                 is_active = False
                 latest_record = None
+                counts = {'ok': 0, 'ng': 0, 'pending': 0}
         else:
             is_active = check_machine_status(config['prep_model'])
             machine_type = 'standard'
@@ -1076,6 +1202,7 @@ def get_dashboard_summary():
                 machine_type = 'lubrication'
             
             latest_record = get_latest_machine_record(config['prep_model'], config['post_model'], machine_type)
+            counts = get_machine_counts(config['prep_model'], config['post_model'], machine_type)
         
         machines_data.append({
             'name': config['name'],
@@ -1086,11 +1213,13 @@ def get_dashboard_summary():
             'is_active': is_active,
             'latest_record': latest_record,
             'type': config['type'],
+            'counts': counts,
         })
     
     for config in ASSEMBLY_CONFIGS:
         is_active = check_machine_status(config['prep_model'])
         latest_record = get_latest_assembly_record(config['prep_model'], config['post_model'])
+        counts = get_assembly_counts(config['prep_model'])
         
         machines_data.append({
             'name': config['name'],
@@ -1102,6 +1231,7 @@ def get_dashboard_summary():
             'latest_record': latest_record,
             'is_assembly': True,
             'type': 'assembly',
+            'counts': counts,
         })
     
     is_active = check_machine_status(OP80_CONFIG['prep_model'])
@@ -1110,6 +1240,7 @@ def get_dashboard_summary():
         OP80_CONFIG['post_model'], 
         'op80'
     )
+    counts = get_machine_counts(OP80_CONFIG['prep_model'], OP80_CONFIG['post_model'], 'op80')
     
     machines_data.append({
         'name': OP80_CONFIG['name'],
@@ -1120,6 +1251,7 @@ def get_dashboard_summary():
         'is_active': is_active,
         'latest_record': latest_record,
         'type': 'op80',
+        'counts': counts,
     })
     
     return machines_data
@@ -1257,6 +1389,7 @@ def sse_machine_stream(request, machine_name):
                         if operation == 'load':
                             records = get_washing_load_data(config['prep_model'])
                             is_active = check_machine_status(config['prep_model']) if config['prep_model'] else False
+                            counts = get_washing_counts(config['prep_model'], None, 'load')
                         else:
                             records = get_washing_unload_data(config['post_model'])
                             try:
@@ -1274,11 +1407,13 @@ def sse_machine_stream(request, machine_name):
                                     is_active = False
                             except:
                                 is_active = False
+                            counts = get_washing_counts(None, config['post_model'], 'unload')
                     
                     elif is_assembly:
                         records = get_assembly_machine_data(config['prep_model'], config['post_model'])
                         machine_type = 'assembly'
                         is_active = check_machine_status(config['prep_model'])
+                        counts = get_assembly_counts(config['prep_model'])
                     else:
                         machine_type = 'standard'
                         if 'Painting' in config['name']:
@@ -1289,6 +1424,7 @@ def sse_machine_stream(request, machine_name):
                             machine_type = 'op80'
                         records = get_machine_data(config['prep_model'], config['post_model'], machine_type)
                         is_active = check_machine_status(config['prep_model'])
+                        counts = get_machine_counts(config['prep_model'], config['post_model'], machine_type)
                     
                     for record in records:
                         if record.get('prep_timestamp') and hasattr(record['prep_timestamp'], 'isoformat'):
@@ -1306,6 +1442,7 @@ def sse_machine_stream(request, machine_name):
                         'is_active': is_active,
                         'records': records,
                         'is_assembly': is_assembly,
+                        'counts': counts,
                     }
                     
                     if config.get('type') == 'washing':
@@ -1332,7 +1469,7 @@ def sse_machine_stream(request, machine_name):
 
 
 # ============================================================================
-# ANALYTICS VIEWS
+# ANALYTICS VIEWS (keeping existing analytics functions)
 # ============================================================================
 
 def analytics_view(request):
@@ -1409,7 +1546,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         'trend_data': {'labels': [], 'values': []},
         'detailed_data': [],
         'active_machines': 0,
-        'model_breakdown': {}  # NEW: breakdown by model_name
+        'model_breakdown': {}
     }
     
     all_records = []
@@ -1527,7 +1664,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
                 'qr_code': qr_value,
                 'timestamp': timestamp,
                 'status': status,
-                'model_name': model_name,  # NEW
+                'model_name': model_name,
             })
         
         # Add machine stats if it has data
@@ -1707,5 +1844,3 @@ def analytics_export(request):
         ])
     
     return response
-
-
