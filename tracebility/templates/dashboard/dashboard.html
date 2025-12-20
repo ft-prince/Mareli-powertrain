@@ -469,11 +469,12 @@ function getMachineGroup(machineId) {
     if (machineId.includes('honing')) return 'honing';
     if (machineId.includes('prewashing') || machineId.includes('finalwashing') || machineId.includes('finlwashing')) return 'washing';
     if (machineId.includes('deburring')) return 'processing';
-    if (machineId.includes('op40')) return 'assembly';
-    if (machineId.includes('op80') || machineId.includes('painting') || machineId.includes('lubrication')) return 'special';
+    // OP80 moved to assembly group alongside OP40 machines
+    if (machineId.includes('op40') || machineId.includes('op80')) return 'assembly';
+    // Only painting and lubrication remain in special
+    if (machineId.includes('painting') || machineId.includes('lubrication')) return 'special';
     return 'other';
 }
-
 function filterMachineGroup(group) {
     currentGroup = group;
     

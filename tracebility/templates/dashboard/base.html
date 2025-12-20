@@ -48,8 +48,12 @@ body {
 
 .header {
     background: var(--white);
-    padding: 1.5rem 2rem;
     box-shadow: 0 4px 6px var(--shadow);
+}
+
+.header-top {
+    padding: 0.1rem 2rem;
+    border-bottom: 1px solid var(--medium-gray);
 }
 
 .header-content {
@@ -57,7 +61,7 @@ body {
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: right;
     gap: 2rem;
 }
 
@@ -85,6 +89,96 @@ body {
     font-size: 0.9rem;
     color: var(--dark-gray);
     margin-top: 0.25rem;
+}
+
+/* Navigation Styles */
+.navbar {
+    background: slate;
+    
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+    width: 100%;
+    justify-content: flex-end;
+
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.2rem 2rem;
+    color: var(--primary-coral);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: all 0.3s;
+    border-radius: 0;
+    position: relative;
+    white-space: nowrap;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: var(--primary-coral);
+    transition: width 0.3s;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.nav-link.active::after {
+    width: 100%;
+}
+
+.nav-icon {
+    font-size: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
 }
 
 .search-container {
@@ -375,6 +469,7 @@ tr.in-progress {
     margin-bottom: 1rem;
 }
 
+/* Responsive Mobile Styles */
 @media (max-width: 768px) {
     .header-content {
         flex-direction: column;
@@ -384,6 +479,37 @@ tr.in-progress {
 
     .header-logo {
         max-width: 150px;
+    }
+
+    .mobile-menu-toggle {
+        display: block;
+    }
+
+    .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nav-menu {
+        flex-direction: column;
+        gap: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+
+    .nav-menu.active {
+        max-height: 500px;
+    }
+
+    .nav-link {
+        border-radius: 0;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-link::after {
+        display: none;
     }
 
     .machine-grid {
@@ -601,19 +727,82 @@ tr.in-progress {
   </style>
   <body>
     <header class="header">
-      <div class="header-content">
-    <img src="{% static 'logo.png' %}" 
- alt='Renata IoT' class="header-logo"/> 
-        <div class="header-text">
-          <h1>Renata <> Traceability</h1>
-          <div class="header-subtitle">Marelli Powertrain India</div>
+      <div class="header-top">
+        <div class="header-content">
+          <img src="{% static 'logo.png' %}" 
+               alt='Renata IoT' class="header-logo"/> 
+          <div class="header-text">
+            <h1>Renata <> Traceability</h1>
+            <div class="header-subtitle">Marelli Powertrain India</div>
+          </div>
         </div>
       </div>
+      
+      <nav class="navbar">
+        <div class="nav-container">
+          <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+            ☰
+          </button>
+          <ul class="nav-menu" id="navMenu">
+            <li class="nav-item">
+              <a href="/" class="nav-link">
+                <span class="nav-icon">🏠</span>
+                <span>Home</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="/monitoring/" class="nav-link">
+                <span class="nav-icon">📊</span>
+                <span>Monitoring</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="/rework/" class="nav-link">
+                <span class="nav-icon">🔧</span>
+                <span>Rework</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
     </header>
 
     {% block search %} {% endblock %}
 
     <main class="container">{% block content %} {% endblock %}</main>
+
+    <script>
+      // Mobile menu toggle
+      function toggleMobileMenu() {
+        const navMenu = document.getElementById('navMenu');
+        navMenu.classList.toggle('active');
+      }
+
+      // Set active nav link based on current URL
+      document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        navLinks.forEach(link => {
+          if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+          }
+        });
+      });
+
+      // Close mobile menu when clicking outside
+      document.addEventListener('click', function(event) {
+        const navMenu = document.getElementById('navMenu');
+        const menuToggle = document.querySelector('.mobile-menu-toggle');
+        
+        if (window.innerWidth <= 768 && 
+            navMenu.classList.contains('active') && 
+            !navMenu.contains(event.target) && 
+            !menuToggle.contains(event.target)) {
+          navMenu.classList.remove('active');
+        }
+      });
+    </script>
 
     {% block scripts %} {% endblock %}
   </body>

@@ -130,7 +130,7 @@ def parse_time_filter(time_filter):
 def search_monitoring_data(filters):
     """
     Search across all machines based on filters for monitoring
-    Returns list of records with machine info and ALL relevant fields
+    Returns list of records with ALL details including gauge values, multiple QR codes, etc.
     """
     results = []
     
@@ -145,7 +145,6 @@ def search_monitoring_data(filters):
     
     # Parse dates based on time filter or custom range
     if custom_start and custom_end:
-        # Custom range
         try:
             start_dt = timezone.make_aware(datetime.strptime(custom_start, '%Y-%m-%d'))
         except:
@@ -156,13 +155,11 @@ def search_monitoring_data(filters):
         except:
             end_dt = timezone.now()
     else:
-        # Quick filter
         start_dt, end_dt = parse_time_filter(time_filter)
     
     # Determine which machines to search
     configs_to_search = []
     if machine_id and machine_id != 'all':
-        # Search specific machine
         for config in MACHINE_CONFIGS:
             config_id = config['name'].lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
             if config_id == machine_id:
@@ -179,7 +176,6 @@ def search_monitoring_data(filters):
         if not configs_to_search and machine_id == 'op80_leak_test':
             configs_to_search.append(OP80_CONFIG)
     else:
-        # Search all machines
         configs_to_search = MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]
     
     # Search each machine
@@ -190,14 +186,16 @@ def search_monitoring_data(filters):
         operation = config.get('operation', None)
         is_assembly = 'OP40' in machine_name
         is_washing = machine_type == 'washing'
+        is_gauge = machine_type == 'gauge'
+        is_painting = 'Painting' in machine_name
+        is_lubrication = 'Lubrication' in machine_name
+        is_op80 = 'Oring_leak' in machine_name
         
         # Handle washing machines separately
         if is_washing:
             if operation == 'load' and config.get('prep_model'):
-                # Search Preprocessing (Loading stage)
                 results.extend(search_washing_load_monitoring(config, qr_code, model_name, start_dt, end_dt, status_filter))
             elif operation == 'unload' and config.get('post_model'):
-                # Search Postprocessing (Unloading stage)
                 results.extend(search_washing_unload_monitoring(config, qr_code, model_name, start_dt, end_dt, status_filter))
             continue
         
@@ -213,11 +211,11 @@ def search_monitoring_data(filters):
                 query &= (Q(qr_data_internal__icontains=qr_code) | 
                          Q(qr_data_external__icontains=qr_code) | 
                          Q(qr_data_housing__icontains=qr_code))
-            elif 'Painting' in machine_name:
+            elif is_painting:
                 query &= (Q(qr_data_housing__icontains=qr_code) | Q(qr_data_piston__icontains=qr_code))
-            elif 'Lubrication' in machine_name:
+            elif is_lubrication:
                 query &= (Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code))
-            elif 'Oring_leak' in machine_name:
+            elif is_op80:
                 query &= (Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code))
             else:
                 query &= Q(qr_data__icontains=qr_code)
@@ -228,18 +226,18 @@ def search_monitoring_data(filters):
                 query &= (Q(model_name_internal=model_name) | 
                          Q(model_name_external=model_name) | 
                          Q(model_name_housing=model_name))
-            elif 'Painting' in machine_name:
+            elif is_painting:
                 query &= (Q(model_name_housing=model_name) | Q(model_name_piston=model_name))
-            elif 'Lubrication' in machine_name:
+            elif is_lubrication:
                 query &= (Q(model_name_piston=model_name) | Q(model_name_housing=model_name))
-            elif 'Oring_leak' in machine_name:
+            elif is_op80:
                 query &= (Q(model_name_internal=model_name) | Q(model_name_external=model_name))
             else:
                 query &= Q(model_name=model_name)
         
         # Get preprocessing records
         try:
-            prep_records = config['prep_model'].objects.filter(query)[:1000]  # Limit to 1000 results
+            prep_records = config['prep_model'].objects.filter(query)[:1000]
         except Exception as e:
             print(f"Error querying {machine_name}: {e}")
             continue
@@ -264,53 +262,126 @@ def search_monitoring_data(filters):
                     if end_dt and dt > end_dt:
                         continue
             
-            # Get status and QR based on machine type
+            # Initialize record with common fields
+            record = {
+                'prep_id': prep.id,
+                'machine_name': machine_name,
+                'display_name': display_name,
+                'machine_type': machine_type,
+            }
+            
+            # Get status and details based on machine type
             if is_assembly:
-                qr_value = prep.qr_data_internal
+                # ASSEMBLY MACHINES
+                qr_internal = prep.qr_data_internal
                 qr_external = prep.qr_data_external or '-'
                 qr_housing = prep.qr_data_housing or '-'
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
-                model_internal = getattr(prep, 'model_name_internal', 'N/A')
-                model_external = getattr(prep, 'model_name_external', 'N/A')
-                model_housing = getattr(prep, 'model_name_housing', 'N/A')
                 
-            elif 'Painting' in machine_name:
-                qr_value = prep.qr_data_housing
-                qr_piston = prep.qr_data_piston
-                qr_external = '-'
-                qr_housing = qr_value
-                post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
-                status = post.status if post else 'Pending'
-                model_housing = getattr(prep, 'model_name_housing', 'N/A')
-                model_piston = getattr(prep, 'model_name_piston', 'N/A')
+                record.update({
+                    'qr_code': qr_internal,
+                    'qr_internal': qr_internal,
+                    'qr_external': qr_external,
+                    'qr_housing': qr_housing,
+                    'model_name': getattr(prep, 'model_name_internal', 'N/A'),
+                    'model_name_internal': getattr(prep, 'model_name_internal', 'N/A'),
+                    'model_name_external': getattr(prep, 'model_name_external', 'N/A'),
+                    'model_name_housing': getattr(prep, 'model_name_housing', 'N/A'),
+                    'previous_machine_internal_status': getattr(prep, 'previous_machine_internal_status', '-'),
+                    'previous_machine_housing_status': getattr(prep, 'previous_machine_housing_status', '-'),
+                    'status': status,
+                    'post_id': prep.id if status != 'Pending' else None,
+                })
                 
-            elif 'Lubrication' in machine_name:
-                qr_value = prep.qr_data_piston
-                qr_piston = qr_value
+            elif is_painting:
+                # PAINTING MACHINE
                 qr_housing = prep.qr_data_housing
-                qr_external = '-'
-                post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
+                qr_piston = prep.qr_data_piston
+                post = config['post_model'].objects.filter(qr_data_housing=qr_housing).first()
                 status = post.status if post else 'Pending'
-                model_piston = getattr(prep, 'model_name_piston', 'N/A')
-                model_housing = getattr(prep, 'model_name_housing', 'N/A')
                 
-            elif 'Oring_leak' in machine_name:
+                record.update({
+                    'qr_code': qr_housing,
+                    'qr_housing': qr_housing,
+                    'qr_piston': qr_piston,
+                    'model_name': getattr(prep, 'model_name_housing', 'N/A'),
+                    'model_name_housing': getattr(prep, 'model_name_housing', 'N/A'),
+                    'model_name_piston': getattr(prep, 'model_name_piston', 'N/A'),
+                    'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+                    'pre_status': getattr(prep, 'pre_status', '-'),
+                    'status': status,
+                    'post_id': post.id if post else None,
+                })
+                
+            elif is_lubrication:
+                # LUBRICATION MACHINE
                 qr_piston = prep.qr_data_piston
                 qr_housing = prep.qr_data_housing
-                qr_value = qr_piston
-                qr_external = '-'
-                post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
+                post = config['post_model'].objects.filter(qr_data_piston=qr_piston).first()
                 status = post.status if post else 'Pending'
-                model_internal = getattr(prep, 'model_name_internal', 'N/A')
-                model_external = getattr(prep, 'model_name_external', 'N/A')
+                
+                record.update({
+                    'qr_code': qr_piston,
+                    'qr_piston': qr_piston,
+                    'qr_housing': qr_housing,
+                    'model_name': getattr(prep, 'model_name_piston', 'N/A'),
+                    'model_name_piston': getattr(prep, 'model_name_piston', 'N/A'),
+                    'model_name_housing': getattr(prep, 'model_name_housing', 'N/A'),
+                    'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+                    'status': status,
+                    'post_id': post.id if post else None,
+                })
+                
+            elif is_op80:
+                # OP80 LEAK TEST
+                qr_piston = prep.qr_data_piston
+                qr_housing = prep.qr_data_housing
+                
+                # Try multiple matching strategies
+                post = config['post_model'].objects.filter(qr_data_housing=qr_housing).first()
+                if not post:
+                    post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
+                if not post:
+                    post = config['post_model'].objects.filter(qr_data_housing=qr_piston).first()
+                
+                status = post.status if post else 'Pending'
+                
+                record.update({
+                    'qr_code': qr_piston,
+                    'qr_piston': qr_piston,
+                    'qr_housing': qr_housing,
+                    'qr_housing_new': post.qr_data_housing_new if post else '-',
+                    'model_name': getattr(prep, 'model_name_internal', 'N/A'),
+                    'model_name_internal': getattr(prep, 'model_name_internal', 'N/A'),
+                    'model_name_external': getattr(prep, 'model_name_external', 'N/A'),
+                    'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+                    'match_status': post.match_status if post else '-',
+                    'status': status,
+                    'post_id': post.id if post else None,
+                })
                 
             else:
+                # STANDARD MACHINES (CNC, Gauge, Honing, etc.)
                 qr_value = prep.qr_data
-                qr_external = '-'
-                qr_housing = '-'
                 post = config['post_model'].objects.filter(qr_data=qr_value).first() if config['post_model'] else None
                 status = post.status if post else 'Pending'
-                model_value = getattr(prep, 'model_name', 'N/A')
+                
+                record.update({
+                    'qr_code': qr_value,
+                    'model_name': getattr(prep, 'model_name', 'N/A'),
+                    'previous_machine_status': getattr(prep, 'previous_machine_status', '-'),
+                    'status': status,
+                    'post_id': post.id if post else None,
+                })
+                
+                # Add gauge values if this is a gauge machine
+                if is_gauge and post:
+                    gauge_values = {}
+                    for i in range(1, 7):
+                        val = getattr(post, f'value{i}', None)
+                        if val is not None:
+                            gauge_values[f'value{i}'] = val
+                    record['gauge_values'] = gauge_values
             
             # Status filter
             if status_filter and status_filter != 'all' and status != status_filter:
@@ -322,72 +393,7 @@ def search_monitoring_data(filters):
             else:
                 timestamp_str = str(timestamp)
             
-            # Build record with ALL relevant fields
-            record = {
-                'prep_id': prep.id,
-                'post_id': post.id if 'post' in locals() and post else None,
-                'machine_name': machine_name,
-                'display_name': display_name,
-                'machine_type': machine_type,
-                'qr_code': qr_value,
-                'timestamp': timestamp_str,
-                'status': status,
-                'stage': 'Preprocessing & Postprocessing' if 'post' in locals() and post else 'Preprocessing Only',
-            }
-            
-            # Add machine-specific fields
-            if is_assembly:
-                record.update({
-                    'qr_internal': qr_value,
-                    'qr_external': qr_external,
-                    'qr_housing': qr_housing,
-                    'model_name': model_internal,
-                    'model_name_internal': model_internal,
-                    'model_name_external': model_external,
-                    'model_name_housing': model_housing,
-                })
-                
-            elif 'Painting' in machine_name:
-                record.update({
-                    'qr_housing': qr_housing,
-                    'qr_piston': qr_piston,
-                    'model_name': model_housing,
-                    'model_name_housing': model_housing,
-                    'model_name_piston': model_piston,
-                })
-                
-            elif 'Lubrication' in machine_name:
-                record.update({
-                    'qr_piston': qr_piston,
-                    'qr_housing': qr_housing,
-                    'model_name': model_piston,
-                    'model_name_piston': model_piston,
-                    'model_name_housing': model_housing,
-                })
-                
-            elif 'Oring_leak' in machine_name:
-                record.update({
-                    'qr_piston': qr_piston,
-                    'qr_housing': qr_housing,
-                    'model_name': model_internal,
-                    'model_name_internal': model_internal,
-                    'model_name_external': model_external,
-                })
-                
-            else:
-                record.update({
-                    'model_name': model_value,
-                })
-                
-                # Add gauge values if available
-                if post and hasattr(post, 'value1'):
-                    gauge_values = {}
-                    for i in range(1, 7):
-                        val = getattr(post, f'value{i}', None)
-                        if val is not None:
-                            gauge_values[f'value{i}'] = val
-                    record['gauge_values'] = gauge_values
-            
+            record['timestamp'] = timestamp_str
             results.append(record)
     
     # Sort by timestamp (newest first)
@@ -554,7 +560,7 @@ def monitoring_search_api(request):
 
 @csrf_exempt
 def monitoring_export_excel(request):
-    """Export monitoring data to Excel with styling"""
+    """Export monitoring data to Excel with ALL details and styling"""
     if request.method != 'GET':
         return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
     
@@ -579,8 +585,8 @@ def monitoring_export_excel(request):
     
     # Define styles
     header_fill = PatternFill(start_color="FF7755", end_color="FF7755", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_alignment = Alignment(horizontal="center", vertical="center")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     
     border_style = Border(
         left=Side(style='thin'),
@@ -596,78 +602,54 @@ def monitoring_export_excel(request):
         'Pending': PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid"),
     }
     
-    # Determine what columns we need based on data
-    has_washing = any(r.get('machine_type') == 'washing' for r in results)
-    has_assembly = any(r.get('machine_type') == 'assembly' for r in results)
+    # Comprehensive headers - include ALL possible fields
+    headers = [
+        'Prep ID', 'Post ID', 'Machine', 'Machine Type', 'QR Code', 
+        'Date', 'Time', 'Status', 'Model Name', 'Previous Status',
+        # Assembly specific
+        'QR Internal', 'QR External', 'QR Housing',
+        'Model Internal', 'Model External', 'Model Housing',
+        'Prev Internal Status', 'Prev Housing Status',
+        # Painting specific
+        'QR Piston', 'Model Piston', 'Model Housing (Paint)', 'Pre-Status',
+        # Lubrication specific  
+        'QR Piston (Lub)', 'QR Housing (Lub)', 'Model Piston (Lub)', 'Model Housing (Lub)',
+        # OP80 specific
+        'QR Piston (OP80)', 'QR Housing (OP80)', 'QR Housing New', 'Model Internal (OP80)', 
+        'Model External (OP80)', 'Match Status',
+        # Gauge specific
+        'Gauge Value 1', 'Gauge Value 2', 'Gauge Value 3', 
+        'Gauge Value 4', 'Gauge Value 5', 'Gauge Value 6',
+        # Washing specific
+        'Washing Stage', 'Washing Prev Status'
+    ]
     
-    # Headers
-    headers = ['ID', 'Machine', 'Machine Type']
-    if has_washing:
-        headers.append('Stage')
-    headers.extend(['QR Code'])
-    if has_assembly:
-        headers.extend(['QR Internal', 'QR External', 'QR Housing'])
-    headers.extend(['Model Name', 'Date', 'Time', 'Status'])
-    if has_washing:
-        headers.append('Previous Status')
-    
+    # Write headers
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num, value=header)
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = header_alignment
         cell.border = border_style
+        ws.row_dimensions[1].height = 30
     
     # Data rows
     for row_num, record in enumerate(results, 2):
         col_num = 1
         
-        # ID
-        ws.cell(row=row_num, column=col_num, value=record.get('prep_id') or record.get('post_id'))
+        # Common fields
+        ws.cell(row=row_num, column=col_num, value=record.get('prep_id') or '-')
         col_num += 1
-        
-        # Machine
+        ws.cell(row=row_num, column=col_num, value=record.get('post_id') or '-')
+        col_num += 1
         ws.cell(row=row_num, column=col_num, value=record.get('display_name', 'N/A'))
         col_num += 1
-        
-        # Machine Type
         ws.cell(row=row_num, column=col_num, value=record.get('machine_type', 'N/A'))
         col_num += 1
-        
-        # Stage (washing only)
-        if has_washing:
-            stage = ''
-            if record.get('machine_type') == 'washing':
-                stage = 'Loading' if record.get('operation') == 'load' else 'Unloading'
-            ws.cell(row=row_num, column=col_num, value=stage)
-            col_num += 1
-        
-        # QR Code
         ws.cell(row=row_num, column=col_num, value=record.get('qr_code', '-'))
         col_num += 1
         
-        # Assembly QR codes
-        if has_assembly:
-            if record.get('machine_type') == 'assembly':
-                ws.cell(row=row_num, column=col_num, value=record.get('qr_internal', '-'))
-                col_num += 1
-                ws.cell(row=row_num, column=col_num, value=record.get('qr_external', '-'))
-                col_num += 1
-                ws.cell(row=row_num, column=col_num, value=record.get('qr_housing', '-'))
-                col_num += 1
-            else:
-                ws.cell(row=row_num, column=col_num, value='-')
-                col_num += 1
-                ws.cell(row=row_num, column=col_num, value='-')
-                col_num += 1
-                ws.cell(row=row_num, column=col_num, value='-')
-                col_num += 1
-        
-        # Model Name
-        ws.cell(row=row_num, column=col_num, value=record.get('model_name', 'N/A'))
-        col_num += 1
-        
-        # Timestamp - parse and format into Date and Time
+        # Date and Time
         timestamp_str = record.get('timestamp', '')
         try:
             dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
@@ -681,7 +663,7 @@ def monitoring_export_excel(request):
             ws.cell(row=row_num, column=col_num, value='')
             col_num += 1
         
-        # Status with color coding
+        # Status with color
         status = record.get('status', 'Pending')
         status_cell = ws.cell(row=row_num, column=col_num, value=status)
         if status in status_fills:
@@ -689,13 +671,104 @@ def monitoring_export_excel(request):
         status_cell.font = Font(bold=True)
         col_num += 1
         
-        # Previous Status (washing only)
-        if has_washing:
-            prev_status = ''
-            if record.get('machine_type') == 'washing':
-                prev_status = record.get('previous_machine_status', '-')
-            ws.cell(row=row_num, column=col_num, value=prev_status)
+        # Model Name and Previous Status
+        ws.cell(row=row_num, column=col_num, value=record.get('model_name', 'N/A'))
+        col_num += 1
+        ws.cell(row=row_num, column=col_num, value=record.get('previous_machine_status', '-'))
+        col_num += 1
+        
+        # Assembly specific fields
+        machine_type = record.get('machine_type', '')
+        if machine_type == 'assembly':
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_internal', '-'))
             col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_external', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_housing', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_internal', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_external', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_housing', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('previous_machine_internal_status', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('previous_machine_housing_status', '-'))
+            col_num += 1
+        else:
+            for _ in range(8):
+                ws.cell(row=row_num, column=col_num, value='-')
+                col_num += 1
+        
+        # Painting specific fields
+        if record.get('machine_name', '').find('Painting') != -1:
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_piston', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_piston', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_housing', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('pre_status', '-'))
+            col_num += 1
+        else:
+            for _ in range(4):
+                ws.cell(row=row_num, column=col_num, value='-')
+                col_num += 1
+        
+        # Lubrication specific fields
+        if record.get('machine_name', '').find('Lubrication') != -1:
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_piston', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_housing', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_piston', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_housing', 'N/A'))
+            col_num += 1
+        else:
+            for _ in range(4):
+                ws.cell(row=row_num, column=col_num, value='-')
+                col_num += 1
+        
+        # OP80 specific fields
+        if machine_type == 'op80':
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_piston', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_housing', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('qr_housing_new', '-'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_internal', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('model_name_external', 'N/A'))
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('match_status', '-'))
+            col_num += 1
+        else:
+            for _ in range(6):
+                ws.cell(row=row_num, column=col_num, value='-')
+                col_num += 1
+        
+        # Gauge values
+        gauge_values = record.get('gauge_values', {})
+        for i in range(1, 7):
+            val = gauge_values.get(f'value{i}', '-')
+            ws.cell(row=row_num, column=col_num, value=val)
+            col_num += 1
+        
+        # Washing specific fields
+        if machine_type == 'washing':
+            operation = record.get('operation', '')
+            stage = 'Loading' if operation == 'load' else 'Unloading' if operation == 'unload' else '-'
+            ws.cell(row=row_num, column=col_num, value=stage)
+            col_num += 1
+            ws.cell(row=row_num, column=col_num, value=record.get('previous_machine_status', '-'))
+            col_num += 1
+        else:
+            for _ in range(2):
+                ws.cell(row=row_num, column=col_num, value='-')
+                col_num += 1
         
         # Apply borders to all cells in row
         for c in range(1, col_num):
@@ -705,27 +778,28 @@ def monitoring_export_excel(request):
     # Auto-fit column widths
     for col_num in range(1, len(headers) + 1):
         column_letter = get_column_letter(col_num)
-        max_length = 0
-        for cell in ws[column_letter]:
+        max_length = len(headers[col_num - 1])
+        for cell in ws[column_letter][1:]:  # Skip header
             try:
-                if cell.value:
+                if cell.value and str(cell.value) != '-':
                     max_length = max(max_length, len(str(cell.value)))
             except:
                 pass
-        adjusted_width = min(max_length + 2, 50)
+        adjusted_width = min(max_length + 2, 40)
         ws.column_dimensions[column_letter].width = adjusted_width
     
-    # Freeze header row
-    ws.freeze_panes = 'A2'
+    # Freeze header row and first 5 columns
+    ws.freeze_panes = 'F2'
     
     # Save to response
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = f'attachment; filename="monitoring_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="monitoring_detailed_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
     
     wb.save(response)
     return response
+
 
 
 @csrf_exempt

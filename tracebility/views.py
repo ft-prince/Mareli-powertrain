@@ -73,7 +73,7 @@ OP80_CONFIG = {
 # ============================================================================
 
 def get_machine_counts(prep_model, post_model, machine_type='standard'):
-    """Get OK and NG counts for a machine"""
+    """Get OK and NG counts for a machine - FIXED OP80"""
     counts = {'ok': 0, 'ng': 0, 'pending': 0}
     
     try:
@@ -87,8 +87,20 @@ def get_machine_counts(prep_model, post_model, machine_type='standard'):
                 qr_value = prep.qr_data_piston
                 post = post_model.objects.filter(qr_data_piston=qr_value).first()
             elif machine_type == 'op80':
+                # FIXED: Try multiple matching strategies
                 qr_housing = prep.qr_data_housing
-                post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
+                qr_piston = prep.qr_data_piston
+                
+                # Try matching with qr_data_housing field first
+                post = post_model.objects.filter(qr_data_housing=qr_housing).first()
+                
+                # If not found, try qr_data_housing_new
+                if not post:
+                    post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
+                
+                # If still not found, try matching with piston QR
+                if not post:
+                    post = post_model.objects.filter(qr_data_housing=qr_piston).first()
             else:
                 qr_value = prep.qr_data
                 post = post_model.objects.filter(qr_data=qr_value).first()
@@ -106,8 +118,8 @@ def get_machine_counts(prep_model, post_model, machine_type='standard'):
         print(f"Error getting counts: {e}")
     
     return counts
-
-
+  
+  
 def get_assembly_counts(prep_model):
     """Get OK and NG counts for assembly machines"""
     counts = {'ok': 0, 'ng': 0, 'pending': 0}
@@ -339,7 +351,7 @@ def get_latest_washing_unload_record(post_model):
 # ============================================================================
 
 def get_machine_data(prep_model, post_model, machine_type='standard'):
-    """Aggregate preprocessing and postprocessing data - UPDATED to include model_name and previous_machine_status"""
+    """Aggregate preprocessing and postprocessing data - FIXED OP80 logic"""
     records = []
     prep_records = prep_model.objects.all()[:100]
     
@@ -356,9 +368,23 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
             post = post_model.objects.filter(qr_data_piston=qr_value).first()
             
         elif machine_type == 'op80':
+            # FIXED: Try multiple matching strategies for OP80
             qr_value_piston = prep.qr_data_piston
             qr_value_housing = prep.qr_data_housing
-            post = post_model.objects.filter(qr_data_housing_new=qr_value_housing).first()
+            
+            # Try matching with qr_data_housing field first (most likely)
+            post = post_model.objects.filter(qr_data_housing=qr_value_housing).first()
+            
+            # If not found, try matching with qr_data_housing_new
+            if not post:
+                post = post_model.objects.filter(qr_data_housing_new=qr_value_housing).first()
+            
+            # If still not found, try matching with piston QR
+            if not post:
+                post = post_model.objects.filter(qr_data_housing=qr_value_piston).first()
+            
+            # Set the main qr_value to piston for consistency
+            qr_value = qr_value_piston
             
         else:
             qr_value = prep.qr_data
@@ -386,8 +412,15 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
                 if val is not None:
                     gauge_values[f'value{i}'] = val
         
+        # FIXED: Get model_name based on machine type
+        if machine_type == 'op80':
+            model_name_internal = getattr(prep, 'model_name_internal', 'N/A')
+            model_name_external = getattr(prep, 'model_name_external', 'N/A')
+            model_name = model_name_internal  # Use internal as primary
+        else:
+            model_name = getattr(prep, 'model_name', 'N/A')
+        
         machine_name = getattr(prep, 'machine_name', 'N/A')
-        model_name = getattr(prep, 'model_name', 'N/A')
         previous_machine_status = getattr(prep, 'previous_machine_status', '-')
         
         record = {
@@ -425,11 +458,11 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
         elif machine_type == 'op80':
             record['qr_piston'] = qr_value_piston
             record['qr_housing_prep'] = qr_value_housing
-            record['model_name_internal'] = getattr(prep, 'model_name_internal', 'N/A')
-            record['model_name_external'] = getattr(prep, 'model_name_external', 'N/A')
+            record['model_name_internal'] = model_name_internal
+            record['model_name_external'] = model_name_external
             
             if post:
-                record['qr_housing_post'] = post.qr_data_housing
+                record['qr_housing_post'] = post.qr_data_housing if hasattr(post, 'qr_data_housing') else None
                 record['qr_housing_new'] = post.qr_data_housing_new
                 record['match_status'] = post.match_status
         
@@ -437,6 +470,7 @@ def get_machine_data(prep_model, post_model, machine_type='standard'):
     
     records.sort(key=lambda x: (x['sort_priority'], -x['prep_id']))
     return records
+
 
    
 
@@ -583,12 +617,19 @@ def check_machine_status(prep_model):
 
 
 def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
-    """Get the latest record for a machine"""
+    """Get the latest record for a machine - FIXED OP80"""
     latest_prep = prep_model.objects.first()
     if not latest_prep:
         return None
     
-    model_name = getattr(latest_prep, 'model_name', 'N/A')
+    # FIXED: Handle model_name for OP80
+    if machine_type == 'op80':
+        model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
+        model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
+        model_name = model_name_internal
+    else:
+        model_name = getattr(latest_prep, 'model_name', 'N/A')
+    
     previous_machine_status = getattr(latest_prep, 'previous_machine_status', '-')
     
     if machine_type == 'painting':
@@ -606,11 +647,20 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         model_name_housing = getattr(latest_prep, 'model_name_housing', 'N/A')
         
     elif machine_type == 'op80':
+        # FIXED: Try multiple matching strategies
         qr_value = latest_prep.qr_data_piston
         qr_housing = latest_prep.qr_data_housing
-        post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
-        model_name_internal = getattr(latest_prep, 'model_name_internal', 'N/A')
-        model_name_external = getattr(latest_prep, 'model_name_external', 'N/A')
+        
+        # Try matching with qr_data_housing field first
+        post = post_model.objects.filter(qr_data_housing=qr_housing).first()
+        
+        # If not found, try qr_data_housing_new
+        if not post:
+            post = post_model.objects.filter(qr_data_housing_new=qr_housing).first()
+        
+        # If still not found, try matching with piston QR
+        if not post:
+            post = post_model.objects.filter(qr_data_housing=qr_value).first()
         
     else:
         qr_value = latest_prep.qr_data
@@ -653,6 +703,8 @@ def get_latest_machine_record(prep_model, post_model, machine_type='standard'):
         result['model_name_external'] = model_name_external
     
     return result
+
+
 
 
 def get_latest_assembly_record(prep_model, post_model):

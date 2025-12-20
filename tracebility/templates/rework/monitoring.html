@@ -351,6 +351,95 @@
     }
 </style>
 
+<style>
+    .expandable-row {
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .expandable-row:hover {
+        background: var(--light-coral) !important;
+    }
+    
+    .details-row {
+        display: none;
+        background: #f8f9fa;
+    }
+    
+    .details-row.active {
+        display: table-row;
+    }
+    
+    .details-content {
+        padding: 1.5rem;
+        border-left: 4px solid var(--dark-coral);
+    }
+    
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .detail-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--medium-gray);
+    }
+    
+    .detail-label {
+        font-size: 0.85rem;
+        color: var(--dark-gray);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+    
+    .detail-value {
+        font-size: 1rem;
+        color: var(--dark-coral);
+        font-weight: 600;
+    }
+    
+    .gauge-values {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .gauge-value-item {
+        background: var(--light-gray);
+        padding: 0.5rem;
+        border-radius: 4px;
+        text-align: center;
+    }
+    
+    .gauge-value-label {
+        font-size: 0.75rem;
+        color: var(--dark-gray);
+        margin-bottom: 0.25rem;
+    }
+    
+    .gauge-value-number {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--dark-coral);
+    }
+    
+    .expand-icon {
+        display: inline-block;
+        transition: transform 0.3s;
+        margin-right: 0.5rem;
+    }
+    
+    .expand-icon.active {
+        transform: rotate(90deg);
+    }
+</style>
+
+
 <div class="monitoring-container">
     <div class="monitoring-header">
         <h1 class="monitoring-title">📊 Production Monitoring</h1>
@@ -597,95 +686,309 @@
             });
     }
 
-    function displayResults(results) {
-        const resultsContainer = document.getElementById('resultsContainer');
+function displayResults(results) {
+    const resultsContainer = document.getElementById('resultsContainer');
 
-        if (results.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="no-results">
-                    <div class="no-results-icon">📭</div>
-                    <p>No records found matching your criteria</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Determine if we have washing machines in results
-        const hasWashing = results.some(r => r.machine_type === 'washing');
-        const hasAssembly = results.some(r => r.machine_type === 'assembly');
-
-        let html = `
-            <table class="results-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Machine</th>
-                        <th>Type</th>
-                        ${hasWashing ? '<th>Stage</th>' : ''}
-                        <th>QR Code</th>
-                        ${hasAssembly ? '<th>QR Internal</th><th>QR External</th><th>QR Housing</th>' : ''}
-                        <th>Model</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                        ${hasWashing ? '<th>Previous Status</th>' : ''}
-                    </tr>
-                </thead>
-                <tbody>
+    if (results.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="no-results">
+                <div class="no-results-icon">📭</div>
+                <p>No records found matching your criteria</p>
+            </div>
         `;
+        return;
+    }
 
-        results.forEach(record => {
-            const timestamp = new Date(record.timestamp);
-            const date = timestamp.toLocaleDateString();
-            const time = timestamp.toLocaleTimeString();
-            const statusClass = record.status.toLowerCase().replace(' ', '-');
-            const isWashing = record.machine_type === 'washing';
-            const isAssembly = record.machine_type === 'assembly';
-            
+    let html = `
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th width="50"></th>
+                    <th>ID</th>
+                    <th>Machine</th>
+                    <th>Type</th>
+                    <th>QR Code</th>
+                    <th>Model</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    results.forEach((record, index) => {
+        const timestamp = new Date(record.timestamp);
+        const date = timestamp.toLocaleDateString();
+        const time = timestamp.toLocaleTimeString();
+        const statusClass = record.status.toLowerCase().replace(' ', '-');
+        const rowId = `row-${index}`;
+        
+        // Main row
+        html += `
+            <tr class="expandable-row ${record.status === 'OK' ? 'completed-ok' : record.status === 'NG' ? 'completed-ng' : 'in-progress'}" 
+                onclick="toggleDetails('${rowId}')">
+                <td><span class="expand-icon" id="icon-${rowId}">▶</span></td>
+                <td>${record.prep_id || record.post_id || '-'}</td>
+                <td><strong>${record.display_name}</strong></td>
+                <td><span class="machine-type-badge type-${record.machine_type}">${record.machine_type}</span></td>
+                <td><strong>${record.qr_code}</strong></td>
+                <td>${record.model_name || 'N/A'}</td>
+                <td>${date}</td>
+                <td>${time}</td>
+                <td><span class="status-badge status-${statusClass}">${record.status}</span></td>
+            </tr>
+        `;
+        
+        // Details row (hidden by default)
+        html += `
+            <tr class="details-row" id="details-${rowId}">
+                <td colspan="9">
+                    <div class="details-content">
+                        ${getDetailsHTML(record)}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    resultsContainer.innerHTML = html;
+}
+
+
+function toggleDetails(rowId) {
+    const detailsRow = document.getElementById(`details-${rowId}`);
+    const icon = document.getElementById(`icon-${rowId}`);
+    
+    detailsRow.classList.toggle('active');
+    icon.classList.toggle('active');
+}
+
+
+function getDetailsHTML(record) {
+    let html = '<div class="details-grid">';
+    
+    const machineType = record.machine_type;
+    
+    // Common details for all machines
+/*
+html += `
+<div class="detail-item">
+    <div class="detail-label">📝 Prep ID</div>
+    <div class="detail-value">${record.prep_id || '-'}</div>
+</div>
+<div class="detail-item">
+    <div class="detail-label">📝 Post ID</div>
+    <div class="detail-value">${record.post_id || '-'}</div>
+</div>
+`;
+*/
+    
+    // Machine type specific details
+    if (machineType === 'assembly') {
+        // ASSEMBLY MACHINES
+        html += `
+            <div class="detail-item">
+                <div class="detail-label">🔧 QR Internal</div>
+                <div class="detail-value">${record.qr_internal || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🔧 QR External</div>
+                <div class="detail-value">${record.qr_external || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🏠 QR Housing</div>
+                <div class="detail-value">${record.qr_housing || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Internal</div>
+                <div class="detail-value">${record.model_name_internal || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model External</div>
+                <div class="detail-value">${record.model_name_external || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Housing</div>
+                <div class="detail-value">${record.model_name_housing || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Prev Status (Internal)</div>
+                <div class="detail-value">${record.previous_machine_internal_status || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Prev Status (Housing)</div>
+                <div class="detail-value">${record.previous_machine_housing_status || '-'}</div>
+            </div>
+        `;
+        
+    } else if (machineType === 'washing') {
+        // WASHING MACHINES
+        html += `
+            <div class="detail-item">
+                <div class="detail-label">📦 Stage</div>
+                <div class="detail-value">${record.operation === 'load' ? '📥 Loading' : '📤 Unloading'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Previous Machine Status</div>
+                <div class="detail-value">${record.previous_machine_status || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Name</div>
+                <div class="detail-value">${record.model_name || 'N/A'}</div>
+            </div>
+        `;
+        
+    } else if (machineType === 'gauge') {
+        // GAUGE MACHINES
+        html += `
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Previous Machine Status</div>
+                <div class="detail-value">${record.previous_machine_status || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Name</div>
+                <div class="detail-value">${record.model_name || 'N/A'}</div>
+            </div>
+        `;
+        
+        // Gauge values
+        if (record.gauge_values) {
             html += `
-                <tr class="${record.status === 'OK' ? 'completed-ok' : record.status === 'NG' ? 'completed-ng' : 'in-progress'}">
-                    <td>${record.prep_id || record.post_id}</td>
-                    <td><strong>${record.display_name}</strong></td>
-                    <td><span class="machine-type-badge type-${record.machine_type}">${record.machine_type}</span></td>
-                    ${hasWashing ? `<td>${isWashing ? (record.operation === 'load' ? '📥 Loading' : '📤 Unloading') : '-'}</td>` : ''}
-                    <td><strong>${record.qr_code}</strong></td>
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-label">📊 Gauge Measurements</div>
+                    <div class="gauge-values">
             `;
-
-            // Add assembly-specific QR codes
-            if (hasAssembly) {
-                if (isAssembly) {
+            
+            for (let i = 1; i <= 6; i++) {
+                const valueKey = `value${i}`;
+                if (record.gauge_values[valueKey] !== undefined) {
                     html += `
-                        <td>${record.qr_internal || '-'}</td>
-                        <td>${record.qr_external || '-'}</td>
-                        <td>${record.qr_housing || '-'}</td>
+                        <div class="gauge-value-item">
+                            <div class="gauge-value-label">Value ${i}</div>
+                            <div class="gauge-value-number">${record.gauge_values[valueKey]}</div>
+                        </div>
                     `;
-                } else {
-                    html += `<td>-</td><td>-</td><td>-</td>`;
                 }
             }
-
+            
             html += `
-                    <td>${record.model_name || 'N/A'}</td>
-                    <td>${date}</td>
-                    <td>${time}</td>
-                    <td><span class="status-badge status-${statusClass}">${record.status}</span></td>
+                    </div>
+                </div>
             `;
-
-            // Add previous status for washing machines
-            if (hasWashing) {
-                html += `<td>${isWashing && record.previous_machine_status ? record.previous_machine_status : '-'}</td>`;
-            }
-
-            html += `</tr>`;
-        });
-
+        }
+        
+    } else if (record.machine_name && record.machine_name.includes('Painting')) {
+        // PAINTING MACHINE
         html += `
-                </tbody>
-            </table>
+            <div class="detail-item">
+                <div class="detail-label">🏠 QR Housing</div>
+                <div class="detail-value">${record.qr_housing || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🔧 QR Piston</div>
+                <div class="detail-value">${record.qr_piston || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Housing</div>
+                <div class="detail-value">${record.model_name_housing || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Piston</div>
+                <div class="detail-value">${record.model_name_piston || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Previous Machine Status</div>
+                <div class="detail-value">${record.previous_machine_status || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">✅ Pre-Status</div>
+                <div class="detail-value">${record.pre_status || '-'}</div>
+            </div>
         `;
-
-        resultsContainer.innerHTML = html;
+        
+    } else if (record.machine_name && record.machine_name.includes('Lubrication')) {
+        // LUBRICATION MACHINE
+        html += `
+            <div class="detail-item">
+                <div class="detail-label">🔧 QR Piston</div>
+                <div class="detail-value">${record.qr_piston || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🏠 QR Housing</div>
+                <div class="detail-value">${record.qr_housing || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Piston</div>
+                <div class="detail-value">${record.model_name_piston || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Housing</div>
+                <div class="detail-value">${record.model_name_housing || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Previous Machine Status</div>
+                <div class="detail-value">${record.previous_machine_status || '-'}</div>
+            </div>
+        `;
+        
+    } else if (machineType === 'op80') {
+        // OP80 LEAK TEST
+        html += `
+            <div class="detail-item">
+                <div class="detail-label">🔧 QR Piston</div>
+                <div class="detail-value">${record.qr_piston || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🏠 QR Housing (Prep)</div>
+                <div class="detail-value">${record.qr_housing || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🏠 QR Housing (New)</div>
+                <div class="detail-value">${record.qr_housing_new || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Internal</div>
+                <div class="detail-value">${record.model_name_internal || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">📦 Model External</div>
+                <div class="detail-value">${record.model_name_external || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">🔄 Match Status</div>
+                <div class="detail-value">${record.match_status || '-'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Previous Machine Status</div>
+                <div class="detail-value">${record.previous_machine_status || '-'}</div>
+            </div>
+        `;
+        
+    } else {
+        // STANDARD MACHINES (CNC, Honing, Deburring)
+        html += `
+            <div class="detail-item">
+                <div class="detail-label">📦 Model Name</div>
+                <div class="detail-value">${record.model_name || 'N/A'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">⬅️ Previous Machine Status</div>
+                <div class="detail-value">${record.previous_machine_status || '-'}</div>
+            </div>
+        `;
     }
+    
+    html += '</div>'; // Close details-grid
+    
+    return html;
+}
+
 
     function exportToExcel() {
         // Build query parameters (same as search)
