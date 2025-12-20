@@ -638,8 +638,21 @@
                     </div>
                 `;
             }
+            // OP80 machines - CHECK FIRST (before Painting/Lubrication)
+            else if (record.machine_type === 'op80' || (record.qr_piston && record.model_name_internal)) {
+                detailsHtml = `
+                    <div style="font-size: 0.85rem;">
+                        ${record.qr_piston ? `<strong>Piston:</strong> ${record.qr_piston}<br>` : ''}
+                        ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
+                        ${record.qr_housing_new && record.qr_housing_new !== '-' ? `<strong>Housing New:</strong> ${record.qr_housing_new}<br>` : ''}
+                        ${record.model_name_internal && record.model_name_internal !== 'N/A' ? `<strong>Model (Internal):</strong> ${record.model_name_internal}<br>` : ''}
+                        ${record.model_name_external && record.model_name_external !== 'N/A' ? `<strong>Model (External):</strong> ${record.model_name_external}<br>` : ''}
+                        ${record.match_status && record.match_status !== '-' ? `<strong>Match Status:</strong> ${record.match_status}` : ''}
+                    </div>
+                `;
+            }
             // Painting machines
-            else if (record.qr_piston || record.model_name_piston) {
+            else if (record.qr_piston && record.model_name_piston) {
                 detailsHtml = `
                     <div style="font-size: 0.85rem;">
                         ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
@@ -658,19 +671,6 @@
                         ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
                         ${record.model_name_piston && record.model_name_piston !== 'N/A' ? `<strong>Model (Pst):</strong> ${record.model_name_piston}<br>` : ''}
                         ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `<strong>Model (Hsg):</strong> ${record.model_name_housing}` : ''}
-                    </div>
-                `;
-            }
-            // OP80 machines
-            else if (record.match_status || record.qr_housing_new) {
-                detailsHtml = `
-                    <div style="font-size: 0.85rem;">
-                        ${record.qr_piston ? `<strong>Piston:</strong> ${record.qr_piston}<br>` : ''}
-                        ${record.qr_housing ? `<strong>Housing:</strong> ${record.qr_housing}<br>` : ''}
-                        ${record.qr_housing_new && record.qr_housing_new !== '-' ? `<strong>Housing New:</strong> ${record.qr_housing_new}<br>` : ''}
-                        ${record.match_status && record.match_status !== '-' ? `<strong>Match:</strong> ${record.match_status}<br>` : ''}
-                        ${record.model_name_internal && record.model_name_internal !== 'N/A' ? `<strong>Model (Int):</strong> ${record.model_name_internal}<br>` : ''}
-                        ${record.model_name_external && record.model_name_external !== 'N/A' ? `<strong>Model (Ext):</strong> ${record.model_name_external}` : ''}
                     </div>
                 `;
             }
@@ -809,37 +809,8 @@
                     <span class="info-value">${record.model_name_housing}</span>
                 </div>` : ''}
             `;
-        } else if (record.qr_piston || record.model_name_piston) {
-            // Painting or Lubrication
-            recordInfoHtml += `
-                ${record.qr_housing ? `
-                <div class="info-item">
-                    <span class="info-label">QR Housing</span>
-                    <span class="info-value">${record.qr_housing}</span>
-                </div>` : ''}
-                ${record.qr_piston ? `
-                <div class="info-item">
-                    <span class="info-label">QR Piston</span>
-                    <span class="info-value">${record.qr_piston}</span>
-                </div>` : ''}
-                ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `
-                <div class="info-item">
-                    <span class="info-label">Model (Housing)</span>
-                    <span class="info-value">${record.model_name_housing}</span>
-                </div>` : ''}
-                ${record.model_name_piston && record.model_name_piston !== 'N/A' ? `
-                <div class="info-item">
-                    <span class="info-label">Model (Piston)</span>
-                    <span class="info-value">${record.model_name_piston}</span>
-                </div>` : ''}
-                ${record.pre_status && record.pre_status !== '-' ? `
-                <div class="info-item">
-                    <span class="info-label">Pre-Status</span>
-                    <span class="info-value">${record.pre_status}</span>
-                </div>` : ''}
-            `;
-        } else if (record.match_status || record.qr_housing_new) {
-            // OP80
+        } else if (record.machine_type === 'op80' || (record.qr_piston && record.model_name_internal)) {
+            // OP80 - CHECK FIRST (before Painting/Lubrication)
             recordInfoHtml += `
                 ${record.qr_piston ? `
                 <div class="info-item">
@@ -870,6 +841,35 @@
                 <div class="info-item">
                     <span class="info-label">Model (External)</span>
                     <span class="info-value">${record.model_name_external}</span>
+                </div>` : ''}
+            `;
+        } else if (record.qr_piston && record.model_name_piston) {
+            // Painting or Lubrication
+            recordInfoHtml += `
+                ${record.qr_housing ? `
+                <div class="info-item">
+                    <span class="info-label">QR Housing</span>
+                    <span class="info-value">${record.qr_housing}</span>
+                </div>` : ''}
+                ${record.qr_piston ? `
+                <div class="info-item">
+                    <span class="info-label">QR Piston</span>
+                    <span class="info-value">${record.qr_piston}</span>
+                </div>` : ''}
+                ${record.model_name_housing && record.model_name_housing !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Housing)</span>
+                    <span class="info-value">${record.model_name_housing}</span>
+                </div>` : ''}
+                ${record.model_name_piston && record.model_name_piston !== 'N/A' ? `
+                <div class="info-item">
+                    <span class="info-label">Model (Piston)</span>
+                    <span class="info-value">${record.model_name_piston}</span>
+                </div>` : ''}
+                ${record.pre_status && record.pre_status !== '-' ? `
+                <div class="info-item">
+                    <span class="info-label">Pre-Status</span>
+                    <span class="info-value">${record.pre_status}</span>
                 </div>` : ''}
             `;
         } else if (record.gauge_values) {

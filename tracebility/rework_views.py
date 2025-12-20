@@ -1,6 +1,10 @@
 """
-Rework Page Views - UPDATED WITH AUDIT TRAIL
+Rework Page Views - FIXED VERSION
 Handles searching, filtering, and updating of production records
+Fixes:
+1. Painting machine qr_value initialization
+2. OP80 model names display
+3. OP80 treated as both pre and post
 """
 
 from django.shortcuts import render
@@ -259,6 +263,7 @@ def search_across_all_machines(filters):
     """
     Search across all machines based on filters
     Returns list of records with machine info and ALL relevant fields including audit trail
+    FIXED: Painting qr_value initialization, OP80 model names
     """
     results = []
     
@@ -315,6 +320,7 @@ def search_across_all_machines(filters):
         operation = config.get('operation', None)  # For washing machines
         is_assembly = 'OP40' in machine_name
         is_washing = machine_type == 'washing'
+        is_op80 = 'Oring_leak' in machine_name or 'OP80' in machine_name
         
         # Handle washing machines separately
         if is_washing:
@@ -342,7 +348,7 @@ def search_across_all_machines(filters):
                 query &= (Q(qr_data_housing__icontains=qr_code) | Q(qr_data_piston__icontains=qr_code))
             elif 'Lubrication' in machine_name:
                 query &= (Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code))
-            elif 'Oring_leak' in machine_name:
+            elif is_op80:
                 query &= (Q(qr_data_piston__icontains=qr_code) | Q(qr_data_housing__icontains=qr_code))
             else:
                 query &= Q(qr_data__icontains=qr_code)
@@ -357,7 +363,7 @@ def search_across_all_machines(filters):
                 query &= (Q(model_name_housing=model_name) | Q(model_name_piston=model_name))
             elif 'Lubrication' in machine_name:
                 query &= (Q(model_name_piston=model_name) | Q(model_name_housing=model_name))
-            elif 'Oring_leak' in machine_name:
+            elif is_op80:
                 query &= (Q(model_name_internal=model_name) | Q(model_name_external=model_name))
             else:
                 query &= Q(model_name=model_name)
@@ -371,6 +377,17 @@ def search_across_all_machines(filters):
         
         # Process each record
         for prep in prep_records:
+            # Initialize variables to avoid UnboundLocalError
+            qr_value = None
+            qr_external = '-'
+            qr_housing = '-'
+            qr_internal = '-'
+            qr_piston = '-'
+            status = 'Pending'
+            post = None
+            previous_machine_status = '-'
+            model_value = 'N/A'
+            
             # Get timestamp
             if is_assembly:
                 timestamp = prep.timestamp_internal
@@ -392,21 +409,33 @@ def search_across_all_machines(filters):
             # Get status and QR based on machine type
             if is_assembly:
                 qr_value = prep.qr_data_internal
+                qr_internal = qr_value
                 qr_external = prep.qr_data_external or '-'
                 qr_housing = prep.qr_data_housing or '-'
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
                 model_internal = getattr(prep, 'model_name_internal', 'N/A')
                 model_external = getattr(prep, 'model_name_external', 'N/A')
                 model_housing = getattr(prep, 'model_name_housing', 'N/A')
+                previous_machine_status = getattr(prep, 'previous_machine_internal_status', '-')
                 # Get audit info from assembly record
                 audit_info = get_audit_info(prep)
                 
             elif 'Painting' in machine_name:
-                qr_value_housing_prep = prep.qr_data_housing
-                qr_value_piston_prep = prep.qr_data_piston
-                qr_external = '-'
+                # FIX: Initialize qr_value for Painting
+                qr_value_housing_prep = prep.qr_data_housing or ''
+                qr_value_piston_prep = prep.qr_data_piston or ''
+                qr_value = qr_value_housing_prep  # Primary QR for display
                 qr_housing = qr_value_housing_prep
-                post = config['post_model'].objects.filter(qr_data_housing=qr_value_housing_prep).first()
+                qr_piston = qr_value_piston_prep
+                qr_external = '-'
+                qr_internal = '-'
+                
+                # Get post record
+                if qr_value_housing_prep:
+                    post = config['post_model'].objects.filter(qr_data_housing=qr_value_housing_prep).first()
+                else:
+                    post = None
+                    
                 status = post.status if post else 'Pending'
                 model_housing = getattr(prep, 'model_name_housing', 'N/A')
                 model_piston = getattr(prep, 'model_name_piston', 'N/A')
@@ -418,8 +447,9 @@ def search_across_all_machines(filters):
             elif 'Lubrication' in machine_name:
                 qr_value = prep.qr_data_piston
                 qr_piston = qr_value
-                qr_housing = prep.qr_data_housing
+                qr_housing = prep.qr_data_housing or '-'
                 qr_external = '-'
+                qr_internal = '-'
                 post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
                 status = post.status if post else 'Pending'
                 model_piston = getattr(prep, 'model_name_piston', 'N/A')
@@ -428,25 +458,41 @@ def search_across_all_machines(filters):
                 # Get audit info from post record
                 audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
                 
-            elif 'Oring_leak' in machine_name:
+            elif is_op80:
+                # FIX: OP80 model names and proper display
                 qr_piston = prep.qr_data_piston
-                qr_housing = prep.qr_data_housing
-                qr_value = qr_piston
+                qr_housing = prep.qr_data_housing or '-'
+                qr_value = qr_piston  # Primary QR for display
+                qr_internal = qr_piston
                 qr_external = '-'
-                post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
+                
+                # Get post record - CORRECTED: Match prep.qr_data_housing with post.qr_data_housing
+                # The postprocessing table has qr_data_housing which should match preprocessing qr_data_housing
+                if qr_housing and qr_housing != '-':
+                    post = config['post_model'].objects.filter(qr_data_housing=qr_housing).first()
+                else:
+                    post = None
+                
                 status = post.status if post else 'Pending'
+                
+                # FIX: Get model names from preprocessing record
                 model_internal = getattr(prep, 'model_name_internal', 'N/A')
                 model_external = getattr(prep, 'model_name_external', 'N/A')
                 previous_machine_status = getattr(prep, 'previous_machine_status', '-')
+                
+                # Get match status and housing new from post if exists
                 match_status = post.match_status if post else '-'
                 qr_housing_new = post.qr_data_housing_new if post else '-'
+                
                 # Get audit info from post record
                 audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
                 
             else:
+                # Standard machines (CNC, Gauge, Honing, Deburring)
                 qr_value = prep.qr_data
                 qr_external = '-'
                 qr_housing = '-'
+                qr_internal = '-'
                 post = config['post_model'].objects.filter(qr_data=qr_value).first() if config['post_model'] else None
                 status = post.status if post else 'Pending'
                 model_value = getattr(prep, 'model_name', 'N/A')
@@ -468,14 +514,14 @@ def search_across_all_machines(filters):
             # Build record with ALL relevant fields INCLUDING AUDIT TRAIL
             record = {
                 'prep_id': prep.id,
-                'post_id': post.id if 'post' in locals() and post else None,
+                'post_id': post.id if post else None,
                 'machine_name': machine_name,
                 'display_name': display_name,
                 'machine_type': machine_type,
                 'qr_code': qr_value,
                 'timestamp': timestamp_str,
                 'status': status,
-                'stage': 'Preprocessing & Postprocessing' if 'post' in locals() and post else 'Preprocessing Only',
+                'stage': 'Preprocessing & Postprocessing' if post else 'Preprocessing Only',
                 # Audit trail
                 'last_updated_by': audit_info.get('last_updated_by'),
                 'last_updated_at': audit_info.get('last_updated_at'),
@@ -484,20 +530,20 @@ def search_across_all_machines(filters):
             # Add machine-specific fields
             if is_assembly:
                 record.update({
-                    'qr_internal': qr_value,
+                    'qr_internal': qr_internal,
                     'qr_external': qr_external,
                     'qr_housing': qr_housing,
                     'model_name': model_internal,  # Primary model for display
                     'model_name_internal': model_internal,
                     'model_name_external': model_external,
                     'model_name_housing': model_housing,
-                    'previous_machine_status': getattr(prep, 'previous_machine_internal_status', '-'),
+                    'previous_machine_status': previous_machine_status,
                 })
                 
             elif 'Painting' in machine_name:
                 record.update({
                     'qr_housing': qr_housing,
-                    'qr_piston': qr_value_piston_prep,
+                    'qr_piston': qr_piston,
                     'qr_external': '-',
                     'qr_internal': '-',
                     'model_name': model_housing,  # Primary model for display
@@ -519,13 +565,14 @@ def search_across_all_machines(filters):
                     'previous_machine_status': previous_machine_status,
                 })
                 
-            elif 'Oring_leak' in machine_name:
+            elif is_op80:
+                # FIX: Include OP80 model names in record
                 record.update({
                     'qr_piston': qr_piston,
                     'qr_housing': qr_housing,
                     'qr_housing_new': qr_housing_new,
                     'qr_external': '-',
-                    'qr_internal': qr_piston,
+                    'qr_internal': qr_internal,
                     'model_name': model_internal,  # Primary model for display
                     'model_name_internal': model_internal,
                     'model_name_external': model_external,
@@ -559,7 +606,6 @@ def search_across_all_machines(filters):
     results.sort(key=lambda x: x['timestamp'], reverse=True)
     
     return results
-
 
 from django.contrib.auth.decorators import login_required
 
@@ -731,6 +777,7 @@ def rework_get_record_api(request, machine_name, prep_id):
         # Get machine type
         machine_type = config.get('type', 'standard')
         is_assembly = 'OP40' in config['name']
+        is_op80 = 'Oring_leak' in config['name'] or 'OP80' in config['name']
         
         # Build record details
         record = {
@@ -754,10 +801,10 @@ def rework_get_record_api(request, machine_name, prep_id):
             audit_info = get_audit_info(prep_record)
             
         elif 'Painting' in config['name']:
-            qr_value = prep_record.qr_data_housing
-            post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
+            qr_value = prep_record.qr_data_housing or ''
+            post = config['post_model'].objects.filter(qr_data_housing=qr_value).first() if qr_value else None
             record['qr_code'] = qr_value
-            record['qr_piston'] = prep_record.qr_data_piston
+            record['qr_piston'] = prep_record.qr_data_piston or ''
             record['status'] = post.status if post else 'Pending'
             record['post_id'] = post.id if post else None
             record['model_name'] = getattr(prep_record, 'model_name_housing', 'N/A')
@@ -769,7 +816,7 @@ def rework_get_record_api(request, machine_name, prep_id):
             qr_value = prep_record.qr_data_piston
             post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
             record['qr_code'] = qr_value
-            record['qr_housing'] = prep_record.qr_data_housing
+            record['qr_housing'] = prep_record.qr_data_housing or ''
             record['status'] = post.status if post else 'Pending'
             record['post_id'] = post.id if post else None
             record['model_name'] = getattr(prep_record, 'model_name_piston', 'N/A')
@@ -777,15 +824,30 @@ def rework_get_record_api(request, machine_name, prep_id):
             # Get audit info from post
             audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
             
-        elif 'Oring_leak' in config['name']:
-            qr_value = prep_record.qr_data_piston
-            qr_housing = prep_record.qr_data_housing
-            post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
-            record['qr_code'] = qr_value
+        elif is_op80:
+            # FIX: OP80 get record details
+            qr_piston = prep_record.qr_data_piston
+            qr_housing = prep_record.qr_data_housing or ''
+            
+            # Get post record - CORRECTED: Match by qr_data_housing
+            post = config['post_model'].objects.filter(qr_data_housing=qr_housing).first() if qr_housing else None
+            
+            record['qr_code'] = qr_piston
+            record['qr_piston'] = qr_piston
             record['qr_housing'] = qr_housing
             record['status'] = post.status if post else 'Pending'
             record['post_id'] = post.id if post else None
-            record['model_name'] = getattr(prep_record, 'model_name_internal', 'N/A')
+            
+            # FIX: Include model names
+            record['model_name_internal'] = getattr(prep_record, 'model_name_internal', 'N/A')
+            record['model_name_external'] = getattr(prep_record, 'model_name_external', 'N/A')
+            record['model_name'] = record['model_name_internal']
+            
+            # Include match status
+            if post:
+                record['match_status'] = post.match_status
+                record['qr_housing_new'] = post.qr_data_housing_new
+            
             record['timestamp'] = prep_record.timestamp
             # Get audit info from post
             audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
