@@ -6,7 +6,7 @@
 {% block search %}
 <div class="search-container">
     <div class="search-wrapper">
-        <h2 style="color: var(--dark-coral); margin-bottom: 1rem; width: 100%;">Rework Management</h2>
+        <h2 style="color: var(--dark-coral); margin-bottom: 0.4rem; width: 100%;">Rework Management</h2>
     </div>
 </div>
 {% endblock %}
@@ -52,6 +52,18 @@
         outline: none;
         border-color: var(--primary-coral);
         box-shadow: 0 0 0 3px rgba(255, 119, 85, 0.1);
+    }
+
+    .time-filter-active {
+        border-color: var(--primary-coral);
+        background-color: #fff5f2;
+    }
+
+    .filter-hint {
+        font-size: 0.75rem;
+        color: var(--dark-gray);
+        margin-top: 0.25rem;
+        font-style: italic;
     }
 
     .filter-actions {
@@ -413,15 +425,44 @@
                 </select>
             </div>
 
-            <div class="filter-group">
+            
+            
+            
+            
+            <div class="filter-group" id="date_range_group">
                 <label class="filter-label">Start Date</label>
                 <input type="date" id="start_date" class="filter-input">
             </div>
-
-            <div class="filter-group">
+            
+            <div class="filter-group" id="date_range_group2">
                 <label class="filter-label">End Date</label>
                 <input type="date" id="end_date" class="filter-input">
             </div>
+
+
+     <div>
+            <div class="filter-group">
+                <label class="filter-label">Time Filter</label>
+                <select id="time_filter" class="filter-select">
+                    <option value="">No Time Filter</option>
+                    <option value="5">Last 5 Minutes</option>
+                    <option value="15">Last 15 Minutes</option>
+                    <option value="30">Last 30 Minutes</option>
+                    <option value="60">Last 1 Hour</option>
+                    <option value="120">Last 2 Hours</option>
+                    <option value="360">Last 6 Hours</option>
+                    <option value="720">Last 12 Hours</option>
+                    <option value="1440">Last 24 Hours</option>
+                    <option value="custom">Custom Time Range</option>
+                </select>
+            </div>
+            <div class="filter-group" id="custom_hours_group" style="display: none;">
+                <label class="filter-label">Custom Hours</label>
+                <input type="number" id="custom_hours" class="filter-input" placeholder="Enter hours..." min="0" step="0.5">
+            </div>
+
+</div>
+
         </div>
 
         <div class="filter-actions">
@@ -519,6 +560,42 @@
     // Global variables
     let currentResults = [];
 
+    // Time filter change handler
+    document.getElementById('time_filter').addEventListener('change', function() {
+        const timeFilter = this.value;
+        const customHoursGroup = document.getElementById('custom_hours_group');
+        const dateRangeGroup = document.getElementById('date_range_group');
+        const dateRangeGroup2 = document.getElementById('date_range_group2');
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const timeFilterSelect = this;
+        
+        if (timeFilter === 'custom') {
+            // Show custom hours input
+            customHoursGroup.style.display = 'block';
+            // Hide date range inputs when using time filter
+            dateRangeGroup.style.display = 'none';
+            dateRangeGroup2.style.display = 'none';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            timeFilterSelect.classList.add('time-filter-active');
+        } else if (timeFilter === '') {
+            // No time filter - show date range inputs
+            customHoursGroup.style.display = 'none';
+            dateRangeGroup.style.display = 'block';
+            dateRangeGroup2.style.display = 'block';
+            timeFilterSelect.classList.remove('time-filter-active');
+        } else {
+            // Preset time filter - hide both custom hours and date range
+            customHoursGroup.style.display = 'none';
+            dateRangeGroup.style.display = 'none';
+            dateRangeGroup2.style.display = 'none';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            timeFilterSelect.classList.add('time-filter-active');
+        }
+    });
+
     // Form submission handler
     document.getElementById('filterForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -563,13 +640,43 @@
     function searchRecords() {
         showLoading();
 
+        // Get time filter value
+        const timeFilter = document.getElementById('time_filter').value;
+        let startDate = document.getElementById('start_date').value;
+        let endDate = document.getElementById('end_date').value;
+        
+        // Calculate dates based on time filter
+        if (timeFilter && timeFilter !== '') {
+            const now = new Date();
+            let minutesAgo;
+            
+            if (timeFilter === 'custom') {
+                const customHours = parseFloat(document.getElementById('custom_hours').value);
+                if (!customHours || customHours <= 0) {
+                    hideLoading();
+                    showError('Please enter a valid number of hours');
+                    return;
+                }
+                minutesAgo = customHours * 60;
+            } else {
+                minutesAgo = parseInt(timeFilter);
+            }
+            
+            // Calculate start time
+            const startTime = new Date(now.getTime() - (minutesAgo * 60 * 1000));
+            
+            // Format dates for API (YYYY-MM-DD)
+            startDate = startTime.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        }
+
         const filters = {
             qr_code: document.getElementById('qr_code').value,
             model_name: document.getElementById('model_name').value,
             machine: document.getElementById('machine').value,
             status: document.getElementById('status').value,
-            start_date: document.getElementById('start_date').value,
-            end_date: document.getElementById('end_date').value,
+            start_date: startDate,
+            end_date: endDate,
         };
 
         const queryString = new URLSearchParams(filters).toString();
