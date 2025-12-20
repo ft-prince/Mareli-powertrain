@@ -1,5 +1,5 @@
 """
-Rework Page Views
+Rework Page Views - UPDATED WITH AUDIT TRAIL
 Handles searching, filtering, and updating of production records
 """
 
@@ -90,6 +90,21 @@ def get_machine_list():
     return machines
 
 
+def get_audit_info(record):
+    """Extract audit trail information from a record"""
+    audit_info = {
+        'last_updated_by': getattr(record, 'last_updated_by', None),
+        'last_updated_at': getattr(record, 'last_updated_at', None)
+    }
+    
+    # Format datetime if present
+    if audit_info['last_updated_at']:
+        if hasattr(audit_info['last_updated_at'], 'isoformat'):
+            audit_info['last_updated_at'] = audit_info['last_updated_at'].isoformat()
+    
+    return audit_info
+
+
 def search_washing_load(config, qr_code, model_name, start_dt, end_dt, status_filter):
     """Search washing machine loading (preprocessing) stage"""
     results = []
@@ -134,6 +149,9 @@ def search_washing_load(config, qr_code, model_name, start_dt, end_dt, status_fi
         else:
             timestamp_str = str(timestamp)
         
+        # Get audit info
+        audit_info = get_audit_info(prep)
+        
         # Build complete record with all fields
         record = {
             'prep_id': prep.id,
@@ -152,6 +170,9 @@ def search_washing_load(config, qr_code, model_name, start_dt, end_dt, status_fi
             'qr_external': '-',
             'qr_housing': '-',
             'qr_internal': '-',
+            # Audit trail
+            'last_updated_by': audit_info['last_updated_by'],
+            'last_updated_at': audit_info['last_updated_at'],
         }
         
         results.append(record)
@@ -203,6 +224,9 @@ def search_washing_unload(config, qr_code, model_name, start_dt, end_dt, status_
         else:
             timestamp_str = str(timestamp)
         
+        # Get audit info
+        audit_info = get_audit_info(post)
+        
         # Build complete record with all fields
         record = {
             'prep_id': None,
@@ -221,6 +245,9 @@ def search_washing_unload(config, qr_code, model_name, start_dt, end_dt, status_
             'qr_external': '-',
             'qr_housing': '-',
             'qr_internal': '-',
+            # Audit trail
+            'last_updated_by': audit_info['last_updated_by'],
+            'last_updated_at': audit_info['last_updated_at'],
         }
         
         results.append(record)
@@ -231,7 +258,7 @@ def search_washing_unload(config, qr_code, model_name, start_dt, end_dt, status_
 def search_across_all_machines(filters):
     """
     Search across all machines based on filters
-    Returns list of records with machine info and ALL relevant fields
+    Returns list of records with machine info and ALL relevant fields including audit trail
     """
     results = []
     
@@ -371,18 +398,22 @@ def search_across_all_machines(filters):
                 model_internal = getattr(prep, 'model_name_internal', 'N/A')
                 model_external = getattr(prep, 'model_name_external', 'N/A')
                 model_housing = getattr(prep, 'model_name_housing', 'N/A')
+                # Get audit info from assembly record
+                audit_info = get_audit_info(prep)
                 
             elif 'Painting' in machine_name:
-                qr_value = prep.qr_data_housing
-                qr_piston = prep.qr_data_piston
+                qr_value_housing_prep = prep.qr_data_housing
+                qr_value_piston_prep = prep.qr_data_piston
                 qr_external = '-'
-                qr_housing = qr_value
-                post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
+                qr_housing = qr_value_housing_prep
+                post = config['post_model'].objects.filter(qr_data_housing=qr_value_housing_prep).first()
                 status = post.status if post else 'Pending'
                 model_housing = getattr(prep, 'model_name_housing', 'N/A')
                 model_piston = getattr(prep, 'model_name_piston', 'N/A')
                 previous_machine_status = getattr(prep, 'previous_machine_status', '-')
                 pre_status = getattr(prep, 'pre_status', '-')
+                # Get audit info from post record
+                audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
                 
             elif 'Lubrication' in machine_name:
                 qr_value = prep.qr_data_piston
@@ -394,6 +425,8 @@ def search_across_all_machines(filters):
                 model_piston = getattr(prep, 'model_name_piston', 'N/A')
                 model_housing = getattr(prep, 'model_name_housing', 'N/A')
                 previous_machine_status = getattr(prep, 'previous_machine_status', '-')
+                # Get audit info from post record
+                audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
                 
             elif 'Oring_leak' in machine_name:
                 qr_piston = prep.qr_data_piston
@@ -407,6 +440,8 @@ def search_across_all_machines(filters):
                 previous_machine_status = getattr(prep, 'previous_machine_status', '-')
                 match_status = post.match_status if post else '-'
                 qr_housing_new = post.qr_data_housing_new if post else '-'
+                # Get audit info from post record
+                audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
                 
             else:
                 qr_value = prep.qr_data
@@ -417,6 +452,8 @@ def search_across_all_machines(filters):
                 model_value = getattr(prep, 'model_name', 'N/A')
                 previous_machine_status = getattr(prep, 'previous_machine_status', '-')
                 machine_name_field = getattr(prep, 'machine_name', '-')
+                # Get audit info from post record
+                audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
             
             # Status filter
             if status_filter and status_filter != 'all' and status != status_filter:
@@ -428,7 +465,7 @@ def search_across_all_machines(filters):
             else:
                 timestamp_str = str(timestamp)
             
-            # Build record with ALL relevant fields
+            # Build record with ALL relevant fields INCLUDING AUDIT TRAIL
             record = {
                 'prep_id': prep.id,
                 'post_id': post.id if 'post' in locals() and post else None,
@@ -439,6 +476,9 @@ def search_across_all_machines(filters):
                 'timestamp': timestamp_str,
                 'status': status,
                 'stage': 'Preprocessing & Postprocessing' if 'post' in locals() and post else 'Preprocessing Only',
+                # Audit trail
+                'last_updated_by': audit_info.get('last_updated_by'),
+                'last_updated_at': audit_info.get('last_updated_at'),
             }
             
             # Add machine-specific fields
@@ -457,7 +497,7 @@ def search_across_all_machines(filters):
             elif 'Painting' in machine_name:
                 record.update({
                     'qr_housing': qr_housing,
-                    'qr_piston': qr_piston,
+                    'qr_piston': qr_value_piston_prep,
                     'qr_external': '-',
                     'qr_internal': '-',
                     'model_name': model_housing,  # Primary model for display
@@ -521,6 +561,9 @@ def search_across_all_machines(filters):
     return results
 
 
+from django.contrib.auth.decorators import login_required
+
+@login_required
 def rework_page(request):
     """Main rework page view"""
     model_names = get_all_model_names()
@@ -560,7 +603,7 @@ def rework_search_api(request):
 
 @csrf_exempt
 def rework_update_api(request):
-    """API endpoint for updating record status"""
+    """API endpoint for updating record status - WITH AUDIT TRAIL"""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
     
@@ -572,6 +615,17 @@ def rework_update_api(request):
         post_id = data.get('post_id')
         new_status = data.get('status')
         machine_type = data.get('machine_type')
+        
+        # Get username from request (adjust based on your authentication setup)
+        # If you're using Django's built-in authentication:
+        username = request.user.username if request.user.is_authenticated else 'Anonymous'
+        
+        # If you have a different auth system, you might use:
+        # username = request.META.get('REMOTE_USER', 'Anonymous')
+        # or from a custom header:
+        # username = request.META.get('HTTP_X_USERNAME', 'Anonymous')
+        
+        update_time = timezone.now()
         
         if not machine_name or not new_status:
             return JsonResponse({'success': False, 'error': 'Missing required fields'}, status=400)
@@ -598,6 +652,8 @@ def rework_update_api(request):
                 try:
                     prep_record = config['prep_model'].objects.get(id=prep_id)
                     prep_record.status = new_status
+                    prep_record.last_updated_by = username
+                    prep_record.last_updated_at = update_time
                     prep_record.save()
                     updated = True
                 except config['prep_model'].DoesNotExist:
@@ -607,6 +663,8 @@ def rework_update_api(request):
                 try:
                     post_record = config['post_model'].objects.get(id=post_id)
                     post_record.status = new_status
+                    post_record.last_updated_by = username
+                    post_record.last_updated_at = update_time
                     post_record.save()
                     updated = True
                 except config['post_model'].DoesNotExist:
@@ -617,6 +675,8 @@ def rework_update_api(request):
             try:
                 prep_record = config['prep_model'].objects.get(id=prep_id)
                 prep_record.status = new_status
+                prep_record.last_updated_by = username
+                prep_record.last_updated_at = update_time
                 prep_record.save()
                 updated = True
             except config['prep_model'].DoesNotExist:
@@ -627,6 +687,8 @@ def rework_update_api(request):
             try:
                 post_record = config['post_model'].objects.get(id=post_id)
                 post_record.status = new_status
+                post_record.last_updated_by = username
+                post_record.last_updated_at = update_time
                 post_record.save()
                 updated = True
             except config['post_model'].DoesNotExist:
@@ -636,7 +698,9 @@ def rework_update_api(request):
             return JsonResponse({
                 'success': True,
                 'message': f'Status updated to {new_status}',
-                'new_status': new_status
+                'new_status': new_status,
+                'updated_by': username,
+                'updated_at': update_time.isoformat()
             })
         else:
             return JsonResponse({'success': False, 'error': 'Record not found or cannot be updated'}, status=404)
@@ -686,6 +750,8 @@ def rework_get_record_api(request, machine_name, prep_id):
             record['model_name_external'] = getattr(prep_record, 'model_name_external', 'N/A')
             record['model_name_housing'] = getattr(prep_record, 'model_name_housing', 'N/A')
             record['timestamp'] = prep_record.timestamp_internal.isoformat() if hasattr(prep_record.timestamp_internal, 'isoformat') else str(prep_record.timestamp_internal)
+            # Get audit info
+            audit_info = get_audit_info(prep_record)
             
         elif 'Painting' in config['name']:
             qr_value = prep_record.qr_data_housing
@@ -696,6 +762,8 @@ def rework_get_record_api(request, machine_name, prep_id):
             record['post_id'] = post.id if post else None
             record['model_name'] = getattr(prep_record, 'model_name_housing', 'N/A')
             record['timestamp'] = prep_record.timestamp
+            # Get audit info from post
+            audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
             
         elif 'Lubrication' in config['name']:
             qr_value = prep_record.qr_data_piston
@@ -706,6 +774,8 @@ def rework_get_record_api(request, machine_name, prep_id):
             record['post_id'] = post.id if post else None
             record['model_name'] = getattr(prep_record, 'model_name_piston', 'N/A')
             record['timestamp'] = prep_record.timestamp
+            # Get audit info from post
+            audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
             
         elif 'Oring_leak' in config['name']:
             qr_value = prep_record.qr_data_piston
@@ -717,6 +787,8 @@ def rework_get_record_api(request, machine_name, prep_id):
             record['post_id'] = post.id if post else None
             record['model_name'] = getattr(prep_record, 'model_name_internal', 'N/A')
             record['timestamp'] = prep_record.timestamp
+            # Get audit info from post
+            audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
             
         else:
             qr_value = prep_record.qr_data
@@ -726,9 +798,15 @@ def rework_get_record_api(request, machine_name, prep_id):
             record['post_id'] = post.id if post else None
             record['model_name'] = getattr(prep_record, 'model_name', 'N/A')
             record['timestamp'] = prep_record.timestamp
+            # Get audit info from post
+            audit_info = get_audit_info(post) if post else {'last_updated_by': None, 'last_updated_at': None}
         
         # Add previous machine status if available
         record['previous_machine_status'] = getattr(prep_record, 'previous_machine_status', '-')
+        
+        # Add audit trail information
+        record['last_updated_by'] = audit_info.get('last_updated_by')
+        record['last_updated_at'] = audit_info.get('last_updated_at')
         
         return JsonResponse({'success': True, 'record': record})
         

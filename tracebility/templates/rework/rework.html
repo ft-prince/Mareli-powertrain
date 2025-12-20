@@ -211,6 +211,22 @@
         opacity: 0.3;
     }
 
+    /* Audit Trail Styles */
+    .audit-info {
+        font-size: 0.75rem;
+        color: var(--dark-gray);
+        font-style: italic;
+        margin-top: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        background: var(--light-gray);
+        border-radius: 4px;
+        border-left: 3px solid var(--primary-coral);
+    }
+
+    .audit-info strong {
+        color: var(--dark-coral);
+    }
+
     /* Edit Modal Styles */
     .edit-modal {
         display: none;
@@ -434,12 +450,13 @@
                     <th>Status</th>
                     <th>Prev. Status</th>
                     <th>Details</th>
+                    <th>Last Updated</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody id="resultsBody">
                 <tr>
-                    <td colspan="9" class="empty-results">
+                    <td colspan="10" class="empty-results">
                         <div class="empty-results-icon">🔍</div>
                         <p>Use the filters above to search for records</p>
                     </td>
@@ -514,6 +531,34 @@
         clearResults();
     });
 
+    // Format audit trail info
+    function formatAuditInfo(record) {
+        if (!record.last_updated_by || !record.last_updated_at) {
+            return '<span style="color: #999; font-size: 0.85rem;">No updates recorded</span>';
+        }
+        
+        const updateDate = new Date(record.last_updated_at);
+        const formattedDate = updateDate.toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        const formattedTime = updateDate.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+        
+        return `
+            <div class="audit-info">
+                <strong>Updated by:</strong> ${record.last_updated_by}<br>
+                <strong>Date:</strong> ${formattedDate}<br>
+                <strong>Time:</strong> ${formattedTime}
+            </div>
+        `;
+    }
+
     // Search records
     function searchRecords() {
         showLoading();
@@ -554,7 +599,7 @@
         if (results.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="empty-results">
+                    <td colspan="10" class="empty-results">
                         <div class="empty-results-icon">📭</div>
                         <p>No records found matching your criteria</p>
                     </td>
@@ -655,7 +700,7 @@
 
             return `
                 <tr>
-                    <td><strong>${record.display_name}  </strong></td>
+                    <td><strong>${record.display_name}</strong></td>
                     <td style="font-size: 0.85rem;">${record.stage || '-'}</td>
                     <td><strong>${record.qr_code}</strong></td>
                     <td>${record.model_name}</td>
@@ -663,6 +708,7 @@
                     <td><span class="status-badge ${statusClass}">${record.status}</span></td>
                     <td>${record.previous_machine_status || '-'}</td>
                     <td>${detailsHtml}</td>
+                    <td>${formatAuditInfo(record)}</td>
                     <td>
                         <button class="edit-btn" onclick="openEditModal(${index})">
                             Edit
@@ -684,7 +730,7 @@
         const tbody = document.getElementById('resultsBody');
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="empty-results">
+                <td colspan="10" class="empty-results">
                     <div class="empty-results-icon">🔍</div>
                     <p>Use the filters above to search for records</p>
                 </td>
@@ -716,6 +762,21 @@
                 <span class="info-value">${new Date(record.timestamp).toLocaleString('en-IN')}</span>
             </div>
         `;
+
+        // Add audit trail info to modal header
+        if (record.last_updated_by && record.last_updated_at) {
+            const updateDate = new Date(record.last_updated_at);
+            recordInfoHtml += `
+                <div class="info-item" style="grid-column: 1/-1;">
+                    <span class="info-label">Last Update Info</span>
+                    <div class="audit-info" style="margin-top: 0.5rem;">
+                        <strong>Updated by:</strong> ${record.last_updated_by}<br>
+                        <strong>Date:</strong> ${updateDate.toLocaleDateString('en-IN')}<br>
+                        <strong>Time:</strong> ${updateDate.toLocaleTimeString('en-IN')}
+                    </div>
+                </div>
+            `;
+        }
 
         // Add machine-specific fields
         if (record.machine_type === 'assembly') {
@@ -890,7 +951,7 @@
         .then(data => {
             hideLoading();
             if (data.success) {
-                showSuccess('Record updated successfully!');
+                showSuccess(`Record updated successfully! Updated by: ${data.updated_by}`);
                 closeEditModal();
                 // Refresh search results
                 searchRecords();

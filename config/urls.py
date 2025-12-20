@@ -3,5 +3,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('tracebility.urls')),  # 👈 include your app’s URLs
+    path('', include('tracebility.urls')), 
+        path('accounts/', include('django.contrib.auth.urls')),
+
 ]
