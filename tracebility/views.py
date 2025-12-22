@@ -2072,6 +2072,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     data['detailed_data'] = all_records[-100:]
     
     return data
+
 @csrf_exempt
 def analytics_api(request):
     """API endpoint for analytics data"""
@@ -2180,4 +2181,533 @@ def analytics_export(request):
             record['status'],
         ])
     
+    return response
+
+
+
+
+
+
+
+# ============================================================================
+# ENHANCED EXCEL EXPORT WITH PROFESSIONAL FORMATTING
+# Add this to your views.py - requires: pip install openpyxl
+# ============================================================================
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.chart import BarChart, PieChart, LineChart, Reference
+from django.http import HttpResponse
+from datetime import datetime
+
+@csrf_exempt
+def analytics_export_excel(request):
+    """Export analytics data to professionally formatted Excel file"""
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    machine_filter = request.GET.get('machine', 'all')
+    status_filter = request.GET.get('status', 'all')
+    
+    start_date, end_date = get_date_range(start_date_str, end_date_str)
+    data = collect_analytics_data(start_date, end_date, machine_filter, status_filter)
+    
+    # Create workbook
+    wb = Workbook()
+    
+    # Define styles
+    header_fill = PatternFill(start_color="FF7755", end_color="FF7755", fill_type="solid")
+    header_font = Font(name='Calibri', size=12, bold=True, color="FFFFFF")
+    
+    subheader_fill = PatternFill(start_color="FFA07A", end_color="FFA07A", fill_type="solid")
+    subheader_font = Font(name='Calibri', size=11, bold=True, color="FFFFFF")
+    
+    title_font = Font(name='Calibri', size=16, bold=True, color="FF7755")
+    section_font = Font(name='Calibri', size=13, bold=True, color="FF7755")
+    normal_font = Font(name='Calibri', size=10)
+    bold_font = Font(name='Calibri', size=10, bold=True)
+    
+    # Color fills for different sections
+    oee_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+    shift_a_fill = PatternFill(start_color="FFF9C4", end_color="FFF9C4", fill_type="solid")
+    shift_b_fill = PatternFill(start_color="BBDEFB", end_color="BBDEFB", fill_type="solid")
+    shift_c_fill = PatternFill(start_color="E1BEE7", end_color="E1BEE7", fill_type="solid")
+    
+    ok_fill = PatternFill(start_color="C8E6C9", end_color="C8E6C9", fill_type="solid")
+    ng_fill = PatternFill(start_color="FFCDD2", end_color="FFCDD2", fill_type="solid")
+    
+    # Border style
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # ========================================================================
+    # SHEET 1: EXECUTIVE SUMMARY
+    # ========================================================================
+    ws_summary = wb.active
+    ws_summary.title = "Executive Summary"
+    
+    # Title
+    ws_summary['A1'] = "Manufacturing Analytics Report"
+    ws_summary['A1'].font = title_font
+    ws_summary.merge_cells('A1:F1')
+    
+    ws_summary['A2'] = f"Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+    ws_summary['A2'].font = normal_font
+    ws_summary.merge_cells('A2:F2')
+    
+    ws_summary['A3'] = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    ws_summary['A3'].font = Font(name='Calibri', size=9, italic=True)
+    ws_summary.merge_cells('A3:F3')
+    
+    # OEE Section
+    row = 5
+    ws_summary[f'A{row}'] = "OEE (Overall Equipment Effectiveness)"
+    ws_summary[f'A{row}'].font = section_font
+    ws_summary.merge_cells(f'A{row}:F{row}')
+    
+    row += 1
+    oee_data = data.get('oee_data', {})
+    oee_metrics = [
+        ['Overall OEE', f"{oee_data.get('oee', 0):.2f}%", 'Target: ≥85% (World Class)'],
+        ['Availability', f"{oee_data.get('availability', 0):.2f}%", 'Operating Time / Loading Time'],
+        ['Performance', f"{oee_data.get('performance', 0):.2f}%", 'Net Operating / Operating Time'],
+        ['Quality', f"{oee_data.get('quality', 0):.2f}%", 'Good Units / Total Units'],
+        ['Estimated Downtime', f"{oee_data.get('downtime_minutes', 0):.2f} min", 'Based on production gap'],
+    ]
+    
+    ws_summary[f'A{row}'] = "Metric"
+    ws_summary[f'B{row}'] = "Value"
+    ws_summary[f'C{row}'] = "Description"
+    for col in ['A', 'B', 'C']:
+        ws_summary[f'{col}{row}'].fill = header_fill
+        ws_summary[f'{col}{row}'].font = header_font
+        ws_summary[f'{col}{row}'].border = thin_border
+        ws_summary[f'{col}{row}'].alignment = Alignment(horizontal='center', vertical='center')
+    
+    for metric in oee_metrics:
+        row += 1
+        ws_summary[f'A{row}'] = metric[0]
+        ws_summary[f'B{row}'] = metric[1]
+        ws_summary[f'C{row}'] = metric[2]
+        
+        for col in ['A', 'B', 'C']:
+            ws_summary[f'{col}{row}'].border = thin_border
+            ws_summary[f'{col}{row}'].fill = oee_fill
+        
+        ws_summary[f'A{row}'].font = bold_font
+        ws_summary[f'B{row}'].font = Font(name='Calibri', size=11, bold=True)
+        ws_summary[f'B{row}'].alignment = Alignment(horizontal='center')
+    
+    # Key Metrics
+    row += 2
+    ws_summary[f'A{row}'] = "Key Production Metrics"
+    ws_summary[f'A{row}'].font = section_font
+    ws_summary.merge_cells(f'A{row}:F{row}')
+    
+    row += 1
+    metrics = [
+        ['Total Parts Processed', data['total_parts']],
+        ['OK Parts', data['ok_parts']],
+        ['NG Parts', data['ng_parts']],
+        ['Pending Parts', data['pending_parts']],
+        ['Rejection Rate', f"{data['rejection_rate']:.2f}%"],
+        ['Productivity', f"{data['productivity']:.2f}%"],
+        ['Average Cycle Time', f"{data['avg_cycle_time']:.2f} min"],
+        ['Active Machines', data['active_machines']],
+    ]
+    
+    ws_summary[f'A{row}'] = "Metric"
+    ws_summary[f'B{row}'] = "Value"
+    for col in ['A', 'B']:
+        ws_summary[f'{col}{row}'].fill = header_fill
+        ws_summary[f'{col}{row}'].font = header_font
+        ws_summary[f'{col}{row}'].border = thin_border
+        ws_summary[f'{col}{row}'].alignment = Alignment(horizontal='center', vertical='center')
+    
+    for metric in metrics:
+        row += 1
+        ws_summary[f'A{row}'] = metric[0]
+        ws_summary[f'B{row}'] = metric[1]
+        
+        ws_summary[f'A{row}'].border = thin_border
+        ws_summary[f'B{row}'].border = thin_border
+        
+        if 'OK' in metric[0]:
+            ws_summary[f'B{row}'].fill = ok_fill
+        elif 'NG' in metric[0] or 'Rejection' in metric[0]:
+            ws_summary[f'B{row}'].fill = ng_fill
+        
+        ws_summary[f'A{row}'].font = bold_font
+        ws_summary[f'B{row}'].alignment = Alignment(horizontal='center')
+    
+    # Column widths
+    ws_summary.column_dimensions['A'].width = 30
+    ws_summary.column_dimensions['B'].width = 20
+    ws_summary.column_dimensions['C'].width = 40
+    
+    # ========================================================================
+    # SHEET 2: SHIFT ANALYSIS
+    # ========================================================================
+    ws_shift = wb.create_sheet("Shift Analysis")
+    
+    ws_shift['A1'] = "Shift-Wise Production Analysis"
+    ws_shift['A1'].font = title_font
+    ws_shift.merge_cells('A1:H1')
+    
+    ws_shift['A2'] = "Shift Definitions: A (06:00-14:00) | B (14:00-22:00) | C (22:00-06:00)"
+    ws_shift['A2'].font = Font(name='Calibri', size=10, italic=True)
+    ws_shift.merge_cells('A2:H2')
+    
+    # Shift data
+    row = 4
+    headers = ['Shift', 'Time Range', 'Total', 'OK', 'NG', 'Pending', 'OEE %', 'Status']
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_shift.cell(row=row, column=col_idx)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    shift_data = data.get('shift_data', {})
+    shifts_info = [
+        ('A', '06:00 AM - 14:00 PM', shift_data.get('A', {}), shift_a_fill, 
+         oee_data.get('shift_A_oee', {}).get('oee', 0)),
+        ('B', '14:00 PM - 22:00 PM', shift_data.get('B', {}), shift_b_fill,
+         oee_data.get('shift_B_oee', {}).get('oee', 0)),
+        ('C', '22:00 PM - 06:00 AM', shift_data.get('C', {}), shift_c_fill,
+         oee_data.get('shift_C_oee', {}).get('oee', 0)),
+    ]
+    
+    for shift_name, time_range, shift_stats, fill, shift_oee in shifts_info:
+        row += 1
+        values = [
+            shift_name,
+            time_range,
+            shift_stats.get('total', 0),
+            shift_stats.get('ok', 0),
+            shift_stats.get('ng', 0),
+            shift_stats.get('pending', 0),
+            f"{shift_oee:.2f}%",
+            'Excellent' if shift_oee >= 85 else 'Good' if shift_oee >= 70 else 'Needs Improvement'
+        ]
+        
+        for col_idx, value in enumerate(values, start=1):
+            cell = ws_shift.cell(row=row, column=col_idx)
+            cell.value = value
+            cell.border = thin_border
+            cell.fill = fill
+            
+            if col_idx == 1:
+                cell.font = Font(name='Calibri', size=12, bold=True)
+                cell.alignment = Alignment(horizontal='center')
+            elif col_idx > 2:
+                cell.alignment = Alignment(horizontal='center')
+    
+    # Shift comparison formulas
+    row += 2
+    ws_shift[f'A{row}'] = "Shift Performance Comparison"
+    ws_shift[f'A{row}'].font = section_font
+    ws_shift.merge_cells(f'A{row}:E{row}')
+    
+    row += 1
+    ws_shift[f'A{row}'] = "Best Performing Shift (OEE)"
+    ws_shift[f'A{row}'].font = bold_font
+    
+    # Find best shift
+    best_shift = 'A'
+    best_oee = oee_data.get('shift_A_oee', {}).get('oee', 0)
+    if oee_data.get('shift_B_oee', {}).get('oee', 0) > best_oee:
+        best_shift = 'B'
+        best_oee = oee_data.get('shift_B_oee', {}).get('oee', 0)
+    if oee_data.get('shift_C_oee', {}).get('oee', 0) > best_oee:
+        best_shift = 'C'
+    
+    ws_shift[f'B{row}'] = f"Shift {best_shift}"
+    ws_shift[f'B{row}'].font = Font(name='Calibri', size=11, bold=True, color="00AA00")
+    
+    # Column widths
+    ws_shift.column_dimensions['A'].width = 15
+    ws_shift.column_dimensions['B'].width = 25
+    ws_shift.column_dimensions['C'].width = 12
+    ws_shift.column_dimensions['D'].width = 12
+    ws_shift.column_dimensions['E'].width = 12
+    ws_shift.column_dimensions['F'].width = 12
+    ws_shift.column_dimensions['G'].width = 15
+    ws_shift.column_dimensions['H'].width = 20
+    
+    # ========================================================================
+    # SHEET 3: MACHINE BREAKDOWN
+    # ========================================================================
+    ws_machine = wb.create_sheet("Machine Breakdown")
+    
+    ws_machine['A1'] = "Machine-Level Performance Analysis"
+    ws_machine['A1'].font = title_font
+    ws_machine.merge_cells('A1:H1')
+    
+    row = 3
+    headers = ['Machine', 'OP Code', 'Total', 'OK', 'NG', 'Pending', 'Yield %', 'Status']
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_machine.cell(row=row, column=col_idx)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    for machine in data['machine_stats']:
+        row += 1
+        total = machine['ok'] + machine['ng'] + machine['pending']
+        completed = machine['ok'] + machine['ng']
+        yield_rate = (machine['ok'] / completed * 100) if completed > 0 else 0
+        
+        values = [
+            machine.get('display_name', machine['machine']),
+            machine.get('op_code', 'N/A'),
+            total,
+            machine['ok'],
+            machine['ng'],
+            machine['pending'],
+            f"{yield_rate:.2f}%",
+            'Excellent' if yield_rate >= 99 else 'Good' if yield_rate >= 95 else 'Needs Attention'
+        ]
+        
+        for col_idx, value in enumerate(values, start=1):
+            cell = ws_machine.cell(row=row, column=col_idx)
+            cell.value = value
+            cell.border = thin_border
+            
+            if col_idx == 1:
+                cell.font = bold_font
+            elif col_idx == 4:
+                cell.fill = ok_fill
+            elif col_idx == 5:
+                cell.fill = ng_fill
+            
+            if col_idx > 2:
+                cell.alignment = Alignment(horizontal='center')
+    
+    # Column widths
+    for col_idx in range(1, 9):
+        ws_machine.column_dimensions[get_column_letter(col_idx)].width = 18
+    
+    # ========================================================================
+    # SHEET 4: MODEL BREAKDOWN
+    # ========================================================================
+    ws_model = wb.create_sheet("Model Breakdown")
+    
+    ws_model['A1'] = "Model-Level Performance Analysis"
+    ws_model['A1'].font = title_font
+    ws_model.merge_cells('A1:G1')
+    
+    row = 3
+    headers = ['Model Name', 'Total', 'OK', 'NG', 'Pending', 'Yield %', 'Status']
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_model.cell(row=row, column=col_idx)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    if data['model_breakdown']:
+        for model_name, stats in data['model_breakdown'].items():
+            row += 1
+            completed = stats['ok'] + stats['ng']
+            yield_rate = (stats['ok'] / completed * 100) if completed > 0 else 0
+            
+            values = [
+                model_name,
+                stats['total'],
+                stats['ok'],
+                stats['ng'],
+                stats['pending'],
+                f"{yield_rate:.2f}%",
+                'Excellent' if yield_rate >= 99 else 'Good' if yield_rate >= 95 else 'Needs Attention'
+            ]
+            
+            for col_idx, value in enumerate(values, start=1):
+                cell = ws_model.cell(row=row, column=col_idx)
+                cell.value = value
+                cell.border = thin_border
+                
+                if col_idx == 1:
+                    cell.font = bold_font
+                elif col_idx == 3:
+                    cell.fill = ok_fill
+                elif col_idx == 4:
+                    cell.fill = ng_fill
+                
+                if col_idx > 1:
+                    cell.alignment = Alignment(horizontal='center')
+    
+    # Column widths
+    ws_model.column_dimensions['A'].width = 25
+    for col_idx in range(2, 8):
+        ws_model.column_dimensions[get_column_letter(col_idx)].width = 15
+    
+    # ========================================================================
+    # SHEET 5: DETAILED RECORDS
+    # ========================================================================
+    ws_details = wb.create_sheet("Detailed Records")
+    
+    ws_details['A1'] = "Transaction-Level Details"
+    ws_details['A1'].font = title_font
+    ws_details.merge_cells('A1:I1')
+    
+    row = 3
+    headers = ['Machine', 'Model', 'QR Code', 'Timestamp', 'Shift', 'Cycle Time (min)', 'Standard CT (min)', 'Status', 'Variance']
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_details.cell(row=row, column=col_idx)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    for record in data['detailed_data']:
+        row += 1
+        timestamp_str = record['timestamp'] if isinstance(record['timestamp'], str) else record['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+        cycle_time = record.get('cycle_time', 0) if record.get('cycle_time') else 0
+        
+        # Get standard cycle time (you may need to add this to your data)
+        standard_ct = 0  # Would need to be calculated based on op_code
+        variance = cycle_time - standard_ct if cycle_time and standard_ct else 0
+        
+        values = [
+            record.get('display_name', record['machine']),
+            record.get('model_name', 'N/A'),
+            record['qr_code'],
+            timestamp_str,
+            record.get('shift', '-'),
+            f"{cycle_time:.2f}" if cycle_time else '-',
+            f"{standard_ct:.2f}" if standard_ct else '-',
+            record['status'],
+            f"{variance:.2f}" if variance else '-'
+        ]
+        
+        for col_idx, value in enumerate(values, start=1):
+            cell = ws_details.cell(row=row, column=col_idx)
+            cell.value = value
+            cell.border = thin_border
+            cell.font = Font(name='Calibri', size=9)
+            
+            if col_idx == 8:  # Status
+                if value == 'OK':
+                    cell.fill = ok_fill
+                elif value == 'NG':
+                    cell.fill = ng_fill
+            
+            if col_idx > 4:
+                cell.alignment = Alignment(horizontal='center')
+    
+    # Column widths
+    ws_details.column_dimensions['A'].width = 20
+    ws_details.column_dimensions['B'].width = 15
+    ws_details.column_dimensions['C'].width = 20
+    ws_details.column_dimensions['D'].width = 20
+    ws_details.column_dimensions['E'].width = 10
+    ws_details.column_dimensions['F'].width = 15
+    ws_details.column_dimensions['G'].width = 15
+    ws_details.column_dimensions['H'].width = 12
+    ws_details.column_dimensions['I'].width = 12
+    
+    # ========================================================================
+    # SHEET 6: OEE CALCULATION REFERENCE
+    # ========================================================================
+    ws_ref = wb.create_sheet("OEE Reference")
+    
+    ws_ref['A1'] = "OEE Calculation Reference & Standard Cycle Times"
+    ws_ref['A1'].font = title_font
+    ws_ref.merge_cells('A1:E1')
+    
+    row = 3
+    ws_ref[f'A{row}'] = "OEE Formula Breakdown"
+    ws_ref[f'A{row}'].font = section_font
+    ws_ref.merge_cells(f'A{row}:E{row}')
+    
+    row += 2
+    formulas = [
+        ['OEE', '=', 'Availability × Performance × Quality'],
+        ['Availability', '=', 'Operating Time / Loading Time (430 min)'],
+        ['Performance', '=', 'Net Operating Time / Operating Time'],
+        ['Quality', '=', 'Good Units / Total Units Produced'],
+        ['', '', ''],
+        ['Operating Time', '=', 'Loading Time - Downtime'],
+        ['Downtime', '=', 'Parts Deficit × Standard Cycle Time'],
+        ['Parts Deficit', '=', 'Expected Parts - Actual Parts'],
+        ['Expected Parts', '=', 'Loading Time / Standard Cycle Time'],
+    ]
+    
+    for formula in formulas:
+        row += 1
+        ws_ref[f'A{row}'] = formula[0]
+        ws_ref[f'B{row}'] = formula[1]
+        ws_ref[f'C{row}'] = formula[2]
+        
+        ws_ref[f'A{row}'].font = bold_font
+        ws_ref[f'C{row}'].font = Font(name='Calibri', size=10, italic=True)
+    
+    # Standard Cycle Times
+    row += 2
+    ws_ref[f'A{row}'] = "Standard Cycle Times by Operation"
+    ws_ref[f'A{row}'].font = section_font
+    ws_ref.merge_cells(f'A{row}:D{row}')
+    
+    row += 1
+    ws_ref[f'A{row}'] = "Operation"
+    ws_ref[f'B{row}'] = "OP Code"
+    ws_ref[f'C{row}'] = "Cycle Time (sec)"
+    ws_ref[f'D{row}'] = "Cycle Time (min)"
+    for col in ['A', 'B', 'C', 'D']:
+        ws_ref[f'{col}{row}'].fill = subheader_fill
+        ws_ref[f'{col}{row}'].font = subheader_font
+        ws_ref[f'{col}{row}'].border = thin_border
+        ws_ref[f'{col}{row}'].alignment = Alignment(horizontal='center')
+    
+    cycle_times = [
+        ['Piston Pre Assy', 'OP-40A/B/C/D', 50, 0.83],
+        ['Piston Oring Lubrication', 'OP-90', 42, 0.70],
+        ['Painting', 'OP-85', 39, 0.65],
+        ['HP Leak Test', 'OP-80', 70, 1.17],
+        ['Deburring', 'OP-160', 32, 0.53],
+        ['Honing Machine 1#', 'OP-140A', 135, 2.25],
+        ['Honing Machine 2#', 'OP-140B', 73, 1.22],
+        ['Turning Housing', 'OP-130A/B/C/D', 255, 4.25],
+        ['Turning Piston', 'OP-110A/B', 130, 2.17],
+    ]
+    
+    for ct_info in cycle_times:
+        row += 1
+        ws_ref[f'A{row}'] = ct_info[0]
+        ws_ref[f'B{row}'] = ct_info[1]
+        ws_ref[f'C{row}'] = ct_info[2]
+        ws_ref[f'D{row}'] = ct_info[3]
+        
+        for col in ['A', 'B', 'C', 'D']:
+            ws_ref[f'{col}{row}'].border = thin_border
+        
+        ws_ref[f'C{row}'].alignment = Alignment(horizontal='center')
+        ws_ref[f'D{row}'].alignment = Alignment(horizontal='center')
+    
+    # Column widths
+    ws_ref.column_dimensions['A'].width = 30
+    ws_ref.column_dimensions['B'].width = 20
+    ws_ref.column_dimensions['C'].width = 20
+    ws_ref.column_dimensions['D'].width = 20
+    ws_ref.column_dimensions['E'].width = 30
+    
+    # ========================================================================
+    # Save and return
+    # ========================================================================
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="analytics_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    
+    wb.save(response)
     return response

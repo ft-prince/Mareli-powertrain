@@ -20,7 +20,11 @@ urlpatterns = [
     # Analytics
     path('analytics/', views.analytics_view, name='analytics'),
     path('api/analytics/', views.analytics_api, name='analytics_api'),
+    # Export URLs
     path('api/analytics/export/', views.analytics_export, name='analytics_export'),
+    path('api/analytics/export/excel/', views.analytics_export_excel, name='analytics_export_excel'),  # NEW
+
+
 
     # 🔧 Rework
     path('rework/', rework_views.rework_page, name='rework_page'),

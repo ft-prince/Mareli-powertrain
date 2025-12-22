@@ -6,6 +6,342 @@
 <div class="analytics-container">
     <h2 style="margin-bottom: 1.5rem; color: var(--dark-coral);">📊 Production Analytics & OEE Dashboard</h2>
     
+    <!-- ========================================================================= -->
+    <!-- INFORMATION PANEL - Collapsible calculation explanations -->
+    <!-- ========================================================================= -->
+    <div class="info-panel-card">
+        <div class="info-panel-header" onclick="toggleInfoPanel()">
+            <div class="info-panel-title">
+                <span class="info-icon">ℹ️</span>
+                <h3>📊 How Are These Metrics Calculated?</h3>
+            </div>
+            <div class="info-panel-toggle" id="infoPanelToggle">
+                <span class="toggle-icon">▼</span>
+            </div>
+        </div>
+        
+        <div class="info-panel-content" id="infoPanelContent" style="display: none;">
+            
+            <!-- OEE Calculation -->
+            <div class="info-section">
+                <div class="info-section-header" onclick="toggleInfoSection('oeeInfo')">
+                    <span class="section-icon">🎯</span>
+                    <h4>OEE (Overall Equipment Effectiveness)</h4>
+                    <span class="section-toggle" id="oeeInfoToggle">▶</span>
+                </div>
+                <div class="info-section-content" id="oeeInfo" style="display: none;">
+                    <div class="formula-box">
+                        <div class="formula-main">
+                            <strong>OEE = Availability × Performance × Quality</strong>
+                        </div>
+                        <div class="formula-breakdown">
+                            <div class="formula-item">
+                                <span class="formula-label">Availability:</span>
+                                <span class="formula-value">Operating Time ÷ Loading Time (430 min)</span>
+                                <p class="formula-explanation">Measures the percentage of scheduled time that the operation is available to operate. Loading time is fixed at 430 minutes per shift.</p>
+                            </div>
+                            <div class="formula-item">
+                                <span class="formula-label">Performance:</span>
+                                <span class="formula-value">Net Operating Time ÷ Operating Time</span>
+                                <p class="formula-explanation">Measures the speed at which the work center runs as a percentage of its designed speed.</p>
+                            </div>
+                            <div class="formula-item">
+                                <span class="formula-label">Quality:</span>
+                                <span class="formula-value">Good Units ÷ Total Units</span>
+                                <p class="formula-explanation">Measures the quality of parts produced (OK parts vs total completed parts).</p>
+                            </div>
+                        </div>
+                        
+                        <div class="example-box">
+                            <h5>📝 Example Calculation:</h5>
+                            <div class="example-content">
+                                <p><strong>Given:</strong></p>
+                                <ul>
+                                    <li>Loading Time: 430 minutes</li>
+                                    <li>Standard Cycle Time: 2.17 min (OP-110A - Turning Piston)</li>
+                                    <li>Expected Parts: 430 ÷ 2.17 = <strong>198 parts</strong></li>
+                                    <li>Actual Parts Produced: <strong>195 parts</strong></li>
+                                    <li>OK Parts: 192 | NG Parts: 3</li>
+                                </ul>
+                                
+                                <p><strong>Calculations:</strong></p>
+                                <ul>
+                                    <li>Parts Deficit: 198 - 195 = <strong>3 parts</strong></li>
+                                    <li>Downtime: 3 × 2.17 = <strong>6.51 minutes</strong></li>
+                                    <li>Operating Time: 430 - 6.51 = <strong>423.49 min</strong></li>
+                                </ul>
+                                
+                                <p><strong>Results:</strong></p>
+                                <ul>
+                                    <li>Availability: 423.49 ÷ 430 = <strong class="success-text">98.49%</strong></li>
+                                    <li>Performance: 423.49 ÷ 423.49 = <strong class="success-text">100%</strong></li>
+                                    <li>Quality: 192 ÷ 195 = <strong class="success-text">98.46%</strong></li>
+                                    <li><strong>OEE: 98.49% × 100% × 98.46% = <span class="highlight-text">96.99%</span></strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="benchmark-box">
+                            <h5>🎯 OEE Benchmarks:</h5>
+                            <div class="benchmark-grid">
+                                <div class="benchmark-item excellent">
+                                    <span class="benchmark-value">≥ 85%</span>
+                                    <span class="benchmark-label">World Class</span>
+                                </div>
+                                <div class="benchmark-item good">
+                                    <span class="benchmark-value">70-84%</span>
+                                    <span class="benchmark-label">Good</span>
+                                </div>
+                                <div class="benchmark-item needs-improvement">
+                                    <span class="benchmark-value">< 70%</span>
+                                    <span class="benchmark-label">Needs Improvement</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shift-Wise Analysis -->
+            <div class="info-section">
+                <div class="info-section-header" onclick="toggleInfoSection('shiftInfo')">
+                    <span class="section-icon">🌓</span>
+                    <h4>Shift-Wise Production Analysis</h4>
+                    <span class="section-toggle" id="shiftInfoToggle">▶</span>
+                </div>
+                <div class="info-section-content" id="shiftInfo" style="display: none;">
+                    <div class="shift-definitions">
+                        <div class="shift-def-item shift-a-bg">
+                            <h5>🌅 Shift A - Morning</h5>
+                            <p><strong>Time:</strong> 06:00 AM to 14:00 PM (8 hours)</p>
+                            <p><strong>Calculation:</strong> All parts with timestamps between 06:00 and 14:00 are counted in Shift A</p>
+                        </div>
+                        <div class="shift-def-item shift-b-bg">
+                            <h5>☀️ Shift B - Afternoon</h5>
+                            <p><strong>Time:</strong> 14:00 PM to 22:00 PM (8 hours)</p>
+                            <p><strong>Calculation:</strong> All parts with timestamps between 14:00 and 22:00 are counted in Shift B</p>
+                        </div>
+                        <div class="shift-def-item shift-c-bg">
+                            <h5>🌙 Shift C - Night</h5>
+                            <p><strong>Time:</strong> 22:00 PM to 06:00 AM (8 hours)</p>
+                            <p><strong>Calculation:</strong> All parts with timestamps between 22:00-23:59 and 00:00-06:00 are counted in Shift C (crosses midnight)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="shift-metrics">
+                        <h5>📊 Metrics Per Shift:</h5>
+                        <ul>
+                            <li><strong>Total Parts:</strong> Count of all parts produced during shift hours</li>
+                            <li><strong>OK/NG Breakdown:</strong> Quality status of parts produced in the shift</li>
+                            <li><strong>Shift OEE:</strong> Individual OEE calculated using only that shift's data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cycle Time Tracking -->
+            <div class="info-section">
+                <div class="info-section-header" onclick="toggleInfoSection('cycleTimeInfo')">
+                    <span class="section-icon">⏱️</span>
+                    <h4>Cycle Time Tracking (Actual vs Standard)</h4>
+                    <span class="section-toggle" id="cycleTimeInfoToggle">▶</span>
+                </div>
+                <div class="info-section-content" id="cycleTimeInfo" style="display: none;">
+                    <div class="cycle-time-explanation">
+                        <div class="ct-item">
+                            <h5>📋 Standard Cycle Time (CT)</h5>
+                            <p>The expected/target time for each operation, based on engineering studies and production standards.</p>
+                            <div class="ct-table-container">
+                                <table class="ct-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Operation</th>
+                                            <th>OP Code</th>
+                                            <th>Std CT (sec)</th>
+                                            <th>Std CT (min)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Turning Piston</td>
+                                            <td>OP-110A/B</td>
+                                            <td>130</td>
+                                            <td>2.17</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Turning Housing</td>
+                                            <td>OP-130A/B/C/D</td>
+                                            <td>255</td>
+                                            <td>4.25</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Honing Machine 1#</td>
+                                            <td>OP-140A</td>
+                                            <td>135</td>
+                                            <td>2.25</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Honing Machine 2#</td>
+                                            <td>OP-140B</td>
+                                            <td>73</td>
+                                            <td>1.22</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Deburring</td>
+                                            <td>OP-160</td>
+                                            <td>32</td>
+                                            <td>0.53</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Painting</td>
+                                            <td>OP-85</td>
+                                            <td>39</td>
+                                            <td>0.65</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Piston Oring Lube</td>
+                                            <td>OP-90</td>
+                                            <td>42</td>
+                                            <td>0.70</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Piston Pre Assy</td>
+                                            <td>OP-40A/B/C/D</td>
+                                            <td>50</td>
+                                            <td>0.83</td>
+                                        </tr>
+                                        <tr>
+                                            <td>HP Leak Test</td>
+                                            <td>OP-80</td>
+                                            <td>70</td>
+                                            <td>1.17</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="ct-item">
+                            <h5>📊 Actual Cycle Time</h5>
+                            <p><strong>Calculation:</strong> Time difference between preprocessing (part entry) and postprocessing (part exit) timestamps.</p>
+                            <div class="formula-box-small">
+                                <code>Actual CT = Post-processing Time - Pre-processing Time</code>
+                            </div>
+                            <p><strong>Example:</strong> Part scanned in at 10:15:30, scanned out at 10:18:00<br>
+                            Actual CT = 2 minutes 30 seconds = <strong>2.50 minutes</strong></p>
+                        </div>
+                        
+                        <div class="ct-item">
+                            <h5>📈 Average Cycle Time</h5>
+                            <p>The mean of all actual cycle times for the selected period and machines.</p>
+                            <div class="formula-box-small">
+                                <code>Avg CT = Sum of all actual CTs ÷ Number of parts</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rejection Rate -->
+            <div class="info-section">
+                <div class="info-section-header" onclick="toggleInfoSection('rejectionInfo')">
+                    <span class="section-icon">📉</span>
+                    <h4>Rejection Rate Trends</h4>
+                    <span class="section-toggle" id="rejectionInfoToggle">▶</span>
+                </div>
+                <div class="info-section-content" id="rejectionInfo" style="display: none;">
+                    <div class="rejection-explanation">
+                        <div class="formula-box">
+                            <div class="formula-main">
+                                <strong>Rejection Rate = (NG Parts ÷ (OK Parts + NG Parts)) × 100%</strong>
+                            </div>
+                            <p class="formula-note"><em>Note: Pending parts are not included in rejection rate calculation</em></p>
+                        </div>
+                        
+                        <div class="example-box">
+                            <h5>📝 Example:</h5>
+                            <p>If production yields 950 OK parts and 50 NG parts:</p>
+                            <ul>
+                                <li>Total Completed: 950 + 50 = 1,000 parts</li>
+                                <li>Rejection Rate: (50 ÷ 1,000) × 100% = <strong>5.00%</strong></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="benchmark-box">
+                            <h5>🎯 Quality Targets:</h5>
+                            <div class="target-grid">
+                                <div class="target-item excellent">
+                                    <span class="target-value">< 1%</span>
+                                    <span class="target-label">Excellent</span>
+                                </div>
+                                <div class="target-item good">
+                                    <span class="target-value">1-3%</span>
+                                    <span class="target-label">Acceptable</span>
+                                </div>
+                                <div class="target-item needs-improvement">
+                                    <span class="target-value">> 3%</span>
+                                    <span class="target-label">Action Required</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Machine & Model Breakdown -->
+            <div class="info-section">
+                <div class="info-section-header" onclick="toggleInfoSection('breakdownInfo')">
+                    <span class="section-icon">🔧</span>
+                    <h4>Machine and Model-Level Breakdowns</h4>
+                    <span class="section-toggle" id="breakdownInfoToggle">▶</span>
+                </div>
+                <div class="info-section-content" id="breakdownInfo" style="display: none;">
+                    <div class="breakdown-explanation">
+                        <div class="breakdown-item">
+                            <h5>🏭 Machine Breakdown</h5>
+                            <p>Aggregates production data by individual machine/station:</p>
+                            <ul>
+                                <li><strong>Total Parts:</strong> All parts processed by this machine</li>
+                                <li><strong>OK/NG Count:</strong> Quality breakdown per machine</li>
+                                <li><strong>Yield Rate:</strong> (OK ÷ (OK + NG)) × 100%</li>
+                            </ul>
+                            <p class="info-note">💡 <em>Use this to identify underperforming machines or bottlenecks</em></p>
+                        </div>
+                        
+                        <div class="breakdown-item">
+                            <h5>📦 Model Breakdown</h5>
+                            <p>Aggregates production data by part model/variant:</p>
+                            <ul>
+                                <li><strong>Total Parts:</strong> All parts of this model produced</li>
+                                <li><strong>OK/NG Count:</strong> Quality breakdown per model</li>
+                                <li><strong>Yield Rate:</strong> (OK ÷ (OK + NG)) × 100%</li>
+                            </ul>
+                            <p class="info-note">💡 <em>Use this to identify problematic part designs or variants</em></p>
+                        </div>
+                        
+                        <div class="breakdown-item">
+                            <h5>📊 Productivity Formula</h5>
+                            <div class="formula-box-small">
+                                <code>Productivity = (OK Parts ÷ Total Parts) × 100%</code>
+                            </div>
+                            <p>Measures overall production efficiency including pending parts</p>
+                        </div>
+                        
+                        <div class="breakdown-item">
+                            <h5>🎯 Yield Rate Formula</h5>
+                            <div class="formula-box-small">
+                                <code>Yield Rate = (OK Parts ÷ (OK Parts + NG Parts)) × 100%</code>
+                            </div>
+                            <p>Measures quality of completed parts only (excludes pending)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+
     <!-- Filters Section -->
     <div class="filters-card">
         <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">⚙️ Filters & Controls</h3>
@@ -92,12 +428,37 @@
             <button class="filter-btn filter-btn-secondary" onclick="resetFilters()">
                 🔄 Reset
             </button>
-            <button class="filter-btn filter-btn-export" onclick="exportData()">
-                📊 Export CSV
+    <!-- Export Dropdown -->
+    <div class="export-dropdown">
+        <button class="filter-btn filter-btn-export" onclick="toggleExportMenu()">
+            📊 Export Data ▼
+        </button>
+        <div class="export-menu" id="exportMenu" style="display: none;">
+            <button class="export-menu-item" onclick="exportExcel()">
+                <span class="export-icon">📗</span>
+                <div class="export-details">
+                    <div class="export-title">Excel (Formatted)</div>
+                    <div class="export-subtitle">Multi-sheet with charts & colors</div>
+                </div>
             </button>
-            <button class="filter-btn filter-btn-export" onclick="exportCharts()">
-                📈 Export Charts (PDF)
+            <button class="export-menu-item" onclick="exportData()">
+                <span class="export-icon">📄</span>
+                <div class="export-details">
+                    <div class="export-title">CSV (Simple)</div>
+                    <div class="export-subtitle">Raw data for analysis</div>
+                </div>
             </button>
+            <button class="export-menu-item" onclick="exportCharts()">
+                <span class="export-icon">📈</span>
+                <div class="export-details">
+                    <div class="export-title">Print/PDF</div>
+                    <div class="export-subtitle">Charts & visualizations</div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
     
@@ -868,10 +1229,564 @@
         }
     }
 </style>
+
+
+<style>
+/* Info Panel Styles */
+.info-panel-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px var(--shadow);
+    overflow: hidden;
+    border: 2px solid #e0e0e0;
+}
+
+.info-panel-header {
+    background: linear-gradient(135deg, #764ba2 0%, #764ba2 100%);
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.info-panel-header:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.info-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--white);
+}
+
+.info-panel-title h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.info-icon {
+    font-size: 1.5rem;
+}
+
+.info-panel-toggle {
+    color: var(--white);
+    font-size: 1.5rem;
+    transition: transform 0.3s;
+}
+
+.info-panel-toggle.rotated {
+    transform: rotate(180deg);
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.3s;
+}
+
+.info-panel-content {
+    padding: 1.5rem;
+    background: #f8f9fa;
+}
+
+/* Info Sections */
+.info-section {
+    background: var(--white);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+.info-section-header {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s;
+}
+
+.info-section-header:hover {
+    background: linear-gradient(135deg, #c3cfe2 0%, #f5f7fa 100%);
+}
+
+.info-section-header h4 {
+    margin: 0;
+    flex: 1;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.section-icon {
+    font-size: 1.5rem;
+}
+
+.section-toggle {
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+    color: #666;
+}
+
+.section-toggle.rotated {
+    transform: rotate(90deg);
+}
+
+.info-section-content {
+    padding: 1.5rem;
+}
+
+/* Formula Boxes */
+.formula-box {
+    background: #fff;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.formula-main {
+    font-size: 1.1rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.formula-breakdown {
+    margin-top: 1rem;
+}
+
+.formula-item {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+}
+
+.formula-label {
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.formula-value {
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.formula-explanation {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.5rem 0 0 0;
+}
+
+.formula-note {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+.formula-box-small {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+}
+
+.formula-box-small code {
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* Example Boxes */
+.example-box {
+    background: #fff8e1;
+    border: 2px solid #ffd54f;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+}
+
+.example-box h5 {
+    color: #f57c00;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.example-content ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.example-content li {
+    margin-bottom: 0.5rem;
+}
+
+.success-text {
+    color: #00cc66;
+    font-weight: 600;
+}
+
+.highlight-text {
+    color: #ff7755;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* Benchmark Boxes */
+.benchmark-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.benchmark-box h5 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.benchmark-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.benchmark-item {
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.benchmark-item.excellent {
+    background: #c8e6c9;
+    border: 2px solid #4caf50;
+}
+
+.benchmark-item.good {
+    background: #fff9c4;
+    border: 2px solid #fbc02d;
+}
+
+.benchmark-item.needs-improvement {
+    background: #ffcdd2;
+    border: 2px solid #f44336;
+}
+
+.benchmark-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.benchmark-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Shift Definitions */
+.shift-definitions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.shift-def-item {
+    padding: 1.25rem;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+.shift-def-item h5 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.shift-def-item p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.shift-a-bg {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+}
+
+.shift-b-bg {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: var(--white);
+}
+
+.shift-c-bg {
+    background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+    color: var(--white);
+}
+
+.shift-metrics {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.shift-metrics h5 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.shift-metrics ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.shift-metrics li {
+    margin-bottom: 0.75rem;
+}
+
+/* Cycle Time Table */
+.ct-table-container {
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.ct-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.ct-table thead {
+    background: #667eea;
+    color: var(--white);
+}
+
+.ct-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.ct-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ct-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* Cycle Time Explanation */
+.cycle-time-explanation {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ct-item h5 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: #667eea;
+}
+
+/* Breakdown Explanation */
+.breakdown-explanation {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.breakdown-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.breakdown-item h5 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: #667eea;
+}
+
+.breakdown-item ul {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+}
+
+.breakdown-item li {
+    margin-bottom: 0.5rem;
+}
+
+.info-note {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #666;
+    margin-top: 0.75rem;
+}
+
+/* Target Grid */
+.target-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.target-item {
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.target-item.excellent {
+    background: #c8e6c9;
+    border: 2px solid #4caf50;
+}
+
+.target-item.good {
+    background: #fff9c4;
+    border: 2px solid #fbc02d;
+}
+
+.target-item.needs-improvement {
+    background: #ffcdd2;
+    border: 2px solid #f44336;
+}
+
+.target-value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.target-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Rejection Explanation */
+.rejection-explanation {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .benchmark-grid,
+    .shift-definitions,
+    .target-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-panel-title h3 {
+        font-size: 1.1rem;
+    }
+}
+
+
+/* Export Dropdown Styles */
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 8px 16px var(--shadow);
+    min-width: 280px;
+    z-index: 1000;
+    overflow: hidden;
+    border: 2px solid var(--medium-gray);
+}
+
+.export-menu-item {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: none;
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-align: left;
+}
+
+.export-menu-item:hover {
+    background: var(--light-gray);
+}
+
+.export-menu-item:not(:last-child) {
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.export-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.export-details {
+    flex: 1;
+}
+
+.export-title {
+    font-weight: 600;
+    color: var(--dark-coral);
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.export-subtitle {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+}
+
+/* Update existing filter-btn-export for dropdown indicator */
+.filter-btn-export {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .export-menu {
+        right: auto;
+        left: 0;
+        width: calc(100vw - 2rem);
+        max-width: 350px;
+    }
+}
+
+</style>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script> {% endcomment %}
 <script >
 
     // Enhanced Analytics JavaScript with OEE, Shift-Wise Production, and Cycle Time
@@ -1762,4 +2677,114 @@ function exportCharts() {
     window.print();
 }
 </script>
+
+<script>
+function toggleInfoPanel() {
+    const content = document.getElementById('infoPanelContent');
+    const toggle = document.getElementById('infoPanelToggle');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.classList.add('rotated');
+    } else {
+        content.style.display = 'none';
+        toggle.classList.remove('rotated');
+    }
+}
+
+function toggleInfoSection(sectionId) {
+    const content = document.getElementById(sectionId);
+    const toggle = document.getElementById(sectionId + 'Toggle');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.classList.add('rotated');
+    } else {
+        content.style.display = 'none';
+        toggle.classList.remove('rotated');
+    }
+}
+</script>
+<script>
+// Toggle export menu
+let exportMenuOpen = false;
+
+function toggleExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    exportMenuOpen = !exportMenuOpen;
+    
+    if (exportMenuOpen) {
+        menu.style.display = 'block';
+        // Add click listener to close menu when clicking outside
+        setTimeout(() => {
+            document.addEventListener('click', closeExportMenuOnClickOutside);
+        }, 100);
+    } else {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeExportMenuOnClickOutside);
+    }
+}
+
+function closeExportMenuOnClickOutside(event) {
+    const menu = document.getElementById('exportMenu');
+    const exportDropdown = event.target.closest('.export-dropdown');
+    
+    if (!exportDropdown && exportMenuOpen) {
+        menu.style.display = 'none';
+        exportMenuOpen = false;
+        document.removeEventListener('click', closeExportMenuOnClickOutside);
+    }
+}
+
+// Export to Excel (formatted)
+function exportExcel() {
+    const filters = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        machine: document.getElementById('machineFilter').value,
+        status: document.getElementById('statusFilter').value
+    };
+    
+    // Close the menu
+    document.getElementById('exportMenu').style.display = 'none';
+    exportMenuOpen = false;
+    
+    // Show loading
+    showLoading();
+    
+    // Redirect to Excel export endpoint
+    window.location.href = '/api/analytics/export/excel/?' + new URLSearchParams(filters);
+    
+    // Hide loading after a delay
+    setTimeout(() => {
+        hideLoading();
+    }, 2000);
+}
+
+// Export to CSV (keep existing function)
+function exportData() {
+    const filters = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        machine: document.getElementById('machineFilter').value,
+        status: document.getElementById('statusFilter').value
+    };
+    
+    // Close the menu
+    document.getElementById('exportMenu').style.display = 'none';
+    exportMenuOpen = false;
+    
+    window.location.href = '/api/analytics/export/?' + new URLSearchParams(filters);
+}
+
+// Export charts to PDF (keep existing function)
+function exportCharts() {
+    // Close the menu
+    document.getElementById('exportMenu').style.display = 'none';
+    exportMenuOpen = false;
+    
+    window.print();
+}
+</script>
+
 {% endblock %}
