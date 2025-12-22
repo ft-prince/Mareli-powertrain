@@ -1,14 +1,14 @@
 {% extends 'dashboard/base.html' %}
 
-{% block title %}Analytics - Manufacturing Traceability{% endblock %}
+{% block title %}Enhanced Analytics - Manufacturing Traceability{% endblock %}
 
 {% block content %}
 <div class="analytics-container">
-    <h2 style="margin-bottom: 1.5rem; color: var(--dark-coral);">Production Analytics & Insights</h2>
+    <h2 style="margin-bottom: 1.5rem; color: var(--dark-coral);">📊 Production Analytics & OEE Dashboard</h2>
     
     <!-- Filters Section -->
     <div class="filters-card">
-        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Filters & Controls</h3>
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">⚙️ Filters & Controls</h3>
         <div class="filter-grid">
             <div class="filter-group">
                 <label for="dateRange">Date Range</label>
@@ -36,42 +36,42 @@
                 <select id="machineFilter">
                     <option value="all">All Machines</option>
                     <optgroup label="CNC Machines">
-                        <option value="cnc_1">CNC 1</option>
-                        <option value="cnc_2">CNC 2</option>
-                        <option value="cnc_3">CNC 3</option>
-                        <option value="cnc_4">CNC 4</option>
-                        <option value="cnc_5">CNC 5</option>
-                        <option value="cnc_6">CNC 6</option>
+                        <option value="dmg_mori1op_110a">CNC 1 (OP-110A)</option>
+                        <option value="dmg_mori2op_110b">CNC 2 (OP-110B)</option>
+                        <option value="dmg_mori3op_130d">CNC 3 (OP-130D)</option>
+                        <option value="dmg_mori4op_130c">CNC 4 (OP-130C)</option>
+                        <option value="dmg_mori5op_130b">CNC 5 (OP-130B)</option>
+                        <option value="dmg_mori6op_130a">CNC 6 (OP-130A)</option>
                     </optgroup>
                     <optgroup label="Gauge">
-                        <option value="gauge_1">Gauge 1</option>
-                        <option value="gauge_2">Gauge 2</option>
-                        <option value="gauge_3">Gauge 3</option>
+                        <option value="gauge1op_115">Gauge 1</option>
+                        <option value="gauge2op_135b">Gauge 2</option>
+                        <option value="gauge3op_135a">Gauge 3</option>
                     </optgroup>
                     <optgroup label="Honing">
-                        <option value="honing_1">Honing 1</option>
-                        <option value="honing_2">Honing 2</option>
+                        <option value="honing1140a">Honing 1</option>
+                        <option value="honing2140b">Honing 2</option>
                     </optgroup>
                     <optgroup label="Processing">
-                        <option value="deburring">Deburring</option>
-                        <option value="prewashing">Prewashing</option>
-                        <option value="final_washing">Final Washing</option>
+                        <option value="deburringop_160">Deburring</option>
+                        <option value="prewashing_loadingop_150">Prewashing Load</option>
+                        <option value="prewashing_unloadingop_150">Prewashing Unload</option>
+                        <option value="finlwashing_loadingop_170">Final Washing Load</option>
+                        <option value="finlwashing_unloadingop_170">Final Washing Unload</option>
                     </optgroup>
                     <optgroup label="Final">
-                        <option value="painting">Painting</option>
-                        <option value="lubrication">Lubrication</option>
+                        <option value="paintingop85">Painting</option>
+                        <option value="lubricationop90">Lubrication</option>
                     </optgroup>
                     <optgroup label="Assembly">
-                        <option value="assembly_op40a">Assembly OP40A</option>
-                        <option value="assembly_op40b">Assembly OP40B</option>
-                        <option value="assembly_op40c">Assembly OP40C</option>
-                        <option value="assembly_op40d">Assembly OP40D</option>
-
+                        <option value="op40a">Assembly OP40A</option>
+                        <option value="op40b">Assembly OP40B</option>
+                        <option value="op40c">Assembly OP40C</option>
+                        <option value="op40d">Assembly OP40D</option>
                     </optgroup>
-                            <optgroup label="Testing">
-                                <option value="op80_leak_test">OP80 Leak Test</option>
-                            </optgroup>
-
+                    <optgroup label="Testing">
+                        <option value="op80_leak_test">OP80 Leak Test</option>
+                    </optgroup>
                 </select>
             </div>            
             <div class="filter-group">
@@ -96,12 +96,53 @@
                 📊 Export CSV
             </button>
             <button class="filter-btn filter-btn-export" onclick="exportCharts()">
-                📈 Export Charts
+                📈 Export Charts (PDF)
             </button>
         </div>
     </div>
     
-    <!-- Statistics Overview -->
+    <!-- OEE METRICS SECTION -->
+    <div class="oee-section">
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">🎯 Overall Equipment Effectiveness (OEE)</h3>
+        <div class="oee-grid">
+            <div class="oee-card oee-main">
+                <div class="oee-icon">🏆</div>
+                <div class="oee-value" id="oeeValue">0%</div>
+                <div class="oee-label">Overall OEE</div>
+                <div class="oee-formula">Availability × Performance × Quality</div>
+            </div>
+            
+            <div class="oee-card">
+                <div class="oee-icon">⏰</div>
+                <div class="oee-value" id="availabilityValue" style="color: #3498db;">0%</div>
+                <div class="oee-label">Availability</div>
+                <div class="oee-sublabel">Operating Time / Loading Time</div>
+            </div>
+            
+            <div class="oee-card">
+                <div class="oee-icon">⚡</div>
+                <div class="oee-value" id="performanceValue" style="color: #9b59b6;">0%</div>
+                <div class="oee-label">Performance</div>
+                <div class="oee-sublabel">Net Operating / Operating Time</div>
+            </div>
+            
+            <div class="oee-card">
+                <div class="oee-icon">✅</div>
+                <div class="oee-value" id="qualityValue" style="color: var(--success-green);">0%</div>
+                <div class="oee-label">Quality</div>
+                <div class="oee-sublabel">Good Units / Total Units</div>
+            </div>
+            
+            <div class="oee-card">
+                <div class="oee-icon">⏸️</div>
+                <div class="oee-value" id="downtimeValue" style="color: var(--danger-red);">0 min</div>
+                <div class="oee-label">Estimated Downtime</div>
+                <div class="oee-sublabel">Based on production gap</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Performance Indicators -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon">📦</div>
@@ -124,34 +165,182 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-value" id="pendingParts" style="color: var(--warning-orange);">0</div>
-            <div class="stat-label">Pending Parts</div>
-            <div class="stat-change" id="pendingPercentage">0%</div>
+            <div class="stat-icon">📉</div>
+            <div class="stat-value" id="rejectionRate" style="color: var(--danger-red);">0%</div>
+            <div class="stat-label">Rejection Rate</div>
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">🎯</div>
-            <div class="stat-value" id="yieldRate">0%</div>
-            <div class="stat-label">Yield Rate</div>
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="avgCycleTime">0 min</div>
+            <div class="stat-label">Avg Cycle Time</div>
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">⚡</div>
-            <div class="stat-value" id="activeMachines">0</div>
-            <div class="stat-label">Active Machines</div>
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="productivity">0%</div>
+            <div class="stat-label">Productivity</div>
+            <div class="stat-sublabel">OK Parts / Total Parts</div>
+        </div>
+    </div>
+    
+    <!-- SHIFT-WISE PRODUCTION SECTION -->
+    <div class="shift-section">
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">🌓 Shift-Wise Production Analysis</h3>
+        <div class="shift-grid">
+            <div class="shift-card shift-a">
+                <div class="shift-header">
+                    <div class="shift-icon">🌅</div>
+                    <div>
+                        <div class="shift-name">Shift A</div>
+                        <div class="shift-time">06:00 AM - 14:00 PM</div>
+                    </div>
+                </div>
+                <div class="shift-stats">
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">Total</div>
+                        <div class="shift-stat-value" id="shiftATotal">0</div>
+                    </div>
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">OK</div>
+                        <div class="shift-stat-value" id="shiftAOK" style="color: var(--success-green);">0</div>
+                    </div>
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">NG</div>
+                        <div class="shift-stat-value" id="shiftANG" style="color: var(--danger-red);">0</div>
+                    </div>
+                </div>
+                <div class="shift-oee">
+                    <div class="shift-oee-label">Shift OEE</div>
+                    <div class="shift-oee-value" id="shiftAOEE">0%</div>
+                </div>
+            </div>
+            
+            <div class="shift-card shift-b">
+                <div class="shift-header">
+                    <div class="shift-icon">☀️</div>
+                    <div>
+                        <div class="shift-name">Shift B</div>
+                        <div class="shift-time">14:00 PM - 22:00 PM</div>
+                    </div>
+                </div>
+                <div class="shift-stats">
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">Total</div>
+                        <div class="shift-stat-value" id="shiftBTotal">0</div>
+                    </div>
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">OK</div>
+                        <div class="shift-stat-value" id="shiftBOK" style="color: var(--success-green);">0</div>
+                    </div>
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">NG</div>
+                        <div class="shift-stat-value" id="shiftBNG" style="color: var(--danger-red);">0</div>
+                    </div>
+                </div>
+                <div class="shift-oee">
+                    <div class="shift-oee-label">Shift OEE</div>
+                    <div class="shift-oee-value" id="shiftBOEE">0%</div>
+                </div>
+            </div>
+            
+            <div class="shift-card shift-c">
+                <div class="shift-header">
+                    <div class="shift-icon">🌙</div>
+                    <div>
+                        <div class="shift-name">Shift C</div>
+                        <div class="shift-time">22:00 PM - 06:00 AM</div>
+                    </div>
+                </div>
+                <div class="shift-stats">
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">Total</div>
+                        <div class="shift-stat-value" id="shiftCTotal">0</div>
+                    </div>
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">OK</div>
+                        <div class="shift-stat-value" id="shiftCOK" style="color: var(--success-green);">0</div>
+                    </div>
+                    <div class="shift-stat">
+                        <div class="shift-stat-label">NG</div>
+                        <div class="shift-stat-value" id="shiftCNG" style="color: var(--danger-red);">0</div>
+                    </div>
+                </div>
+                <div class="shift-oee">
+                    <div class="shift-oee-label">Shift OEE</div>
+                    <div class="shift-oee-value" id="shiftCOEE">0%</div>
+                </div>
+            </div>
         </div>
     </div>
     
     <!-- Charts Section -->
     <div class="charts-grid">
+        <!-- OEE Gauge Chart -->
         <div class="chart-card">
-            <h3>Status Distribution</h3>
+            <h3>OEE Components Breakdown</h3>
             <div class="chart-container">
-                <canvas id="statusPieChart"></canvas>
+                <canvas id="oeeRadarChart"></canvas>
             </div>
         </div>
         
+        <!-- Shift Comparison -->
+        <div class="chart-card">
+            <h3>Shift-Wise Production Comparison</h3>
+            <div class="chart-container">
+                <canvas id="shiftComparisonChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Shift Timeline (Full Width) -->
+        <div class="chart-card full-width-chart">
+            <h3>Shift-Wise Daily Production Timeline</h3>
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="shiftTimelineChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Cycle Time Comparison -->
+        <div class="chart-card">
+            <h3>Actual vs Standard Cycle Time</h3>
+            <div class="chart-container">
+                <canvas id="cycleTimeChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Rejection Rate Trend -->
+        <div class="chart-card">
+            <h3>Rejection Rate Trend</h3>
+            <div class="chart-container">
+                <canvas id="rejectionTrendChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Production Timeline -->
+        <div class="chart-card full-width-chart">
+            <h3>Overall Production Timeline</h3>
+            <div class="chart-container" style="height: 350px;">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Hourly Production -->
+        <div class="chart-card">
+            <h3>Hourly Production Rate</h3>
+            <div class="chart-container">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Yield Rate Trend -->
+        <div class="chart-card">
+            <h3>Yield Rate Trend</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Machine Performance -->
         <div class="chart-card">
             <h3>Machine Performance</h3>
             <div class="chart-container">
@@ -159,27 +348,12 @@
             </div>
         </div>
         
-        <div class="chart-card full-width-chart">
-            <h3>Production Timeline</h3>
-            <div class="chart-container" style="height: 350px;">
-                <canvas id="timelineChart"></canvas>
-            </div>
-        </div>
-        
+        <!-- Status Distribution -->
         <div class="chart-card">
-            <h3>Hourly Production Rate</h3>
+            <h3>Status Distribution</h3>
             <div class="chart-container">
-                <canvas id="hourlyChart"></canvas>
+                <canvas id="statusPieChart"></canvas>
             </div>
-            <div id="hourlyDebug" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;"></div>
-        </div>
-        
-        <div class="chart-card">
-            <h3>Yield Rate Trend</h3>
-            <div class="chart-container">
-                <canvas id="trendChart"></canvas>
-            </div>
-            <div id="trendDebug" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;"></div>
         </div>
     </div>
     
@@ -187,13 +361,21 @@
     <div class="chart-card">
         <h3>Machine Breakdown</h3>
         <div class="machine-breakdown" id="machineBreakdown">
-            <!-- Will be populated by JavaScript -->
+            <!-- Populated by JavaScript -->
+        </div>
+    </div>
+    
+    <!-- Model Breakdown -->
+    <div class="chart-card">
+        <h3>Model Name Breakdown</h3>
+        <div class="machine-breakdown" id="modelBreakdown">
+            <!-- Populated by JavaScript -->
         </div>
     </div>
     
     <!-- QR Code Search Section -->
     <div class="data-table-card">
-        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">QR Code Search</h3>
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">🔍 QR Code Search</h3>
         <div class="search-bar">
             <input type="text" id="qrSearchInput" class="search-input-analytics" placeholder="Enter QR Code to search...">
             <button class="filter-btn filter-btn-primary" onclick="searchQRCode()">
@@ -205,20 +387,22 @@
     
     <!-- Detailed Data Table -->
     <div class="data-table-card">
-        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">Detailed Data (Latest 100 Records)</h3>
+        <h3 style="color: var(--dark-coral); margin-bottom: 1rem;">📋 Detailed Data (Latest 100 Records)</h3>
         <div class="data-table-container" style="max-height: 500px; overflow-y: auto;">
             <table class="data-table" id="detailedDataTable">
                 <thead>
                     <tr>
                         <th>Machine</th>
+                        <th>Model</th>
                         <th>QR Code</th>
                         <th>Timestamp</th>
+                        <th>Shift</th>
+                        <th>Cycle Time</th>
                         <th>Status</th>
-                        <th>Values</th>
                     </tr>
                 </thead>
                 <tbody id="detailedDataBody">
-                    <!-- Will be populated by JavaScript -->
+                    <!-- Populated by JavaScript -->
                 </tbody>
             </table>
         </div>
@@ -231,7 +415,7 @@
 </div>
 
 <style>
-    /* Analytics-specific styles using existing Renata color palette */
+    /* Enhanced Analytics Styles */
     .analytics-container {
         padding: 1rem;
     }
@@ -327,9 +511,169 @@
         box-shadow: 0 4px 8px var(--shadow);
     }
     
-    .stats-grid {
+    /* OEE Section */
+    .oee-section {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px var(--shadow);
+    }
+    
+    .oee-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .oee-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .oee-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px var(--shadow);
+    }
+    
+    .oee-main {
+        background: linear-gradient(135deg, var(--dark-coral) 0%, var(--accent-orange) 100%);
+        color: var(--white);
+    }
+    
+    .oee-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .oee-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .oee-label {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .oee-sublabel, .oee-formula {
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+    
+    /* Shift Section */
+    .shift-section {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px var(--shadow);
+    }
+    
+    .shift-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+    
+    .shift-card {
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s;
+    }
+    
+    .shift-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px var(--shadow);
+    }
+    
+    .shift-a {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    }
+    
+    .shift-b {
+        background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+        color: var(--white);
+    }
+    
+    .shift-c {
+        background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+        color: var(--white);
+    }
+    
+    .shift-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .shift-icon {
+        font-size: 2rem;
+    }
+    
+    .shift-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+    
+    .shift-time {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+    
+    .shift-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+    }
+    
+    .shift-stat {
+        text-align: center;
+    }
+    
+    .shift-stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .shift-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .shift-oee {
+        text-align: center;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+    }
+    
+    .shift-oee-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .shift-oee-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 1rem;
         margin-bottom: 1.5rem;
     }
@@ -365,6 +709,12 @@
         font-size: 0.9rem;
     }
     
+    .stat-sublabel {
+        color: var(--dark-gray);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+    
     .stat-change {
         font-size: 0.85rem;
         margin-top: 0.5rem;
@@ -379,6 +729,7 @@
         color: var(--danger-red);
     }
     
+    /* Charts */
     .charts-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -409,6 +760,7 @@
         grid-column: 1 / -1;
     }
     
+    /* Data Tables */
     .data-table-card {
         background: var(--white);
         border-radius: 12px;
@@ -510,27 +862,33 @@
         .filter-btn {
             width: 100%;
         }
+        
+        .shift-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {% endblock %}
 
 {% block scripts %}
-<!-- Load Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script >
 
-<script>
-// Wait for both DOM and Chart.js to be ready
+    // Enhanced Analytics JavaScript with OEE, Shift-Wise Production, and Cycle Time
+// ============================================================================
+
 let chartJsLoaded = false;
 let domReady = false;
+let analyticsData = null;
+let charts = {};
 
 function tryInitialize() {
     if (chartJsLoaded && domReady) {
-        console.log('✅ Initializing dashboard...');
+        console.log('✅ Initializing enhanced analytics dashboard...');
         initializeDashboard();
     }
 }
 
-// Check Chart.js loading
 function checkChartJs() {
     if (typeof Chart !== 'undefined') {
         console.log('✅ Chart.js loaded successfully');
@@ -542,7 +900,6 @@ function checkChartJs() {
     }
 }
 
-// Wait for DOM
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ DOM ready');
@@ -554,13 +911,8 @@ if (document.readyState === 'loading') {
     domReady = true;
 }
 
-// Start checking for Chart.js
 checkChartJs();
 
-let analyticsData = null;
-let charts = {};
-
-// Format timestamp helper
 function formatTimestamp(timestamp) {
     if (!timestamp) return '-';
     
@@ -690,8 +1042,11 @@ function resetFilters() {
 
 function updateDashboard(data) {
     updateStatistics(data);
+    updateOEEMetrics(data);
+    updateShiftData(data);
     updateCharts(data);
     updateMachineBreakdown(data);
+    updateModelBreakdown(data);
     updateDetailedTable(data);
 }
 
@@ -704,36 +1059,90 @@ function updateStatistics(data) {
     document.getElementById('totalParts').textContent = total.toLocaleString();
     document.getElementById('okParts').textContent = ok.toLocaleString();
     document.getElementById('ngParts').textContent = ng.toLocaleString();
-    document.getElementById('pendingParts').textContent = pending.toLocaleString();
     
     const okPercent = total > 0 ? ((ok / total) * 100).toFixed(1) : 0;
     const ngPercent = total > 0 ? ((ng / total) * 100).toFixed(1) : 0;
-    const pendingPercent = total > 0 ? ((pending / total) * 100).toFixed(1) : 0;
     
     document.getElementById('okPercentage').textContent = okPercent + '%';
     document.getElementById('ngPercentage').textContent = ngPercent + '%';
-    document.getElementById('pendingPercentage').textContent = pendingPercent + '%';
     
-    const completed = ok + ng;
-    const yieldRate = completed > 0 ? ((ok / completed) * 100).toFixed(1) : 0;
-    document.getElementById('yieldRate').textContent = yieldRate + '%';
+    // NEW: Rejection Rate
+    const rejectionRate = data.rejection_rate || 0;
+    document.getElementById('rejectionRate').textContent = rejectionRate.toFixed(2) + '%';
     
-    document.getElementById('activeMachines').textContent = (data.active_machines || 0).toLocaleString();
+    // NEW: Average Cycle Time
+    const avgCycleTime = data.avg_cycle_time || 0;
+    document.getElementById('avgCycleTime').textContent = avgCycleTime.toFixed(2) + ' min';
+    
+    // NEW: Productivity
+    const productivity = data.productivity || 0;
+    document.getElementById('productivity').textContent = productivity.toFixed(1) + '%';
+}
+
+function updateOEEMetrics(data) {
+    const oeeData = data.oee_data || {};
+    
+    // Overall OEE
+    const oee = oeeData.oee || 0;
+    const availability = oeeData.availability || 0;
+    const performance = oeeData.performance || 0;
+    const quality = oeeData.quality || 0;
+    const downtime = oeeData.downtime_minutes || 0;
+    
+    document.getElementById('oeeValue').textContent = oee.toFixed(2) + '%';
+    document.getElementById('availabilityValue').textContent = availability.toFixed(2) + '%';
+    document.getElementById('performanceValue').textContent = performance.toFixed(2) + '%';
+    document.getElementById('qualityValue').textContent = quality.toFixed(2) + '%';
+    document.getElementById('downtimeValue').textContent = downtime.toFixed(0) + ' min';
+    
+    // Color code OEE value
+    const oeeElement = document.getElementById('oeeValue');
+    if (oee >= 85) {
+        oeeElement.style.color = '#00cc66';
+    } else if (oee >= 70) {
+        oeeElement.style.color = '#ff9933';
+    } else {
+        oeeElement.style.color = '#cc3333';
+    }
+}
+
+function updateShiftData(data) {
+    const shiftData = data.shift_data || {};
+    const oeeData = data.oee_data || {};
+    
+    // Shift A
+    const shiftA = shiftData.A || {ok: 0, ng: 0, pending: 0, total: 0};
+    document.getElementById('shiftATotal').textContent = shiftA.total.toLocaleString();
+    document.getElementById('shiftAOK').textContent = shiftA.ok.toLocaleString();
+    document.getElementById('shiftANG').textContent = shiftA.ng.toLocaleString();
+    const shiftAOEE = oeeData.shift_A_oee?.oee || 0;
+    document.getElementById('shiftAOEE').textContent = shiftAOEE.toFixed(2) + '%';
+    
+    // Shift B
+    const shiftB = shiftData.B || {ok: 0, ng: 0, pending: 0, total: 0};
+    document.getElementById('shiftBTotal').textContent = shiftB.total.toLocaleString();
+    document.getElementById('shiftBOK').textContent = shiftB.ok.toLocaleString();
+    document.getElementById('shiftBNG').textContent = shiftB.ng.toLocaleString();
+    const shiftBOEE = oeeData.shift_B_oee?.oee || 0;
+    document.getElementById('shiftBOEE').textContent = shiftBOEE.toFixed(2) + '%';
+    
+    // Shift C
+    const shiftC = shiftData.C || {ok: 0, ng: 0, pending: 0, total: 0};
+    document.getElementById('shiftCTotal').textContent = shiftC.total.toLocaleString();
+    document.getElementById('shiftCOK').textContent = shiftC.ok.toLocaleString();
+    document.getElementById('shiftCNG').textContent = shiftC.ng.toLocaleString();
+    const shiftCOEE = oeeData.shift_C_oee?.oee || 0;
+    document.getElementById('shiftCOEE').textContent = shiftCOEE.toFixed(2) + '%';
 }
 
 function updateCharts(data) {
-    // Check if Chart is available
     if (typeof Chart === 'undefined') {
         console.error('❌ Chart.js is not loaded yet');
         setTimeout(() => updateCharts(data), 1000);
         return;
     }
     
-    console.log('📈 Updating charts with data:', {
-        hourly: data.hourly_data,
-        trend: data.trend_data,
-        timeline: data.timeline_data
-    });
+    console.log('📈 Updating all charts...');
     
     // Destroy existing charts
     Object.values(charts).forEach(chart => {
@@ -743,212 +1152,443 @@ function updateCharts(data) {
     });
     charts = {};
     
-    // Status Distribution Pie Chart
-    const statusCtx = document.getElementById('statusPieChart');
-    if (statusCtx) {
-        const ctx = statusCtx.getContext('2d');
-        charts.status = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['OK', 'NG', 'Pending'],
-                datasets: [{
-                    data: [data.ok_parts || 0, data.ng_parts || 0, data.pending_parts || 0],
-                    backgroundColor: ['#00cc66', '#cc3333', '#ff9933']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
+    createOEERadarChart(data);
+    createShiftComparisonChart(data);
+    createShiftTimelineChart(data);
+    createCycleTimeChart(data);
+    createRejectionTrendChart(data);
+    createStatusPieChart(data);
+    createMachineBarChart(data);
+    createTimelineChart(data);
+    createHourlyChart(data);
+    createTrendChart(data);
+}
+
+function createOEERadarChart(data) {
+    const ctx = document.getElementById('oeeRadarChart');
+    if (!ctx) return;
+    
+    const oeeData = data.oee_data || {};
+    
+    charts.oeeRadar = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Availability', 'Performance', 'Quality'],
+            datasets: [{
+                label: 'Overall OEE Components',
+                data: [
+                    oeeData.availability || 0,
+                    oeeData.performance || 0,
+                    oeeData.quality || 0
+                ],
+                backgroundColor: 'rgba(255, 119, 85, 0.2)',
+                borderColor: '#ff7755',
+                pointBackgroundColor: '#ff7755',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#ff7755'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
                         }
                     }
                 }
             }
-        });
-        console.log('✅ Status pie chart created');
+        }
+    });
+}
+
+function createShiftComparisonChart(data) {
+    const ctx = document.getElementById('shiftComparisonChart');
+    if (!ctx) return;
+    
+    const shiftData = data.shift_data || {};
+    
+    charts.shiftComparison = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Shift A (06:00-14:00)', 'Shift B (14:00-22:00)', 'Shift C (22:00-06:00)'],
+            datasets: [
+                {
+                    label: 'OK Parts',
+                    data: [
+                        shiftData.A?.ok || 0,
+                        shiftData.B?.ok || 0,
+                        shiftData.C?.ok || 0
+                    ],
+                    backgroundColor: '#00cc66'
+                },
+                {
+                    label: 'NG Parts',
+                    data: [
+                        shiftData.A?.ng || 0,
+                        shiftData.B?.ng || 0,
+                        shiftData.C?.ng || 0
+                    ],
+                    backgroundColor: '#cc3333'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
+            }
+        }
+    });
+}
+
+function createShiftTimelineChart(data) {
+    const ctx = document.getElementById('shiftTimelineChart');
+    if (!ctx) return;
+    
+    const shiftTimeline = data.shift_timeline || {};
+    
+    charts.shiftTimeline = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: shiftTimeline.labels || [],
+            datasets: [
+                {
+                    label: 'Shift A - OK',
+                    data: shiftTimeline.shift_A_ok || [],
+                    backgroundColor: '#ffeaa7',
+                    stack: 'A'
+                },
+                {
+                    label: 'Shift A - NG',
+                    data: shiftTimeline.shift_A_ng || [],
+                    backgroundColor: '#fdcb6e',
+                    stack: 'A'
+                },
+                {
+                    label: 'Shift B - OK',
+                    data: shiftTimeline.shift_B_ok || [],
+                    backgroundColor: '#74b9ff',
+                    stack: 'B'
+                },
+                {
+                    label: 'Shift B - NG',
+                    data: shiftTimeline.shift_B_ng || [],
+                    backgroundColor: '#0984e3',
+                    stack: 'B'
+                },
+                {
+                    label: 'Shift C - OK',
+                    data: shiftTimeline.shift_C_ok || [],
+                    backgroundColor: '#a29bfe',
+                    stack: 'C'
+                },
+                {
+                    label: 'Shift C - NG',
+                    data: shiftTimeline.shift_C_ng || [],
+                    backgroundColor: '#6c5ce7',
+                    stack: 'C'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createCycleTimeChart(data) {
+    const ctx = document.getElementById('cycleTimeChart');
+    if (!ctx) return;
+    
+    const cycleTimeData = data.cycle_time_data || {};
+    
+    if (!cycleTimeData.labels || cycleTimeData.labels.length === 0) {
+        ctx.getContext('2d').fillText('No cycle time data available', 50, 50);
+        return;
     }
     
-    // Machine Performance Bar Chart
-    if (data.machine_stats && data.machine_stats.length > 0) {
-        const machineCtx = document.getElementById('machineBarChart');
-        if (machineCtx) {
-            const ctx = machineCtx.getContext('2d');
-            charts.machine = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.machine_stats.map(m => m.machine),
-                    datasets: [
-                        {
-                            label: 'OK',
-                            data: data.machine_stats.map(m => m.ok),
-                            backgroundColor: '#00cc66'
-                        },
-                        {
-                            label: 'NG',
-                            data: data.machine_stats.map(m => m.ng),
-                            backgroundColor: '#cc3333'
-                        }
-                    ]
+    charts.cycleTime = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: cycleTimeData.labels || [],
+            datasets: [
+                {
+                    label: 'Actual Cycle Time',
+                    data: cycleTimeData.actual || [],
+                    borderColor: '#ff7755',
+                    backgroundColor: 'rgba(255, 119, 85, 0.1)',
+                    fill: true,
+                    tension: 0.4
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            stacked: false
-                        },
-                        y: {
-                            stacked: false,
-                            beginAtZero: true
+                {
+                    label: 'Standard Cycle Time',
+                    data: cycleTimeData.standard || [],
+                    borderColor: '#00cc66',
+                    backgroundColor: 'rgba(0, 204, 102, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderDash: [5, 5]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Time (minutes)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createRejectionTrendChart(data) {
+    const ctx = document.getElementById('rejectionTrendChart');
+    if (!ctx) return;
+    
+    const timelineData = data.timeline_data || {};
+    const labels = timelineData.labels || [];
+    const okData = timelineData.ok || [];
+    const ngData = timelineData.ng || [];
+    
+    const rejectionRates = labels.map((label, index) => {
+        const ok = okData[index] || 0;
+        const ng = ngData[index] || 0;
+        const total = ok + ng;
+        return total > 0 ? ((ng / total) * 100).toFixed(2) : 0;
+    });
+    
+    charts.rejectionTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Rejection Rate %',
+                data: rejectionRates,
+                borderColor: '#cc3333',
+                backgroundColor: 'rgba(204, 51, 51, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
                         }
                     }
                 }
-            });
-            console.log('✅ Machine bar chart created');
+            }
         }
-    }
+    });
+}
+
+function createStatusPieChart(data) {
+    const ctx = document.getElementById('statusPieChart');
+    if (!ctx) return;
     
-    // Timeline Chart
-    if (data.timeline_data && data.timeline_data.labels && data.timeline_data.labels.length > 0) {
-        const timelineCtx = document.getElementById('timelineChart');
-        if (timelineCtx) {
-            const ctx = timelineCtx.getContext('2d');
-            charts.timeline = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.timeline_data.labels,
-                    datasets: [
-                        {
-                            label: 'OK Parts',
-                            data: data.timeline_data.ok,
-                            borderColor: '#00cc66',
-                            backgroundColor: 'rgba(0, 204, 102, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'NG Parts',
-                            data: data.timeline_data.ng,
-                            borderColor: '#cc3333',
-                            backgroundColor: 'rgba(204, 51, 51, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+    charts.status = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['OK', 'NG', 'Pending'],
+            datasets: [{
+                data: [data.ok_parts || 0, data.ng_parts || 0, data.pending_parts || 0],
+                backgroundColor: ['#00cc66', '#cc3333', '#ff9933']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
                         }
                     }
                 }
-            });
-            console.log('✅ Timeline chart created');
+            }
         }
-    }
+    });
+}
+
+function createMachineBarChart(data) {
+    const ctx = document.getElementById('machineBarChart');
+    if (!ctx) return;
     
-    // Hourly Production Chart
-    if (data.hourly_data && data.hourly_data.labels && data.hourly_data.labels.length > 0) {
-        console.log('⏰ Creating hourly chart with:', data.hourly_data);
-        const hourlyCtx = document.getElementById('hourlyChart');
-        if (hourlyCtx) {
-            const ctx = hourlyCtx.getContext('2d');
-            charts.hourly = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.hourly_data.labels,
-                    datasets: [{
-                        label: 'Parts Produced',
-                        data: data.hourly_data.values,
-                        backgroundColor: '#ff7755'
-                    }]
+    if (!data.machine_stats || data.machine_stats.length === 0) return;
+    
+    charts.machine = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.machine_stats.map(m => m.display_name || m.machine),
+            datasets: [
+                {
+                    label: 'OK',
+                    data: data.machine_stats.map(m => m.ok),
+                    backgroundColor: '#00cc66'
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                {
+                    label: 'NG',
+                    data: data.machine_stats.map(m => m.ng),
+                    backgroundColor: '#cc3333'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: false },
+                y: { stacked: false, beginAtZero: true }
+            }
+        }
+    });
+}
+
+function createTimelineChart(data) {
+    const ctx = document.getElementById('timelineChart');
+    if (!ctx) return;
+    
+    const timelineData = data.timeline_data || {};
+    
+    if (!timelineData.labels || timelineData.labels.length === 0) return;
+    
+    charts.timeline = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timelineData.labels,
+            datasets: [
+                {
+                    label: 'OK Parts',
+                    data: timelineData.ok,
+                    borderColor: '#00cc66',
+                    backgroundColor: 'rgba(0, 204, 102, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'NG Parts',
+                    data: timelineData.ng,
+                    borderColor: '#cc3333',
+                    backgroundColor: 'rgba(204, 51, 51, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+function createHourlyChart(data) {
+    const ctx = document.getElementById('hourlyChart');
+    if (!ctx) return;
+    
+    const hourlyData = data.hourly_data || {};
+    
+    if (!hourlyData.labels || hourlyData.labels.length === 0) return;
+    
+    charts.hourly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: hourlyData.labels,
+            datasets: [{
+                label: 'Parts Produced',
+                data: hourlyData.values,
+                backgroundColor: '#ff7755'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+function createTrendChart(data) {
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+    
+    const trendData = data.trend_data || {};
+    
+    if (!trendData.labels || trendData.labels.length === 0) return;
+    
+    charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: [{
+                label: 'Yield Rate %',
+                data: trendData.values,
+                borderColor: '#ff7755',
+                backgroundColor: 'rgba(255, 119, 85, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
                         }
                     }
                 }
-            });
-            console.log('✅ Hourly chart created');
-            document.getElementById('hourlyDebug').textContent = 
-                `Data points: ${data.hourly_data.labels.length}, Total parts: ${data.hourly_data.values.reduce((a,b) => a+b, 0)}`;
+            }
         }
-    } else {
-        console.warn('⚠️ No hourly data available:', data.hourly_data);
-        document.getElementById('hourlyDebug').textContent = 'No hourly data available';
-    }
-    
-    // Trend Chart (Yield Rate)
-    if (data.trend_data && data.trend_data.labels && data.trend_data.labels.length > 0) {
-        console.log('📈 Creating trend chart with:', data.trend_data);
-        const trendCtx = document.getElementById('trendChart');
-        if (trendCtx) {
-            const ctx = trendCtx.getContext('2d');
-            charts.trend = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.trend_data.labels,
-                    datasets: [{
-                        label: 'Yield Rate %',
-                        data: data.trend_data.values,
-                        borderColor: '#ff7755',
-                        backgroundColor: 'rgba(255, 119, 85, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Yield Rate: ' + context.parsed.y.toFixed(1) + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            console.log('✅ Trend chart created');
-            document.getElementById('trendDebug').textContent = 
-                `Data points: ${data.trend_data.labels.length}, Avg yield: ${(data.trend_data.values.reduce((a,b) => a+b, 0) / data.trend_data.values.length).toFixed(1)}%`;
-        }
-    } else {
-        console.warn('⚠️ No trend data available:', data.trend_data);
-        document.getElementById('trendDebug').textContent = 'No trend data available';
-    }
+    });
 }
 
 function updateMachineBreakdown(data) {
@@ -964,7 +1604,7 @@ function updateMachineBreakdown(data) {
             
             container.innerHTML += `
                 <div class="machine-stat">
-                    <div class="machine-stat-name">${machine.machine}</div>
+                    <div class="machine-stat-name">${machine.display_name || machine.machine}</div>
                     <div class="machine-stat-value">${total.toLocaleString()}</div>
                     <div style="font-size: 0.75rem; color: var(--dark-gray); margin-top: 0.25rem;">
                         Yield: ${yieldRate}%
@@ -980,6 +1620,35 @@ function updateMachineBreakdown(data) {
     }
 }
 
+function updateModelBreakdown(data) {
+    const container = document.getElementById('modelBreakdown');
+    container.innerHTML = '';
+    
+    if (data.model_breakdown && Object.keys(data.model_breakdown).length > 0) {
+        Object.entries(data.model_breakdown).forEach(([modelName, stats]) => {
+            const total = stats.total;
+            const yieldRate = (stats.ok + stats.ng) > 0 
+                ? ((stats.ok / (stats.ok + stats.ng)) * 100).toFixed(1) 
+                : 0;
+            
+            container.innerHTML += `
+                <div class="machine-stat">
+                    <div class="machine-stat-name">${modelName}</div>
+                    <div class="machine-stat-value">${total.toLocaleString()}</div>
+                    <div style="font-size: 0.75rem; color: var(--dark-gray); margin-top: 0.25rem;">
+                        Yield: ${yieldRate}%
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--dark-gray); margin-top: 0.25rem;">
+                        OK: ${stats.ok} | NG: ${stats.ng}
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        container.innerHTML = '<p style="text-align: center; color: var(--dark-gray);">No model data available</p>';
+    }
+}
+
 function updateDetailedTable(data) {
     const tbody = document.getElementById('detailedDataBody');
     tbody.innerHTML = '';
@@ -990,27 +1659,24 @@ function updateDetailedTable(data) {
             const statusClass = record.status === 'OK' ? 'status-ok' : 
                                record.status === 'NG' ? 'status-ng' : 'status-inprogress';
             
-            let valuesHtml = '-';
-            if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
-                valuesHtml = '<small>';
-                for (const [key, value] of Object.entries(record.gauge_values)) {
-                    valuesHtml += `${key}: ${value.toFixed(3)}<br>`;
-                }
-                valuesHtml += '</small>';
-            }
+            const cycleTime = record.cycle_time ? `${record.cycle_time.toFixed(2)} min` : '-';
+            const shift = record.shift || '-';
+            const modelName = record.model_name || 'N/A';
             
             tbody.innerHTML += `
                 <tr>
-                    <td>${record.machine}</td>
+                    <td><small>${record.display_name || record.machine}</small></td>
+                    <td><small>${modelName}</small></td>
                     <td><strong>${record.qr_code}</strong></td>
                     <td><small>${timestamp}</small></td>
+                    <td><span class="shift-badge shift-${shift.toLowerCase()}">${shift}</span></td>
+                    <td><small>${cycleTime}</small></td>
                     <td><span class="status-badge ${statusClass}">${record.status}</span></td>
-                    <td>${valuesHtml}</td>
                 </tr>
             `;
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--dark-gray);">No data available for the selected filters</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--dark-gray);">No data available for the selected filters</td></tr>';
     }
 }
 
@@ -1065,7 +1731,7 @@ function displaySearchResults(data) {
     data.results.forEach(result => {
         html += `
             <tr>
-                <td><strong>${result.machine}</strong></td>
+                <td><strong>${result.display_name || result.machine}</strong></td>
                 <td>${result.preprocessing_count}</td>
                 <td>${result.postprocessing_count}</td>
             </tr>
@@ -1093,36 +1759,7 @@ function exportData() {
 }
 
 function exportCharts() {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write('<html><head><title>Analytics Charts</title>');
-    printWindow.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; } .chart { margin-bottom: 40px; page-break-inside: avoid; } h2 { color: #ff7755; }</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write('<h1>Production Analytics Report</h1>');
-    printWindow.document.write('<p>Generated: ' + new Date().toLocaleString() + '</p>');
-    
-    printWindow.document.write('<h2>Statistics Summary</h2>');
-    printWindow.document.write('<table border="1" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">');
-    printWindow.document.write('<tr><td><strong>Total Parts:</strong></td><td>' + document.getElementById('totalParts').textContent + '</td></tr>');
-    printWindow.document.write('<tr><td><strong>OK Parts:</strong></td><td>' + document.getElementById('okParts').textContent + '</td></tr>');
-    printWindow.document.write('<tr><td><strong>NG Parts:</strong></td><td>' + document.getElementById('ngParts').textContent + '</td></tr>');
-    printWindow.document.write('<tr><td><strong>Yield Rate:</strong></td><td>' + document.getElementById('yieldRate').textContent + '</td></tr>');
-    printWindow.document.write('</table>');
-    
-    Object.keys(charts).forEach(key => {
-        const canvas = charts[key].canvas;
-        const imgData = canvas.toDataURL('image/png');
-        printWindow.document.write('<div class="chart">');
-        printWindow.document.write('<h2>' + key.charAt(0).toUpperCase() + key.slice(1) + ' Chart</h2>');
-        printWindow.document.write('<img src="' + imgData + '" style="max-width: 100%;">');
-        printWindow.document.write('</div>');
-    });
-    
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    
-    setTimeout(() => {
-        printWindow.print();
-    }, 500);
+    window.print();
 }
 </script>
 {% endblock %}

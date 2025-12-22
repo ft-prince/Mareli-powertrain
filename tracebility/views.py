@@ -1585,8 +1585,151 @@ def get_machine_config_by_id(machine_id):
 
     return None
 
+# ============================================================================
+# ENHANCED ANALYTICS WITH OEE, SHIFT-WISE PRODUCTION & CYCLE TIME
+# Add these helper functions and update the collect_analytics_data function
+# ============================================================================
+
+from datetime import datetime, timedelta
+from django.utils import timezone
+from collections import defaultdict
+import statistics
+
+# Standard cycle times per operation (in minutes)
+STANDARD_CYCLE_TIMES = {
+    'op-40A': 0.83,  # Piston Pre Assy - 50 sec
+    'op-40B': 0.83,
+    'op-40C': 0.83,
+    'op-40D': 0.83,
+    'op-90': 0.70,   # Piston Oring Lubrication - 42 sec
+    'op-85': 0.65,   # Painting - 39 sec
+    'op-80': 1.17,   # HP Leak Test - 70 sec
+    'op-170': 0.00,  # Final Washing
+    'op-160': 0.53,  # Deburring - 32 sec
+    'op-150': 0.00,  # Pre-washing
+    'op-140A': 2.25, # Honing machine 1# - 135 sec
+    'op-140B': 1.22, # Honing machine 2# - 73 sec
+    'op-135A': 0.00, # Gauge
+    'op-135B': 0.00, # Gauge
+    'op-115': 0.00,  # Gauge
+    'op-130A': 4.25, # Turning Housing - 255 sec
+    'op-130B': 4.25,
+    'op-130C': 4.25,
+    'op-130D': 4.25,
+    'op-110A': 2.17, # Turning Piston - 130 sec
+    'op-110B': 2.17,
+}
+
+# Shift timing definitions
+SHIFTS = {
+    'A': {'start': 6, 'end': 14},   # 06:00 AM to 14:00 PM (2:00 PM)
+    'B': {'start': 14, 'end': 22},  # 14:00 PM to 22:00 PM (10:00 PM)
+    'C': {'start': 22, 'end': 6}    # 22:00 PM to 06:00 AM (crosses midnight)
+}
+
+LOADING_TIME_MINUTES = 430  # Fixed loading time per shift
+
+
+def determine_shift(timestamp_dt):
+    """Determine which shift (A/B/C) a timestamp belongs to"""
+    if not timestamp_dt:
+        return None
+    
+    hour = timestamp_dt.hour
+    
+    if 6 <= hour < 14:
+        return 'A'
+    elif 14 <= hour < 22:
+        return 'B'
+    else:  # 22-23 or 0-5
+        return 'C'
+
+
+def calculate_cycle_time(prep_timestamp, post_timestamp):
+    """Calculate actual cycle time between preprocessing and postprocessing"""
+    if not prep_timestamp or not post_timestamp:
+        return None
+    
+    try:
+        prep_dt = parse_timestamp_to_datetime(prep_timestamp)
+        post_dt = parse_timestamp_to_datetime(post_timestamp)
+        
+        if prep_dt and post_dt:
+            time_diff = post_dt - prep_dt
+            cycle_time_minutes = time_diff.total_seconds() / 60
+            return cycle_time_minutes
+    except:
+        return None
+    
+    return None
+
+
+def calculate_oee_for_shift(shift_data, op_code):
+    """
+    Calculate OEE for a specific shift
+    OEE = Availability × Performance × Quality
+    """
+    total_parts = shift_data['total']
+    ok_parts = shift_data['ok']
+    ng_parts = shift_data['ng']
+    
+    if total_parts == 0:
+        return {
+            'availability': 0,
+            'performance': 0,
+            'quality': 0,
+            'oee': 0,
+            'downtime_minutes': 0
+        }
+    
+    # Get standard cycle time for this operation
+    standard_ct = STANDARD_CYCLE_TIMES.get(op_code, 1.0)
+    
+    # QUALITY: Good Units / Total Units Produced
+    completed_parts = ok_parts + ng_parts
+    quality = (ok_parts / completed_parts * 100) if completed_parts > 0 else 0
+    
+    # PERFORMANCE CALCULATION
+    # Expected parts = Loading Time / Standard Cycle Time
+    expected_parts = LOADING_TIME_MINUTES / standard_ct if standard_ct > 0 else total_parts
+    
+    # Parts deficit (how many parts we couldn't produce)
+    parts_deficit = max(0, expected_parts - total_parts)
+    
+    # Convert deficit to downtime minutes
+    downtime_minutes = parts_deficit * standard_ct
+    
+    # AVAILABILITY: Operating Time / Loading Time
+    # Operating Time = Loading Time - Downtime
+    operating_time = LOADING_TIME_MINUTES - downtime_minutes
+    availability = (operating_time / LOADING_TIME_MINUTES * 100) if LOADING_TIME_MINUTES > 0 else 0
+    availability = min(100, max(0, availability))  # Clamp between 0-100
+    
+    # PERFORMANCE: Net Operating Time / Operating Time
+    # Net Operating Time = Operating Time - Performance Loss
+    # We consider downtime as performance loss
+    net_operating_time = operating_time
+    performance = (net_operating_time / operating_time * 100) if operating_time > 0 else 0
+    performance = min(100, max(0, performance))
+    
+    # Overall OEE
+    oee = (availability * performance * quality) / 10000  # Divide by 10000 because all are percentages
+    
+    return {
+        'availability': round(availability, 2),
+        'performance': round(performance, 2),
+        'quality': round(quality, 2),
+        'oee': round(oee, 2),
+        'downtime_minutes': round(downtime_minutes, 2),
+        'expected_parts': round(expected_parts, 0),
+        'actual_parts': total_parts,
+        'parts_deficit': round(parts_deficit, 0)
+    }
+
+
 def collect_analytics_data(start_date, end_date, machine_filter='all', status_filter='all'):
-    """Collect analytics data from all machines - UPDATED to include model_name info"""
+    """Collect analytics data with OEE, shift-wise production, and cycle time calculations"""
+    
     data = {
         'total_parts': 0,
         'ok_parts': 0,
@@ -1598,26 +1741,72 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         'trend_data': {'labels': [], 'values': []},
         'detailed_data': [],
         'active_machines': 0,
-        'model_breakdown': {}
+        'model_breakdown': {},
+        
+        # NEW: Shift-wise data
+        'shift_data': {
+            'A': {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0},
+            'B': {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0},
+            'C': {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0}
+        },
+        
+        # NEW: OEE metrics
+        'oee_data': {
+            'availability': 0,
+            'performance': 0,
+            'quality': 0,
+            'oee': 0,
+            'shift_A_oee': {},
+            'shift_B_oee': {},
+            'shift_C_oee': {}
+        },
+        
+        # NEW: Additional metrics
+        'rejection_rate': 0,
+        'avg_cycle_time': 0,
+        'productivity': 0,
+        
+        # NEW: Shift timeline (daily breakdown by shift)
+        'shift_timeline': {
+            'labels': [],
+            'shift_A_ok': [],
+            'shift_A_ng': [],
+            'shift_B_ok': [],
+            'shift_B_ng': [],
+            'shift_C_ok': [],
+            'shift_C_ng': []
+        },
+        
+        # NEW: Cycle time data
+        'cycle_time_data': {
+            'labels': [],
+            'actual': [],
+            'standard': []
+        }
     }
     
     all_records = []
+    cycle_times = []
     
     # Determine which machines to query
     configs_to_query = []
+    selected_op_code = None
+    
     if machine_filter == 'all':
         configs_to_query = MACHINE_CONFIGS + ASSEMBLY_CONFIGS + [OP80_CONFIG]
     else:
         config = get_machine_config_by_id(machine_filter)
         if config:
             configs_to_query = [config]
+            selected_op_code = config.get('op_code')
     
     # Collect data from each machine
     for config in configs_to_query:
         machine_name = config['name']
+        op_code = config.get('op_code', 'unknown')
         is_assembly = 'OP40' in machine_name
         
-        # Check if machine is active (has recent records)
+        # Check if machine is active
         try:
             recent_count = config['prep_model'].objects.all()[:5].count()
             if recent_count > 0:
@@ -1636,7 +1825,8 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             'display_name': config.get('display_name', machine_name),
             'ok': 0,
             'ng': 0,
-            'pending': 0
+            'pending': 0,
+            'op_code': op_code
         }
         
         for prep in prep_records:
@@ -1646,41 +1836,61 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             else:
                 timestamp = prep.timestamp
             
-            # Check if in date range (filter in Python)
+            # Check if in date range
             if not is_in_date_range(timestamp, start_date, end_date):
                 continue
             
-            # Get model_name (NEW)
+            # Determine shift
+            timestamp_dt = parse_timestamp_to_datetime(timestamp)
+            shift = determine_shift(timestamp_dt)
+            
+            # Get model_name
             if is_assembly:
                 model_name = getattr(prep, 'model_name_internal', 'N/A')
             else:
                 model_name = getattr(prep, 'model_name', 'N/A')
             
-            # Get QR code and status based on machine type
+            # Get QR code and status
             if is_assembly:
                 qr_value = prep.qr_data_internal
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
+                post_timestamp = prep.timestamp_external or prep.timestamp_internal
                 
             elif 'Painting' in machine_name:
                 qr_value = prep.qr_data_housing
                 post = config['post_model'].objects.filter(qr_data_housing=qr_value).first()
                 status = post.status if post else 'Pending'
+                post_timestamp = post.timestamp if post else None
                 
             elif 'Lubrication' in machine_name:
                 qr_value = prep.qr_data_piston
                 post = config['post_model'].objects.filter(qr_data_piston=qr_value).first()
                 status = post.status if post else 'Pending'
+                post_timestamp = post.timestamp if post else None
                 
             elif 'Oring_leak' in machine_name:
                 qr_value = prep.qr_data_piston
                 qr_housing = prep.qr_data_housing
                 post = config['post_model'].objects.filter(qr_data_housing_new=qr_housing).first()
                 status = post.status if post else 'Pending'
+                post_timestamp = post.timestamp if post else None
                 
             else:
                 qr_value = prep.qr_data
-                post = config['post_model'].objects.filter(qr_data=qr_value).first()
+                post = config['post_model'].objects.filter(qr_data=qr_value).first() if config['post_model'] else None
                 status = post.status if post else 'Pending'
+                post_timestamp = post.timestamp if post else None
+            
+            # Calculate cycle time
+            cycle_time = calculate_cycle_time(timestamp, post_timestamp)
+            if cycle_time is not None and cycle_time > 0:
+                cycle_times.append({
+                    'machine': machine_name,
+                    'op_code': op_code,
+                    'cycle_time': cycle_time,
+                    'standard_ct': STANDARD_CYCLE_TIMES.get(op_code, 0),
+                    'date': timestamp_dt.strftime('%Y-%m-%d') if timestamp_dt else 'N/A'
+                })
             
             # Apply status filter
             if status_filter != 'all' and status != status_filter:
@@ -1698,7 +1908,17 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
                 data['pending_parts'] += 1
                 machine_stats['pending'] += 1
             
-            # Track model breakdown (NEW)
+            # Update shift data
+            if shift:
+                data['shift_data'][shift]['total'] += 1
+                if status == 'OK':
+                    data['shift_data'][shift]['ok'] += 1
+                elif status == 'NG':
+                    data['shift_data'][shift]['ng'] += 1
+                else:
+                    data['shift_data'][shift]['pending'] += 1
+            
+            # Track model breakdown
             if model_name not in data['model_breakdown']:
                 data['model_breakdown'][model_name] = {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0}
             data['model_breakdown'][model_name]['total'] += 1
@@ -1717,22 +1937,54 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
                 'timestamp': timestamp,
                 'status': status,
                 'model_name': model_name,
+                'shift': shift,
+                'cycle_time': cycle_time
             })
         
         # Add machine stats if it has data
         if machine_stats['ok'] + machine_stats['ng'] + machine_stats['pending'] > 0:
             data['machine_stats'].append(machine_stats)
     
-    # Sort records by timestamp - FIX FOR TIMEZONE ISSUE
+    # Calculate OEE metrics
+    op_code_for_oee = selected_op_code or 'op-110A'  # Default to a common operation
+    
+    # Overall OEE (aggregate all shifts)
+    total_shift_data = {
+        'total': data['total_parts'],
+        'ok': data['ok_parts'],
+        'ng': data['ng_parts']
+    }
+    overall_oee = calculate_oee_for_shift(total_shift_data, op_code_for_oee)
+    data['oee_data']['availability'] = overall_oee['availability']
+    data['oee_data']['performance'] = overall_oee['performance']
+    data['oee_data']['quality'] = overall_oee['quality']
+    data['oee_data']['oee'] = overall_oee['oee']
+    data['oee_data']['downtime_minutes'] = overall_oee.get('downtime_minutes', 0)
+    
+    # Shift-specific OEE
+    data['oee_data']['shift_A_oee'] = calculate_oee_for_shift(data['shift_data']['A'], op_code_for_oee)
+    data['oee_data']['shift_B_oee'] = calculate_oee_for_shift(data['shift_data']['B'], op_code_for_oee)
+    data['oee_data']['shift_C_oee'] = calculate_oee_for_shift(data['shift_data']['C'], op_code_for_oee)
+    
+    # Calculate rejection rate
+    completed = data['ok_parts'] + data['ng_parts']
+    data['rejection_rate'] = round((data['ng_parts'] / completed * 100), 2) if completed > 0 else 0
+    
+    # Calculate average cycle time
+    if cycle_times:
+        avg_ct = statistics.mean([ct['cycle_time'] for ct in cycle_times])
+        data['avg_cycle_time'] = round(avg_ct, 2)
+    
+    # Calculate productivity
+    data['productivity'] = round((data['ok_parts'] / data['total_parts'] * 100), 2) if data['total_parts'] > 0 else 0
+    
+    # Sort records by timestamp
     def safe_sort_key(record):
-        """Convert timestamp to timezone-aware datetime for sorting"""
         dt = parse_timestamp_to_datetime(record['timestamp'])
         if dt is None:
             return timezone.make_aware(datetime.min.replace(year=1900))
-        
         if timezone.is_naive(dt):
             dt = timezone.make_aware(dt)
-        
         return dt
     
     all_records.sort(key=safe_sort_key)
@@ -1740,10 +1992,16 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     # Generate timeline data (daily aggregation)
     daily_data = defaultdict(lambda: {'ok': 0, 'ng': 0})
     hourly_data = defaultdict(int)
+    shift_daily_data = defaultdict(lambda: {
+        'A': {'ok': 0, 'ng': 0},
+        'B': {'ok': 0, 'ng': 0},
+        'C': {'ok': 0, 'ng': 0}
+    })
     
     for record in all_records:
         timestamp = record['timestamp']
         dt = parse_timestamp_to_datetime(timestamp)
+        shift = record.get('shift')
         
         if dt:
             date_key = dt.strftime('%Y-%m-%d')
@@ -1751,13 +2009,17 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         else:
             continue
         
-        # Daily aggregation for timeline
+        # Daily aggregation
         if record['status'] == 'OK':
             daily_data[date_key]['ok'] += 1
+            if shift:
+                shift_daily_data[date_key][shift]['ok'] += 1
         elif record['status'] == 'NG':
             daily_data[date_key]['ng'] += 1
+            if shift:
+                shift_daily_data[date_key][shift]['ng'] += 1
         
-        # Hourly aggregation (count all parts regardless of status)
+        # Hourly aggregation
         hourly_data[hour_key] += 1
     
     # Timeline data (daily OK/NG breakdown)
@@ -1766,7 +2028,17 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     data['timeline_data']['ok'] = [daily_data[date]['ok'] for date in sorted_dates]
     data['timeline_data']['ng'] = [daily_data[date]['ng'] for date in sorted_dates]
     
-    # Hourly data (parts produced per hour)
+    # Shift timeline data
+    data['shift_timeline']['labels'] = sorted_dates
+    for date in sorted_dates:
+        data['shift_timeline']['shift_A_ok'].append(shift_daily_data[date]['A']['ok'])
+        data['shift_timeline']['shift_A_ng'].append(shift_daily_data[date]['A']['ng'])
+        data['shift_timeline']['shift_B_ok'].append(shift_daily_data[date]['B']['ok'])
+        data['shift_timeline']['shift_B_ng'].append(shift_daily_data[date]['B']['ng'])
+        data['shift_timeline']['shift_C_ok'].append(shift_daily_data[date]['C']['ok'])
+        data['shift_timeline']['shift_C_ng'].append(shift_daily_data[date]['C']['ng'])
+    
+    # Hourly data
     if hourly_data:
         sorted_hours = sorted(hourly_data.keys())
         data['hourly_data']['labels'] = sorted_hours
@@ -1781,12 +2053,25 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         data['trend_data']['labels'].append(date)
         data['trend_data']['values'].append(round(yield_rate, 2))
     
+    # Cycle time data (group by date)
+    if cycle_times:
+        cycle_time_by_date = defaultdict(list)
+        for ct_record in cycle_times:
+            cycle_time_by_date[ct_record['date']].append(ct_record)
+        
+        for date in sorted(cycle_time_by_date.keys()):
+            records = cycle_time_by_date[date]
+            avg_actual = statistics.mean([r['cycle_time'] for r in records])
+            avg_standard = statistics.mean([r['standard_ct'] for r in records if r['standard_ct'] > 0])
+            
+            data['cycle_time_data']['labels'].append(date)
+            data['cycle_time_data']['actual'].append(round(avg_actual, 2))
+            data['cycle_time_data']['standard'].append(round(avg_standard, 2))
+    
     # Store detailed data (limit to 100 most recent)
     data['detailed_data'] = all_records[-100:]
     
     return data
-
-
 @csrf_exempt
 def analytics_api(request):
     """API endpoint for analytics data"""
