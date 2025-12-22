@@ -1587,7 +1587,7 @@ def get_machine_config_by_id(machine_id):
 
 # ============================================================================
 # ENHANCED ANALYTICS WITH OEE, SHIFT-WISE PRODUCTION & CYCLE TIME
-# Add these helper functions and update the collect_analytics_data function
+
 # ============================================================================
 
 from datetime import datetime, timedelta
@@ -1728,7 +1728,7 @@ def calculate_oee_for_shift(shift_data, op_code):
 
 
 def collect_analytics_data(start_date, end_date, machine_filter='all', status_filter='all'):
-    """Collect analytics data with OEE, shift-wise production, and cycle time calculations"""
+    """Collect analytics data with OEE, shift-wise production, and cycle time calculations - FIXED for washing machines"""
     
     data = {
         'total_parts': 0,
@@ -1743,14 +1743,14 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         'active_machines': 0,
         'model_breakdown': {},
         
-        # NEW: Shift-wise data
+        # Shift-wise data
         'shift_data': {
             'A': {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0},
             'B': {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0},
             'C': {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0}
         },
         
-        # NEW: OEE metrics
+        # OEE metrics
         'oee_data': {
             'availability': 0,
             'performance': 0,
@@ -1761,12 +1761,12 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             'shift_C_oee': {}
         },
         
-        # NEW: Additional metrics
+        # Additional metrics
         'rejection_rate': 0,
         'avg_cycle_time': 0,
         'productivity': 0,
         
-        # NEW: Shift timeline (daily breakdown by shift)
+        # Shift timeline
         'shift_timeline': {
             'labels': [],
             'shift_A_ok': [],
@@ -1777,7 +1777,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             'shift_C_ng': []
         },
         
-        # NEW: Cycle time data
+        # Cycle time data
         'cycle_time_data': {
             'labels': [],
             'actual': [],
@@ -1804,21 +1804,21 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     for config in configs_to_query:
         machine_name = config['name']
         op_code = config.get('op_code', 'unknown')
+        machine_type = config.get('type', 'standard')
         is_assembly = 'OP40' in machine_name
         
         # Check if machine is active
         try:
-            recent_count = config['prep_model'].objects.all()[:5].count()
-            if recent_count > 0:
-                data['active_machines'] += 1
+            if config.get('prep_model'):
+                recent_count = config['prep_model'].objects.all()[:5].count()
+                if recent_count > 0:
+                    data['active_machines'] += 1
+            elif config.get('post_model'):
+                recent_count = config['post_model'].objects.all()[:5].count()
+                if recent_count > 0:
+                    data['active_machines'] += 1
         except:
             pass
-        
-        # Get ALL preprocessing records
-        try:
-            prep_records = config['prep_model'].objects.all()
-        except Exception as e:
-            continue
         
         machine_stats = {
             'machine': machine_name,
@@ -1828,6 +1828,167 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             'pending': 0,
             'op_code': op_code
         }
+        
+        # ===================================================================
+        # HANDLE WASHING MACHINES SEPARATELY (Load and Unload)
+        # ===================================================================
+        if machine_type == 'washing':
+            operation = config.get('operation', 'load')
+            
+            if operation == 'load' and config.get('prep_model'):
+                # PREWASHING/FINALWASHING LOADING (Preprocessing)
+                prep_records = config['prep_model'].objects.all()
+                
+                for prep in prep_records:
+                    timestamp = prep.timestamp
+                    
+                    # Check if in date range
+                    if not is_in_date_range(timestamp, start_date, end_date):
+                        continue
+                    
+                    # Determine shift
+                    timestamp_dt = parse_timestamp_to_datetime(timestamp)
+                    shift = determine_shift(timestamp_dt)
+                    
+                    # Get data from preprocessing record
+                    qr_value = prep.qr_data
+                    model_name = getattr(prep, 'model_name', 'N/A')
+                    status = getattr(prep, 'status', 'OK')  # Status is in preprocessing for LOAD
+                    
+                    # Apply status filter
+                    if status_filter != 'all' and status != status_filter:
+                        continue
+                    
+                    # Update counts
+                    data['total_parts'] += 1
+                    if status == 'OK':
+                        data['ok_parts'] += 1
+                        machine_stats['ok'] += 1
+                    elif status == 'NG':
+                        data['ng_parts'] += 1
+                        machine_stats['ng'] += 1
+                    else:
+                        data['pending_parts'] += 1
+                        machine_stats['pending'] += 1
+                    
+                    # Update shift data
+                    if shift:
+                        data['shift_data'][shift]['total'] += 1
+                        if status == 'OK':
+                            data['shift_data'][shift]['ok'] += 1
+                        elif status == 'NG':
+                            data['shift_data'][shift]['ng'] += 1
+                        else:
+                            data['shift_data'][shift]['pending'] += 1
+                    
+                    # Track model breakdown
+                    if model_name not in data['model_breakdown']:
+                        data['model_breakdown'][model_name] = {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0}
+                    data['model_breakdown'][model_name]['total'] += 1
+                    if status == 'OK':
+                        data['model_breakdown'][model_name]['ok'] += 1
+                    elif status == 'NG':
+                        data['model_breakdown'][model_name]['ng'] += 1
+                    else:
+                        data['model_breakdown'][model_name]['pending'] += 1
+                    
+                    # Store record for timeline
+                    all_records.append({
+                        'machine': machine_name,
+                        'display_name': config.get('display_name', machine_name),
+                        'qr_code': qr_value,
+                        'timestamp': timestamp,
+                        'status': status,
+                        'model_name': model_name,
+                        'shift': shift,
+                        'cycle_time': None  # No cycle time for washing load
+                    })
+            
+            elif operation == 'unload' and config.get('post_model'):
+                # PREWASHING/FINALWASHING UNLOADING (Postprocessing)
+                post_records = config['post_model'].objects.all()
+                
+                for post in post_records:
+                    timestamp = post.timestamp
+                    
+                    # Check if in date range
+                    if not is_in_date_range(timestamp, start_date, end_date):
+                        continue
+                    
+                    # Determine shift
+                    timestamp_dt = parse_timestamp_to_datetime(timestamp)
+                    shift = determine_shift(timestamp_dt)
+                    
+                    # Get data from postprocessing record
+                    qr_value = post.qr_data
+                    model_name = getattr(post, 'model_name', 'N/A')
+                    status = getattr(post, 'status', 'OK')  # Status is in postprocessing for UNLOAD
+                    
+                    # Apply status filter
+                    if status_filter != 'all' and status != status_filter:
+                        continue
+                    
+                    # Update counts
+                    data['total_parts'] += 1
+                    if status == 'OK':
+                        data['ok_parts'] += 1
+                        machine_stats['ok'] += 1
+                    elif status == 'NG':
+                        data['ng_parts'] += 1
+                        machine_stats['ng'] += 1
+                    else:
+                        data['pending_parts'] += 1
+                        machine_stats['pending'] += 1
+                    
+                    # Update shift data
+                    if shift:
+                        data['shift_data'][shift]['total'] += 1
+                        if status == 'OK':
+                            data['shift_data'][shift]['ok'] += 1
+                        elif status == 'NG':
+                            data['shift_data'][shift]['ng'] += 1
+                        else:
+                            data['shift_data'][shift]['pending'] += 1
+                    
+                    # Track model breakdown
+                    if model_name not in data['model_breakdown']:
+                        data['model_breakdown'][model_name] = {'ok': 0, 'ng': 0, 'pending': 0, 'total': 0}
+                    data['model_breakdown'][model_name]['total'] += 1
+                    if status == 'OK':
+                        data['model_breakdown'][model_name]['ok'] += 1
+                    elif status == 'NG':
+                        data['model_breakdown'][model_name]['ng'] += 1
+                    else:
+                        data['model_breakdown'][model_name]['pending'] += 1
+                    
+                    # Store record for timeline
+                    all_records.append({
+                        'machine': machine_name,
+                        'display_name': config.get('display_name', machine_name),
+                        'qr_code': qr_value,
+                        'timestamp': timestamp,
+                        'status': status,
+                        'model_name': model_name,
+                        'shift': shift,
+                        'cycle_time': None  # No cycle time for washing unload
+                    })
+            
+            # Add machine stats if it has data
+            if machine_stats['ok'] + machine_stats['ng'] + machine_stats['pending'] > 0:
+                data['machine_stats'].append(machine_stats)
+            
+            # Skip to next machine (washing machines handled)
+            continue
+        
+        # ===================================================================
+        # HANDLE REGULAR MACHINES (Non-washing)
+        # ===================================================================
+        
+        # Get preprocessing records
+        try:
+            prep_records = config['prep_model'].objects.all()
+        except Exception as e:
+            continue
         
         for prep in prep_records:
             # Get timestamp
@@ -1850,7 +2011,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
             else:
                 model_name = getattr(prep, 'model_name', 'N/A')
             
-            # Get QR code and status
+            # Get QR code and status based on machine type
             if is_assembly:
                 qr_value = prep.qr_data_internal
                 status = prep.status if prep.qr_data_external and prep.qr_data_housing else 'Pending'
@@ -1945,10 +2106,13 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         if machine_stats['ok'] + machine_stats['ng'] + machine_stats['pending'] > 0:
             data['machine_stats'].append(machine_stats)
     
-    # Calculate OEE metrics
-    op_code_for_oee = selected_op_code or 'op-110A'  # Default to a common operation
+    # ===================================================================
+    # Calculate OEE metrics (rest of the function remains the same)
+    # ===================================================================
     
-    # Overall OEE (aggregate all shifts)
+    op_code_for_oee = selected_op_code or 'op-110A'
+    
+    # Overall OEE
     total_shift_data = {
         'total': data['total_parts'],
         'ok': data['ok_parts'],
@@ -2022,7 +2186,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         # Hourly aggregation
         hourly_data[hour_key] += 1
     
-    # Timeline data (daily OK/NG breakdown)
+    # Timeline data
     sorted_dates = sorted(daily_data.keys())
     data['timeline_data']['labels'] = sorted_dates
     data['timeline_data']['ok'] = [daily_data[date]['ok'] for date in sorted_dates]
@@ -2053,7 +2217,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
         data['trend_data']['labels'].append(date)
         data['trend_data']['values'].append(round(yield_rate, 2))
     
-    # Cycle time data (group by date)
+    # Cycle time data
     if cycle_times:
         cycle_time_by_date = defaultdict(list)
         for ct_record in cycle_times:
@@ -2072,6 +2236,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
     data['detailed_data'] = all_records[-100:]
     
     return data
+
 
 @csrf_exempt
 def analytics_api(request):
