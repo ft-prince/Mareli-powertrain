@@ -535,32 +535,39 @@ function parseCustomTimestamp(timestamp) {
             if (!isNaN(date.getTime())) return date;
         }
         
+        // DD/MM/YYYY HH:MM:SS (24-hour, no comma, no AM/PM)
+        const match24 = timestamp.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/);
+        if (match24) {
+            const [, day, month, year, hour, minute, second] = match24;
+            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day),
+                                  parseInt(hour), parseInt(minute), parseInt(second));
+            if (!isNaN(date.getTime())) return date;
+        }
+        
+        // DD/MM/YYYY HH:MM:SS AM/PM (with or without comma)
         const match = timestamp.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})\s*(am|pm|AM|PM)/i);
         if (match) {
             let [, day, month, year, hour, minute, second, meridiem] = match;
             
-            day = parseInt(day);
-            month = parseInt(month);
-            year = parseInt(year);
-            hour = parseInt(hour);
-            minute = parseInt(minute);
-            second = parseInt(second);
+            day = parseInt(day); month = parseInt(month); year = parseInt(year);
+            hour = parseInt(hour); minute = parseInt(minute); second = parseInt(second);
             
-            if (meridiem.toLowerCase() === 'pm' && hour !== 12) {
-                hour += 12;
-            } else if (meridiem.toLowerCase() === 'am' && hour === 12) {
-                hour = 0;
-            }
+            if (meridiem.toLowerCase() === 'pm' && hour !== 12) hour += 12;
+            else if (meridiem.toLowerCase() === 'am' && hour === 12) hour = 0;
             
             let date = new Date(year, month - 1, day, hour, minute, second);
-            if (!isNaN(date.getTime()) && date.getDate() === day) {
-                return date;
-            }
+            if (!isNaN(date.getTime()) && date.getDate() === day) return date;
             
             date = new Date(year, day - 1, month, hour, minute, second);
-            if (!isNaN(date.getTime())) {
-                return date;
-            }
+            if (!isNaN(date.getTime())) return date;
+        }
+        
+        // DD/MM/YYYY date only
+        const dateOnly = timestamp.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (dateOnly) {
+            const [, day, month, year] = dateOnly;
+            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            if (!isNaN(date.getTime())) return date;
         }
         
         const date = new Date(timestamp);
@@ -572,7 +579,6 @@ function parseCustomTimestamp(timestamp) {
         return null;
     }
 }
-
 function formatDate(timestamp) {
     if (!timestamp) return '-';
     const date = parseCustomTimestamp(timestamp);
@@ -1688,15 +1694,19 @@ function renderMachineData(data) {
                 <td style="padding: 8px; border: 1px solid #ddd;"><small>${postTime}</small></td>
         `;
         
-        if (isOP80 && record.match_status) {
-            const matchBadge = (record.match_status === 'TRUE' || record.match_status === 'true' || record.match_status === true) ? 
-                '<span class="status-badge status-ok">✅ Match</span>' : 
-                '<span class="status-badge status-ng">❌ No Match</span>';
-            tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${matchBadge}</td>`;
-        }
-        
-        // Status cell
-        let statusCell = '-';
+if (isOP80) {
+    let matchBadge = '-';
+    if (record.match_status === 'TRUE' || record.match_status === 'true' || record.match_status === true) {
+        matchBadge = '<span class="status-badge status-ok">✅ Match</span>';
+    } else if (record.match_status === 'FALSE' || record.match_status === 'false' || record.match_status === false) {
+        matchBadge = '<span class="status-badge status-ng">❌ No Match</span>';
+    } else if (record.match_status) {
+        matchBadge = `<span class="status-badge status-inprogress">${record.match_status}</span>`;
+    }
+    tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${matchBadge}</td>`;
+}        
+                // Status cell
+            let statusCell = '-';
         if (record.post_status === 'Pending' || !record.post_status) {
             statusCell = '<span class="status-badge status-inprogress">⏳ Pending</span>';
         } else if (record.post_status === 'OK') {
@@ -1710,7 +1720,26 @@ function renderMachineData(data) {
             }
         } else if (record.post_status === 'NG') {
             statusCell = '<span class="status-badge status-ng">❌ NG</span>';
+            if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
+                statusCell += '<br><small>';
+                for (const [key, value] of Object.entries(record.gauge_values)) {
+                    statusCell += `${key}: ${parseFloat(value).toFixed(3)}<br>`;
+                }
+                statusCell += '</small>';
+            }
+        } else if (record.post_status === 'REWORK') {
+            statusCell = '<span class="status-badge status-inprogress">🔧 REWORK</span>';
+            if (record.gauge_values && Object.keys(record.gauge_values).length > 0) {
+                statusCell += '<br><small>';
+                for (const [key, value] of Object.entries(record.gauge_values)) {
+                    statusCell += `${key}: ${parseFloat(value).toFixed(3)}<br>`;
+                }
+                statusCell += '</small>';
+            }
+        } else {
+            statusCell = `<span class="status-badge status-inprogress">${record.post_status}</span>`;
         }
+
         
         tableHTML += `
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${statusCell}</td>

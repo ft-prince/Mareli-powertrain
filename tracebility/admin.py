@@ -8,7 +8,6 @@ from . import models
 # ============================================================================
 
 def colored_status(status):
-    """Display status with color coding"""
     if status == 'OK':
         return format_html(
             '<span style="background: #e8f5e9; color: #00cc66; padding: 4px 12px; border-radius: 4px; font-weight: bold;">✓ OK</span>'
@@ -17,11 +16,14 @@ def colored_status(status):
         return format_html(
             '<span style="background: #ffebee; color: #cc3333; padding: 4px 12px; border-radius: 4px; font-weight: bold;">✗ NG</span>'
         )
+    elif status == 'REWORK':
+        return format_html(
+            '<span style="background: #fff8e1; color: #f57c00; padding: 4px 12px; border-radius: 4px; font-weight: bold;">🔧 REWORK</span>'
+        )
     else:
         return format_html(
-            '<span style="background: #fff3e0; color: #ff9933; padding: 4px 12px; border-radius: 4px; font-weight: bold;">⏳ Pending</span>'
+            '<span style="background: #fff3e0; color: #ff9933; padding: 4px 12px; border-radius: 4px; font-weight: bold;">⏳ {}</span>', status
         )
-
 
 # ============================================================================
 # CNC MACHINES (1-6) - Preprocessing & Postprocessing

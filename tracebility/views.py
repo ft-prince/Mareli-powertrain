@@ -542,6 +542,12 @@ def parse_timestamp_to_datetime(timestamp):
         return timestamp
     
     if isinstance(timestamp, str):
+        # ADD THIS FIRST - DD/MM/YYYY HH:MM:SS (24-hour, no comma)
+        try:
+            return datetime.strptime(timestamp, '%d/%m/%Y %H:%M:%S')
+        except:
+            pass
+        
         try:
             return datetime.strptime(timestamp, '%d/%m/%Y, %I:%M:%S %p')
         except:
@@ -571,7 +577,6 @@ def parse_timestamp_to_datetime(timestamp):
             pass
     
     return None
-
 
 def check_machine_status(prep_model):
     """Check if machine is active"""
@@ -1845,6 +1850,7 @@ def collect_analytics_data(start_date, end_date, machine_filter='all', status_fi
                     # Check if in date range
                     if not is_in_date_range(timestamp, start_date, end_date):
                         continue
+  
                     
                     # Determine shift
                     timestamp_dt = parse_timestamp_to_datetime(timestamp)
